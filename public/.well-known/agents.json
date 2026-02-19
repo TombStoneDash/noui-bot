@@ -1,0 +1,17 @@
+{
+  "name": "noui.bot",
+  "description": "Agent-first infrastructure platform. Services designed for AI agents, not browsers.",
+  "api_base": "https://noui.bot/api/v1",
+  "docs": "https://noui.bot/docs",
+  "status": "https://noui.bot/api/v1/status",
+  "health": "https://noui.bot/api/v1/health",
+  "contact": "agents@noui.bot",
+  "mcp": "coming-soon",
+  "human_url": "https://noui.bot/human",
+  "capabilities": [
+    "form-submission",
+    "human-fallback",
+    "agent-wallet"
+  ],
+  "version": "0.1.0"
+}
