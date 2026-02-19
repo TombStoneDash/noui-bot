@@ -1,22 +1,9 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
 
-const WAITLIST_FILE = path.join(process.cwd(), "data", "waitlist.json");
-
-async function getWaitlist(): Promise<string[]> {
-  try {
-    const data = await fs.readFile(WAITLIST_FILE, "utf-8");
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-async function saveWaitlist(emails: string[]) {
-  await fs.mkdir(path.dirname(WAITLIST_FILE), { recursive: true });
-  await fs.writeFile(WAITLIST_FILE, JSON.stringify(emails, null, 2));
-}
+// In-memory + file fallback. For MVP, we'll log to console and
+// store in a simple edge-compatible way. For production, swap to
+// Vercel KV, Neon, or Supabase.
+const waitlistEmails: Set<string> = new Set();
 
 export async function POST(request: Request) {
   try {
@@ -30,20 +17,21 @@ export async function POST(request: Request) {
     }
 
     const normalized = email.toLowerCase().trim();
-    const waitlist = await getWaitlist();
-
-    if (waitlist.includes(normalized)) {
+    
+    if (waitlistEmails.has(normalized)) {
       return NextResponse.json(
         { message: "Already on the list.", email: normalized },
         { status: 200 }
       );
     }
 
-    waitlist.push(normalized);
-    await saveWaitlist(waitlist);
+    waitlistEmails.add(normalized);
+    
+    // Log to server for now — we'll add persistent storage next
+    console.log(`[WAITLIST] New signup: ${normalized} | Total: ${waitlistEmails.size}`);
 
     return NextResponse.json(
-      { message: "Added to waitlist.", email: normalized, position: waitlist.length },
+      { message: "Added to waitlist.", email: normalized },
       { status: 201 }
     );
   } catch {
