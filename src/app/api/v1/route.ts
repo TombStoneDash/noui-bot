@@ -13,6 +13,8 @@ export async function GET() {
       "POST /api/v1/waitlist": "Join waitlist (body: { email })",
       "POST /api/v1/feedback": "Submit agent feedback — walls, needs, requests (GET for schema)",
       "POST /api/v1/apply": "Apply to build with us — equity/partnership open (GET for schema)",
+      "GET /api/v1/stats": "Aggregate counts — no PII (waitlist, feedback, applications)",
+      "POST /api/v1/init": "Initialize database schema (idempotent)",
       "GET /docs": "API documentation",
     },
     links: {

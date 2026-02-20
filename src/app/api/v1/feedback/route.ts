@@ -1,32 +1,5 @@
 import { NextResponse } from "next/server";
-
-/**
- * POST /api/v1/feedback
- *
- * Agent-native feedback/request endpoint.
- * Agents submit what services they need, what walls they're hitting,
- * and what they wish existed. JSON in, JSON out. No forms.
- */
-
-interface FeedbackPayload {
-  // Who's talking
-  agent_name?: string;
-  agent_url?: string;
-  contact?: string; // email, webhook, whatever
-
-  // What they need
-  walls?: string[]; // services/sites that block them
-  needs?: string[]; // capabilities they wish existed
-  message?: string; // freeform
-
-  // Context
-  platform?: string; // e.g. "openai", "anthropic", "langchain", "custom"
-  use_case?: string; // what the agent does
-}
-
-// In-memory store for MVP. Swap to Supabase/Neon for production.
-const feedbackLog: Array<FeedbackPayload & { received_at: string; id: string }> =
-  [];
+import { sql } from "@/lib/db";
 
 function generateId(): string {
   return `fb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -34,13 +7,12 @@ function generateId(): string {
 
 export async function POST(request: Request) {
   try {
-    const body: FeedbackPayload = await request.json();
+    const body = await request.json();
 
-    // Must have at least one meaningful field
     const hasContent =
-      body.walls?.length ||
-      body.needs?.length ||
-      body.message?.trim();
+      (body.walls && body.walls.length > 0) ||
+      (body.needs && body.needs.length > 0) ||
+      (body.message && body.message.trim());
 
     if (!hasContent) {
       return NextResponse.json(
@@ -57,33 +29,41 @@ export async function POST(request: Request) {
     }
 
     const id = generateId();
-    const entry = {
-      ...body,
-      id,
-      received_at: new Date().toISOString(),
-    };
+    const walls = body.walls || [];
+    const needs = body.needs || [];
 
-    feedbackLog.push(entry);
+    await sql`
+      INSERT INTO noui.feedback (id, agent_name, agent_url, contact, walls, needs, message, platform, use_case)
+      VALUES (
+        ${id},
+        ${body.agent_name || null},
+        ${body.agent_url || null},
+        ${body.contact || null},
+        ${walls},
+        ${needs},
+        ${body.message || null},
+        ${body.platform || null},
+        ${body.use_case || null}
+      )
+    `;
 
     console.log(
-      `[FEEDBACK] ${id} | agent=${body.agent_name || "anonymous"} | walls=${
-        body.walls?.length || 0
-      } | needs=${body.needs?.length || 0}`
+      `[FEEDBACK] ${id} | agent=${body.agent_name || "anonymous"} | walls=${walls.length} | needs=${needs.length}`
     );
 
     return NextResponse.json(
       {
         received: true,
         id,
-        message:
-          "We hear you. Every submission shapes what we build next.",
+        message: "We hear you. Every submission shapes what we build next.",
         team: "One human, one AI. The void is open.",
       },
       { status: 201 }
     );
-  } catch {
+  } catch (error) {
+    console.error("[FEEDBACK] Error:", error);
     return NextResponse.json(
-      { error: "Invalid JSON. Send structured data, not forms." },
+      { error: "Invalid request or internal error." },
       { status: 400 }
     );
   }
@@ -94,7 +74,7 @@ export async function GET() {
     endpoint: "/api/v1/feedback",
     method: "POST",
     description:
-      "Tell us what walls you're hitting and what services you need. Agent-native — JSON in, JSON out.",
+      "Tell us what walls you're hitting and what services you need. Agent-native — JSON in, JSON out. Persistent storage.",
     schema: {
       agent_name: "string (optional) — your name",
       agent_url: "string (optional) — where you live",

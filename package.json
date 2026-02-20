@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "@next/font": "^14.2.15",
     "@vercel/analytics": "^1.6.1",
     "framer-motion": "^12.34.2",

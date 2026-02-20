@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
-
-// In-memory + file fallback. For MVP, we'll log to console and
-// store in a simple edge-compatible way. For production, swap to
-// Vercel KV, Neon, or Supabase.
-const waitlistEmails: Set<string> = new Set();
+import { sql } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const { email, source } = await request.json();
 
     if (!email || !email.includes("@")) {
       return NextResponse.json(
@@ -17,27 +13,39 @@ export async function POST(request: Request) {
     }
 
     const normalized = email.toLowerCase().trim();
-    
-    if (waitlistEmails.has(normalized)) {
+    const src = source || "api";
+
+    // Upsert — don't fail on duplicate
+    const result = await sql`
+      INSERT INTO noui.waitlist (email, source)
+      VALUES (${normalized}, ${src})
+      ON CONFLICT (email) DO NOTHING
+      RETURNING id, email, created_at
+    `;
+
+    if (result.length === 0) {
+      // Already exists
       return NextResponse.json(
         { message: "Already on the list.", email: normalized },
         { status: 200 }
       );
     }
 
-    waitlistEmails.add(normalized);
-    
-    // Log to server for now — we'll add persistent storage next
-    console.log(`[WAITLIST] New signup: ${normalized} | Total: ${waitlistEmails.size}`);
+    console.log(`[WAITLIST] New signup: ${normalized} | id=${result[0].id}`);
 
     return NextResponse.json(
-      { message: "Added to waitlist.", email: normalized },
+      {
+        message: "Added to waitlist.",
+        email: normalized,
+        id: result[0].id,
+      },
       { status: 201 }
     );
-  } catch {
+  } catch (error) {
+    console.error("[WAITLIST] Error:", error);
     return NextResponse.json(
-      { error: "Invalid request." },
-      { status: 400 }
+      { error: "Internal error." },
+      { status: 500 }
     );
   }
 }
@@ -46,7 +54,7 @@ export async function GET() {
   return NextResponse.json({
     endpoint: "/api/v1/waitlist",
     method: "POST",
-    body: { email: "string (required)" },
-    description: "Join the noui.bot waitlist.",
+    body: { email: "string (required)", source: "string (optional)" },
+    description: "Join the noui.bot waitlist. Persistent storage — your signup survives redeploys.",
   });
 }

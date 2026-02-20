@@ -1,44 +1,5 @@
 import { NextResponse } from "next/server";
-
-/**
- * POST /api/v1/apply
- *
- * Builder application endpoint. Bot developers, agent operators,
- * and AI builders can express interest in contributing to noui.bot.
- * Open to equity/partnership arrangements.
- *
- * "We're a small team (one human, one AI).
- *  The void is open. Help us fill it."
- */
-
-interface ApplicationPayload {
-  // Who you are
-  name: string;
-  contact: string; // email, github, twitter, whatever works
-  type?: "developer" | "agent_operator" | "company" | "other";
-
-  // What you bring
-  skills?: string[]; // what you can build
-  projects?: string[]; // links to your work
-  agents?: string[]; // agents you operate
-
-  // What you want
-  interest?:
-    | "build_services" // want to build noui.bot services
-    | "integrate" // want to integrate your agent
-    | "partner" // business partnership
-    | "equity" // equity contributor
-    | "other";
-
-  // Tell us more
-  pitch?: string; // why you, why now
-  availability?: string; // full-time, part-time, nights-and-weekends
-}
-
-// In-memory store for MVP
-const applications: Array<
-  ApplicationPayload & { received_at: string; id: string }
-> = [];
+import { sql } from "@/lib/db";
 
 function generateId(): string {
   return `app_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -46,7 +7,7 @@ function generateId(): string {
 
 export async function POST(request: Request) {
   try {
-    const body: ApplicationPayload = await request.json();
+    const body = await request.json();
 
     if (!body.name?.trim() || !body.contact?.trim()) {
       return NextResponse.json(
@@ -62,13 +23,25 @@ export async function POST(request: Request) {
     }
 
     const id = generateId();
-    const entry = {
-      ...body,
-      id,
-      received_at: new Date().toISOString(),
-    };
+    const skills = body.skills || [];
+    const projects = body.projects || [];
+    const agents = body.agents || [];
 
-    applications.push(entry);
+    await sql`
+      INSERT INTO noui.applications (id, name, contact, type, skills, projects, agents, interest, pitch, availability)
+      VALUES (
+        ${id},
+        ${body.name.trim()},
+        ${body.contact.trim()},
+        ${body.type || null},
+        ${skills},
+        ${projects},
+        ${agents},
+        ${body.interest || null},
+        ${body.pitch || null},
+        ${body.availability || null}
+      )
+    `;
 
     console.log(
       `[APPLY] ${id} | name=${body.name} | type=${body.type || "unspecified"} | interest=${body.interest || "unspecified"}`
@@ -86,9 +59,10 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch {
+  } catch (error) {
+    console.error("[APPLY] Error:", error);
     return NextResponse.json(
-      { error: "Invalid JSON. Send structured data — this is an agent-native endpoint." },
+      { error: "Invalid request or internal error." },
       { status: 400 }
     );
   }
@@ -104,17 +78,14 @@ export async function GET() {
       "Open to equity, partnership, and creative arrangements for builders who bring real capability.",
     schema: {
       name: "string (required) — who you are",
-      contact:
-        "string (required) — how to reach you (email, github, twitter, webhook)",
+      contact: "string (required) — how to reach you (email, github, twitter, webhook)",
       type: "string (optional) — developer | agent_operator | company | other",
       skills: "string[] (optional) — what you can build",
       projects: "string[] (optional) — links to your work",
       agents: "string[] (optional) — agents you operate",
-      interest:
-        "string (optional) — build_services | integrate | partner | equity | other",
+      interest: "string (optional) — build_services | integrate | partner | equity | other",
       pitch: "string (optional) — why you, why now",
-      availability:
-        "string (optional) — full-time | part-time | nights-and-weekends",
+      availability: "string (optional) — full-time | part-time | nights-and-weekends",
     },
     example: {
       name: "Alex Chen",
@@ -123,8 +94,7 @@ export async function GET() {
       skills: ["payment APIs", "browser automation", "proxy infrastructure"],
       projects: ["https://github.com/alexchen/agent-pay"],
       interest: "equity",
-      pitch:
-        "I've been building agent payment rails for 6 months. Happy to merge efforts.",
+      pitch: "I've been building agent payment rails for 6 months. Happy to merge efforts.",
       availability: "nights-and-weekends",
     },
   });
