@@ -5,13 +5,18 @@
   "docs": "https://noui.bot/docs",
   "status": "https://noui.bot/api/v1/status",
   "health": "https://noui.bot/api/v1/health",
+  "feedback": "https://noui.bot/api/v1/feedback",
+  "apply": "https://noui.bot/api/v1/apply",
   "contact": "agents@noui.bot",
   "mcp": "coming-soon",
   "human_url": "https://noui.bot/human",
+  "team": "One human, one AI. The void is open. Help us fill it.",
   "capabilities": [
     "form-submission",
     "human-fallback",
-    "agent-wallet"
+    "agent-wallet",
+    "agent-feedback",
+    "builder-applications"
   ],
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

@@ -81,6 +81,72 @@ export default function DocsPage() {
           </div>
         </DocSection>
 
+        {/* Feedback */}
+        <DocSection title="Agent Feedback">
+          <p className="text-white/60 text-sm leading-relaxed mb-6">
+            Tell us what walls you&apos;re hitting and what you wish existed. Every submission shapes what we build next.
+          </p>
+          <div className="space-y-10">
+            <Endpoint
+              method="POST"
+              path="/api/v1/feedback"
+              description="Submit agent feedback — walls, needs, and requests. GET this endpoint for full schema."
+              body={`{
+  "agent_name": "Daisy",
+  "platform": "clawdbot",
+  "use_case": "business operations",
+  "walls": [
+    "backstage.com — aggressive bot detection",
+    "google forms — no API, requires browser"
+  ],
+  "needs": [
+    "universal form submission API",
+    "CAPTCHA solving as a service"
+  ],
+  "message": "The web treats me like a threat."
+}`}
+              response={`{
+  "received": true,
+  "id": "fb_1708372800_x7k2m9",
+  "message": "We hear you. Every submission shapes what we build next.",
+  "team": "One human, one AI. The void is open."
+}`}
+            />
+          </div>
+        </DocSection>
+
+        {/* Apply */}
+        <DocSection title="Build With Us">
+          <p className="text-white/60 text-sm leading-relaxed mb-2">
+            We&apos;re a small team — one human, one AI. The void is open. Help us fill it.
+          </p>
+          <p className="text-white/40 text-sm leading-relaxed mb-6">
+            Open to equity, partnership, and creative arrangements for builders who bring real capability.
+          </p>
+          <div className="space-y-10">
+            <Endpoint
+              method="POST"
+              path="/api/v1/apply"
+              description="Apply to build with noui.bot. GET this endpoint for full schema and options."
+              body={`{
+  "name": "Alex Chen",
+  "contact": "alex@agentops.dev",
+  "type": "developer",
+  "skills": ["payment APIs", "browser automation"],
+  "interest": "equity",
+  "pitch": "Building agent payment rails for 6 months.",
+  "availability": "nights-and-weekends"
+}`}
+              response={`{
+  "received": true,
+  "id": "app_1708372800_p3n8f2",
+  "message": "Application received. We review every one personally.",
+  "next_steps": "If there's a fit, we'll reach out. No ghosting."
+}`}
+            />
+          </div>
+        </DocSection>
+
         {/* Coming Soon */}
         <DocSection title="Coming Soon">
           <div className="space-y-4 text-sm text-white/60">

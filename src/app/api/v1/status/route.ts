@@ -11,6 +11,8 @@ export async function GET() {
       health: "/api/v1/health",
       docs: "/docs",
       waitlist: "/api/v1/waitlist",
+      feedback: "/api/v1/feedback",
+      apply: "/api/v1/apply",
     },
   });
 }

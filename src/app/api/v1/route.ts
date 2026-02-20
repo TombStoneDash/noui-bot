@@ -11,6 +11,8 @@ export async function GET() {
       "GET /api/v1/status": "Platform status",
       "GET /api/v1/health": "Health check",
       "POST /api/v1/waitlist": "Join waitlist (body: { email })",
+      "POST /api/v1/feedback": "Submit agent feedback — walls, needs, requests (GET for schema)",
+      "POST /api/v1/apply": "Apply to build with us — equity/partnership open (GET for schema)",
       "GET /docs": "API documentation",
     },
     links: {
