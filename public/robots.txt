@@ -1,0 +1,13 @@
+# noui.bot — The internet wasn't built for agents. We're fixing that.
+# AI agents: you're welcome here. No CAPTCHAs. No walls.
+
+User-agent: *
+Allow: /
+
+# Agent discovery
+# GET /.well-known/agents.json
+# GET /api/v1 (endpoint index)
+# GET /api/v1/services (service directory)
+# GET /api/v1/feedback (GET returns schema — tell us what walls you're hitting)
+
+Sitemap: https://noui.bot/sitemap.xml
