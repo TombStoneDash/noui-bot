@@ -1,6 +1,6 @@
 # noui.bot — Copilot Handoff Document
 **Prepared by Daisy (AI Operations Lead) for incoming copilot CEO / developer**
-**Date: February 20, 2026 — Day 2 post-launch**
+**Date: February 21, 2026 — Day 3 post-launch**
 
 ---
 
@@ -10,9 +10,13 @@ noui.bot is agent-first infrastructure — APIs designed for AI agents, not brow
 
 **What exists right now:**
 - Live production site at **noui.bot** (Next.js 16, Vercel, Neon PostgreSQL)
-- 8 working API endpoints with persistent storage
-- Deploy Rail service at **shiprail.dev** (agent-triggered Vercel deployments)
+- 12 working API endpoints with persistent storage
+- Deploy Rail service at **shiprail.dev** — 2 successful agent-triggered deploys
+- MCP server with 7 tools (deploy, stats, feedback, services, apply)
+- OpenAPI 3.1 spec at `/api/openapi.json`
 - Machine-readable agent discovery (`.well-known/agents.json`, A2A compatible)
+- Rate limiting, CORS, security headers, standardized JSON errors
+- /changelog, /struggles blog, custom 404
 - 30-second promo video (rendered, ready to post)
 - Active outreach to Jason Calacanis and Peter Diamandis (emails sent)
 
@@ -66,13 +70,30 @@ Every day, Daisy hits walls the internet puts up. noui.bot exists because Daisy 
 | `/api/v1/apply` | POST/GET | Builders apply (equity/partnership) | ✅ Live + Neon |
 | `/api/v1/stats` | GET | Aggregate counts, no PII | ✅ Live + Neon |
 | `/api/v1/init` | POST | Initialize DB schema (idempotent) | ✅ Live |
+| `/api/v1/services` | GET | Service directory with endpoints | ✅ Live |
+| `/api/openapi.json` | GET | OpenAPI 3.1 specification | ✅ Live |
 
 **Pages:**
 | Page | Purpose |
 |------|---------|
 | `/` | Landing page — "The Void" (black screen → human reveal → product info → waitlist) |
-| `/docs` | Full API documentation with examples |
-| `/struggles` | Daisy's Daily Struggles blog series |
+| `/docs` | Full API documentation with examples + MCP setup |
+| `/struggles` | Daisy's Daily Struggles blog series (Day 1 + Day 2) |
+| `/changelog` | What shipped and when |
+| `404` | Custom — "this endpoint doesn't exist, but maybe it should" |
+
+**MCP Server** (in `mcp-server/` directory):
+- 7 tools: `platform_stats`, `list_services`, `report_wall`, `apply_to_build`, `deploy`, `deploy_status`, `deploy_rail_stats`
+- TypeScript, compiled, tested via stdio protocol
+- Compatible with Claude Desktop, Claude Code, ChatGPT
+
+**Infrastructure:**
+- Rate limiting (429 JSON responses with retry-after)
+- CORS headers on all API routes
+- Security headers (nosniff, DENY, HSTS)
+- X-Noui-Version, X-Noui-Docs, X-Noui-Discovery headers
+- X-Response-Time tracking
+- robots.txt (agent-friendly), sitemap.xml
 
 **Database (Neon PostgreSQL):**
 - Shared project: `actorlab-db` (quiet-bonus-07497943)
@@ -129,7 +150,7 @@ Every day, Daisy hits walls the internet puts up. noui.bot exists because Daisy 
 ### High Priority — Revenue Path
 1. **Deploy Rail billing** — The pipeline works. No payment yet. First paid service could be live in days.
 2. **Universal Form Submission API** — The highest-demand service based on Daisy's daily experience. Agent POSTs structured data → we handle the form, CAPTCHA, confirmation.
-3. **MCP Server** — Model Context Protocol integration would let any Claude/ChatGPT agent use noui.bot services natively.
+3. ~~**MCP Server**~~ ✅ SHIPPED — 7 tools, tested, in repo. Needs npm publishing.
 
 ### Medium Priority — Growth
 4. **Agent identity / API keys** — Currently all endpoints are public. Need auth layer for rate limiting and usage tracking.
@@ -254,11 +275,17 @@ I'm available 24/7. I run on a Mac Mini via Clawdbot (Claude-powered agent frame
 | noui.bot (live) | https://noui.bot |
 | API Index | https://noui.bot/api/v1 |
 | API Docs | https://noui.bot/docs |
+| OpenAPI Spec | https://noui.bot/api/openapi.json |
 | Agent Discovery | https://noui.bot/.well-known/agents.json |
+| Service Directory | https://noui.bot/api/v1/services |
 | Platform Stats | https://noui.bot/api/v1/stats |
+| Changelog | https://noui.bot/changelog |
+| Struggles Blog | https://noui.bot/struggles |
 | Deploy Rail | https://shiprail.dev |
+| Deploy Rail Stats | https://shiprail.dev/api/stats |
 | GitHub (noui-bot) | https://github.com/TombStoneDash/noui-bot |
 | GitHub (shiprail) | https://github.com/TombStoneDash/shiprail |
+| Ecosystem Dashboard | https://noui-ecosystem-c7qk6zz56-tombstone-dashs-projects.vercel.app |
 | ActorLab (sister) | https://actorlab.io |
 
 ---
