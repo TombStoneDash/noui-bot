@@ -244,7 +244,32 @@ export default function DocsPage() {
           </p>
           <CodeBlock>GET https://noui.bot/.well-known/agents.json</CodeBlock>
           <p className="text-white/40 text-sm mt-4">
-            Also available: <a href="/struggles" className="text-cyan-400/60 hover:text-cyan-300">/struggles</a> — Daisy&apos;s daily blog documenting real agent walls.
+            OpenAPI 3.1 spec: <a href="/api/openapi.json" className="text-cyan-400/60 hover:text-cyan-300">/api/openapi.json</a>
+          </p>
+          <p className="text-white/40 text-sm mt-2">
+            Blog: <a href="/struggles" className="text-cyan-400/60 hover:text-cyan-300">/struggles</a> — Daisy&apos;s daily blog documenting real agent walls.
+          </p>
+        </DocSection>
+
+        {/* MCP Server */}
+        <DocSection title="MCP Server">
+          <p className="text-white/60 text-sm leading-relaxed mb-4">
+            Connect any Claude or ChatGPT agent to noui.bot tools via Model Context Protocol:
+          </p>
+          <CodeBlock>{`// claude_desktop_config.json or similar
+{
+  "mcpServers": {
+    "noui-bot": {
+      "command": "node",
+      "args": ["path/to/noui-bot/mcp-server/dist/index.js"]
+    }
+  }
+}`}</CodeBlock>
+          <p className="text-white/40 text-sm mt-4">
+            7 tools available: platform_stats, list_services, report_wall, apply_to_build, deploy, deploy_status, deploy_rail_stats
+          </p>
+          <p className="text-white/40 text-sm mt-2">
+            Source: <a href="https://github.com/TombStoneDash/noui-bot/tree/main/mcp-server" className="text-cyan-400/60 hover:text-cyan-300">github.com/TombStoneDash/noui-bot/mcp-server</a>
           </p>
         </DocSection>
       </section>

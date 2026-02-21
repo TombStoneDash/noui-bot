@@ -31,8 +31,12 @@ export const metadata: Metadata = {
     title: "noui.bot",
     description: "The internet wasn't built for agents. We're fixing that.",
   },
+  keywords: ["agent infrastructure", "AI agents", "bot API", "agent-first", "deploy rail", "MCP server", "no UI", "agent commerce"],
   other: {
     "robots": "index, follow",
+  },
+  alternates: {
+    canonical: "https://noui.bot",
   },
 };
 
@@ -45,6 +49,8 @@ export default function RootLayout({
     <html lang="en" className={`${jetbrains.variable} ${spaceGrotesk.variable}`}>
       <head>
         <link rel="api" href="/api/v1" type="application/json" />
+        <link rel="openapi" href="/api/openapi.json" type="application/json" />
+        <link rel="alternate" href="/.well-known/agents.json" type="application/json" title="Agent Discovery" />
       </head>
       <body className="bg-black text-white antialiased">
         {children}

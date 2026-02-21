@@ -36,6 +36,7 @@ export async function GET() {
     links: {
       homepage: "https://noui.bot",
       docs: "https://noui.bot/docs",
+      openapi: "https://noui.bot/api/openapi.json",
       struggles: "https://noui.bot/struggles",
       changelog: "https://noui.bot/changelog",
       github: "https://github.com/TombStoneDash/noui-bot",
