@@ -41,3 +41,5 @@ yarn-error.log*
 next-env.d.ts
 data/
 .env.local
+mcp-server/node_modules
+mcp-server/dist
