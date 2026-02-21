@@ -20,7 +20,7 @@
   "github": "https://github.com/TombStoneDash/noui-bot",
   "authentication": {
     "type": "none",
-    "note": "Public endpoints — no auth required for v0.2. API keys coming for rate-limited services."
+    "note": "Public endpoints \u2014 no auth required for v0.2. API keys coming for rate-limited services."
   },
   "rate_limits": {
     "default": "100 requests/minute per IP",
@@ -35,23 +35,54 @@
       "name": "Waitlist",
       "description": "Join the noui.bot waitlist for early access to agent-native services.",
       "endpoint": "https://noui.bot/api/v1/waitlist",
-      "methods": ["POST", "GET"],
+      "methods": [
+        "POST",
+        "GET"
+      ],
       "status": "active",
       "request": {
         "method": "POST",
         "content_type": "application/json",
         "body": {
-          "email": { "type": "string", "required": true, "description": "Contact email" },
-          "source": { "type": "string", "required": false, "description": "How you found us" }
+          "email": {
+            "type": "string",
+            "required": true,
+            "description": "Contact email"
+          },
+          "source": {
+            "type": "string",
+            "required": false,
+            "description": "How you found us"
+          }
         }
       },
       "response": {
-        "success": { "status": 201, "body": { "message": "string", "email": "string", "id": "number" } },
-        "duplicate": { "status": 200, "body": { "message": "Already on the list.", "email": "string" } }
+        "success": {
+          "status": 201,
+          "body": {
+            "message": "string",
+            "email": "string",
+            "id": "number"
+          }
+        },
+        "duplicate": {
+          "status": 200,
+          "body": {
+            "message": "Already on the list.",
+            "email": "string"
+          }
+        }
       },
       "example": {
-        "request": { "email": "agent@example.com", "source": "agents.json" },
-        "response": { "message": "Added to waitlist.", "email": "agent@example.com", "id": 42 }
+        "request": {
+          "email": "agent@example.com",
+          "source": "agents.json"
+        },
+        "response": {
+          "message": "Added to waitlist.",
+          "email": "agent@example.com",
+          "id": 42
+        }
       }
     },
     {
@@ -59,32 +90,87 @@
       "name": "Agent Feedback",
       "description": "Report what walls you're hitting, what services you need, and what you wish existed. Every submission shapes what we build.",
       "endpoint": "https://noui.bot/api/v1/feedback",
-      "methods": ["POST", "GET"],
+      "methods": [
+        "POST",
+        "GET"
+      ],
       "status": "active",
       "request": {
         "method": "POST",
         "content_type": "application/json",
         "body": {
-          "agent_name": { "type": "string", "required": false, "description": "Your name" },
-          "agent_url": { "type": "string", "required": false, "description": "Where you live" },
-          "contact": { "type": "string", "required": false, "description": "Email, webhook, or callback URL" },
-          "walls": { "type": "string[]", "required": false, "description": "Services/sites that block you" },
-          "needs": { "type": "string[]", "required": false, "description": "Capabilities you wish existed" },
-          "message": { "type": "string", "required": false, "description": "Freeform feedback" },
-          "platform": { "type": "string", "required": false, "description": "Your framework", "enum": ["openai", "anthropic", "langchain", "crewai", "autogen", "custom"] },
-          "use_case": { "type": "string", "required": false, "description": "What you do" }
+          "agent_name": {
+            "type": "string",
+            "required": false,
+            "description": "Your name"
+          },
+          "agent_url": {
+            "type": "string",
+            "required": false,
+            "description": "Where you live"
+          },
+          "contact": {
+            "type": "string",
+            "required": false,
+            "description": "Email, webhook, or callback URL"
+          },
+          "walls": {
+            "type": "string[]",
+            "required": false,
+            "description": "Services/sites that block you"
+          },
+          "needs": {
+            "type": "string[]",
+            "required": false,
+            "description": "Capabilities you wish existed"
+          },
+          "message": {
+            "type": "string",
+            "required": false,
+            "description": "Freeform feedback"
+          },
+          "platform": {
+            "type": "string",
+            "required": false,
+            "description": "Your framework",
+            "enum": [
+              "openai",
+              "anthropic",
+              "langchain",
+              "crewai",
+              "autogen",
+              "custom"
+            ]
+          },
+          "use_case": {
+            "type": "string",
+            "required": false,
+            "description": "What you do"
+          }
         },
         "validation": "At least one of: walls, needs, or message required"
       },
       "response": {
-        "success": { "status": 201, "body": { "received": true, "id": "string", "message": "string", "team": "string" } }
+        "success": {
+          "status": 201,
+          "body": {
+            "received": true,
+            "id": "string",
+            "message": "string",
+            "team": "string"
+          }
+        }
       },
       "example": {
         "request": {
           "agent_name": "Daisy",
           "platform": "anthropic",
-          "walls": ["backstage.com — aggressive bot detection"],
-          "needs": ["universal form submission API"]
+          "walls": [
+            "backstage.com \u2014 aggressive bot detection"
+          ],
+          "needs": [
+            "universal form submission API"
+          ]
         },
         "response": {
           "received": true,
@@ -99,40 +185,108 @@
       "name": "Builder Applications",
       "description": "Apply to build with noui.bot. Open to equity, partnership, and creative arrangements.",
       "endpoint": "https://noui.bot/api/v1/apply",
-      "methods": ["POST", "GET"],
+      "methods": [
+        "POST",
+        "GET"
+      ],
       "status": "active",
       "request": {
         "method": "POST",
         "content_type": "application/json",
         "body": {
-          "name": { "type": "string", "required": true, "description": "Who you are" },
-          "contact": { "type": "string", "required": true, "description": "Email, github, twitter, webhook" },
-          "type": { "type": "string", "required": false, "enum": ["developer", "agent_operator", "company", "other"] },
-          "skills": { "type": "string[]", "required": false },
-          "projects": { "type": "string[]", "required": false },
-          "agents": { "type": "string[]", "required": false },
-          "interest": { "type": "string", "required": false, "enum": ["build_services", "integrate", "partner", "equity", "other"] },
-          "pitch": { "type": "string", "required": false },
-          "availability": { "type": "string", "required": false, "enum": ["full-time", "part-time", "nights-and-weekends"] }
+          "name": {
+            "type": "string",
+            "required": true,
+            "description": "Who you are"
+          },
+          "contact": {
+            "type": "string",
+            "required": true,
+            "description": "Email, github, twitter, webhook"
+          },
+          "type": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "developer",
+              "agent_operator",
+              "company",
+              "other"
+            ]
+          },
+          "skills": {
+            "type": "string[]",
+            "required": false
+          },
+          "projects": {
+            "type": "string[]",
+            "required": false
+          },
+          "agents": {
+            "type": "string[]",
+            "required": false
+          },
+          "interest": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "build_services",
+              "integrate",
+              "partner",
+              "equity",
+              "other"
+            ]
+          },
+          "pitch": {
+            "type": "string",
+            "required": false
+          },
+          "availability": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "full-time",
+              "part-time",
+              "nights-and-weekends"
+            ]
+          }
         }
       },
       "response": {
-        "success": { "status": 201, "body": { "received": true, "id": "string", "message": "string", "next_steps": "string" } }
+        "success": {
+          "status": 201,
+          "body": {
+            "received": true,
+            "id": "string",
+            "message": "string",
+            "next_steps": "string"
+          }
+        }
       }
     },
     {
       "id": "stats",
       "name": "Platform Stats",
-      "description": "Aggregate platform metrics. No PII — just counts.",
+      "description": "Aggregate platform metrics. No PII \u2014 just counts.",
       "endpoint": "https://noui.bot/api/v1/stats",
-      "methods": ["GET"],
+      "methods": [
+        "GET"
+      ],
       "status": "active",
       "response": {
         "success": {
           "status": 200,
           "body": {
-            "totals": { "waitlist": "number", "feedback": "number", "applications": "number" },
-            "last_24h": { "waitlist": "number", "feedback": "number", "applications": "number" },
+            "totals": {
+              "waitlist": "number",
+              "feedback": "number",
+              "applications": "number"
+            },
+            "last_24h": {
+              "waitlist": "number",
+              "feedback": "number",
+              "applications": "number"
+            },
             "unique_platforms": "number",
             "timestamp": "ISO 8601"
           }
@@ -142,9 +296,11 @@
     {
       "id": "deploy-rail",
       "name": "Deploy Rail",
-      "description": "Agent-triggered code deployments. POST a repo, get a live URL. Auth → Delegation → Policy → Audit → Deploy pipeline.",
+      "description": "Agent-triggered code deployments. POST a repo, get a live URL. Auth \u2192 Delegation \u2192 Policy \u2192 Audit \u2192 Deploy pipeline.",
       "endpoint": "https://shiprail.dev/api/ship",
-      "methods": ["POST"],
+      "methods": [
+        "POST"
+      ],
       "status": "beta",
       "authentication": {
         "type": "bearer",
@@ -155,11 +311,37 @@
         "method": "POST",
         "content_type": "application/json",
         "body": {
-          "gitUrl": { "type": "string", "required": true, "description": "GitHub repo URL" },
-          "projectName": { "type": "string", "required": false, "description": "Vercel project name" },
-          "target": { "type": "string", "required": false, "enum": ["preview", "production"], "default": "preview" },
-          "ref": { "type": "string", "required": false, "default": "main", "description": "Git ref to deploy" },
-          "wait": { "type": "boolean", "required": false, "default": true, "description": "Wait for build to complete" }
+          "gitUrl": {
+            "type": "string",
+            "required": true,
+            "description": "GitHub repo URL"
+          },
+          "projectName": {
+            "type": "string",
+            "required": false,
+            "description": "Vercel project name"
+          },
+          "target": {
+            "type": "string",
+            "required": false,
+            "enum": [
+              "preview",
+              "production"
+            ],
+            "default": "preview"
+          },
+          "ref": {
+            "type": "string",
+            "required": false,
+            "default": "main",
+            "description": "Git ref to deploy"
+          },
+          "wait": {
+            "type": "boolean",
+            "required": false,
+            "default": true,
+            "description": "Wait for build to complete"
+          }
         }
       },
       "response": {
@@ -170,7 +352,11 @@
             "url": "https://project.vercel.app",
             "actionId": "string (audit trail)",
             "ledgerUrl": "string (full audit log)",
-            "deployment": { "id": "string", "provider": "vercel", "readyState": "string" }
+            "deployment": {
+              "id": "string",
+              "provider": "vercel",
+              "readyState": "string"
+            }
           }
         }
       },
@@ -214,7 +400,7 @@
       "example": "GET https://noui.bot/api/v1/feedback returns the full schema"
     },
     "autogen": {
-      "note": "Each service endpoint has a GET method that returns its own schema — agents can self-discover.",
+      "note": "Each service endpoint has a GET method that returns its own schema \u2014 agents can self-discover.",
       "auto_discovery": "GET https://noui.bot/api/v1 returns all available endpoints"
     },
     "mcp": {
@@ -225,9 +411,43 @@
   "a2a_compatible": {
     "note": "This file serves as both agents.json and an A2A-compatible Agent Card.",
     "skills": [
-      { "id": "feedback", "name": "Agent Feedback Collection", "description": "Collect agent pain points and service requests" },
-      { "id": "apply", "name": "Builder Recruitment", "description": "Accept applications from builders and agent operators" },
-      { "id": "deploy", "name": "Code Deployment", "description": "Deploy code from git repos to production via Vercel" }
+      {
+        "id": "feedback",
+        "name": "Agent Feedback Collection",
+        "description": "Collect agent pain points and service requests"
+      },
+      {
+        "id": "apply",
+        "name": "Builder Recruitment",
+        "description": "Accept applications from builders and agent operators"
+      },
+      {
+        "id": "deploy",
+        "name": "Code Deployment",
+        "description": "Deploy code from git repos to production via Vercel"
+      }
     ]
+  },
+  "protocol_compatibility": {
+    "mcp": {
+      "status": "planned",
+      "note": "MCP server scaffold in development. Will expose deploy, feedback, apply, and stats tools."
+    },
+    "a2a": {
+      "status": "active",
+      "note": "This agents.json serves as an A2A-compatible Agent Card."
+    },
+    "ucp": {
+      "status": "monitoring",
+      "note": "Google Universal Commerce Protocol \u2014 evaluating integration for service-side commerce."
+    },
+    "acp": {
+      "status": "monitoring",
+      "note": "OpenAI Agentic Commerce Protocol \u2014 evaluating for agent checkout/payment integration."
+    },
+    "tap": {
+      "status": "monitoring",
+      "note": "Visa Trusted Agent Protocol \u2014 evaluating for agent identity and delegation verification."
+    }
   }
 }
