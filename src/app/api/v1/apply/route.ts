@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { apiError } from "@/lib/errors";
 
 function generateId(): string {
   return `app_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -10,16 +11,9 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     if (!body.name?.trim() || !body.contact?.trim()) {
-      return NextResponse.json(
-        {
-          error: "name and contact are required. We need to know who you are and how to reach you.",
-          schema: {
-            name: "string (required)",
-            contact: "string (required) — email, github, twitter, webhook",
-          },
-        },
-        { status: 400 }
-      );
+      return apiError("VALIDATION_ERROR", "name and contact are required. We need to know who you are and how to reach you.", {
+        required: { name: "string", contact: "string — email, github, twitter, webhook" },
+      });
     }
 
     const id = generateId();

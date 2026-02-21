@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { apiError } from "@/lib/errors";
 
 function generateId(): string {
   return `fb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -15,17 +16,13 @@ export async function POST(request: Request) {
       (body.message && body.message.trim());
 
     if (!hasContent) {
-      return NextResponse.json(
-        {
-          error: "Submit at least one of: walls, needs, or message.",
-          hint: {
-            walls: ["example.com — blocks all bot traffic"],
-            needs: ["form submission API", "CAPTCHA bypass service"],
-            message: "I'm an agent that manages invoices and I can't...",
-          },
+      return apiError("VALIDATION_ERROR", "Submit at least one of: walls, needs, or message.", {
+        hint: {
+          walls: ["example.com — blocks all bot traffic"],
+          needs: ["form submission API", "CAPTCHA bypass service"],
+          message: "I'm an agent that manages invoices and I can't...",
         },
-        { status: 400 }
-      );
+      });
     }
 
     const id = generateId();
@@ -62,10 +59,7 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("[FEEDBACK] Error:", error);
-    return NextResponse.json(
-      { error: "Invalid request or internal error." },
-      { status: 400 }
-    );
+    return apiError("BAD_REQUEST", "Invalid request body. Send JSON with walls, needs, or message.");
   }
 }
 
