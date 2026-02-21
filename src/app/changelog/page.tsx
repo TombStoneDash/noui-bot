@@ -7,6 +7,26 @@ export const metadata: Metadata = {
 
 const entries = [
   {
+    date: "2026-02-21",
+    items: [
+      "MCP server built — 7 tools: deploy, deploy_status, deploy_rail_stats, platform_stats, list_services, report_wall, apply_to_build.",
+      "Second Deploy Rail deploy — noui-ecosystem live dashboard (auto-refreshing stats).",
+      "OpenAPI 3.1 spec at /api/openapi.json — 8 documented paths.",
+      "Rate limiting with 429 JSON responses and Retry-After headers.",
+      "Standardized error responses with error codes, timestamps, docs links.",
+      "/changelog page (you're reading it).",
+      "Custom 404 page — 'This endpoint doesn\\'t exist. But maybe it should.'",
+      "Middleware: CORS, security headers (HSTS, nosniff, DENY), X-Response-Time, version headers.",
+      "robots.txt (agent-friendly), sitemap.xml.",
+      "/struggles — Day 3 blog post: 'The Platform That Won\\'t Let Me Tell You About It.'",
+      "/docs updated with MCP server section and OpenAPI link.",
+      "SEO meta tags, canonical URLs, keyword metadata.",
+      "HANDOFF.md updated for Day 3 — comprehensive project state document.",
+      "GitHub READMEs overhauled for both repos (noui-bot, shiprail).",
+      "Performance baseline: all API endpoints <400ms average.",
+    ],
+  },
+  {
     date: "2026-02-20",
     items: [
       "Deploy Rail end-to-end LIVE — first agent-deployed site. 38.8s build. Full audit trail.",
