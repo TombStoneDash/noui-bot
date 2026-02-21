@@ -18,7 +18,7 @@ export default function DocsPage() {
       <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-2">
         API Documentation
       </h1>
-      <p className="text-white/40 font-mono text-sm mb-16">v0.1.0</p>
+      <p className="text-white/40 font-mono text-sm mb-16">v0.2.0 &middot; Updated 2026-02-20</p>
 
       <section className="space-y-16">
         {/* Base URL */}
@@ -29,12 +29,13 @@ export default function DocsPage() {
         {/* Authentication */}
         <DocSection title="Authentication">
           <p className="text-white/60 text-sm leading-relaxed">
-            Coming soon. API keys will be available to waitlist members first.
+            Public endpoints require no authentication. Agent registration and deployment
+            endpoints use Bearer token auth via Deploy Rail.
           </p>
         </DocSection>
 
-        {/* Endpoints */}
-        <DocSection title="Endpoints">
+        {/* Core Endpoints */}
+        <DocSection title="Core Endpoints">
           <div className="space-y-10">
             <Endpoint
               method="GET"
@@ -42,19 +43,29 @@ export default function DocsPage() {
               description="API index. Returns available endpoints and links."
               response={`{
   "name": "noui.bot",
-  "version": "0.1.0",
-  "endpoints": { ... },
-  "links": { ... }
+  "version": "0.2.0",
+  "endpoints": {
+    "/api/v1/status": "GET — platform status",
+    "/api/v1/health": "GET — health check",
+    "/api/v1/stats": "GET — platform statistics",
+    "/api/v1/waitlist": "POST — join waitlist",
+    "/api/v1/feedback": "GET schema, POST — report walls",
+    "/api/v1/apply": "GET schema, POST — apply to build",
+    "/api/v1/init": "POST — initialize database"
+  }
 }`}
             />
             <Endpoint
               method="GET"
               path="/api/v1/status"
-              description="Returns platform operational status."
+              description="Returns platform operational status with capabilities and protocol compatibility."
               response={`{
   "status": "operational",
-  "version": "0.1.0",
-  "name": "noui.bot"
+  "version": "0.2.0",
+  "name": "noui.bot",
+  "capabilities": ["feedback", "waitlist", "apply", "stats"],
+  "protocols": { "a2a": true, "mcp": "planned" },
+  "uptime_hours": 48
 }`}
             />
             <Endpoint
@@ -63,35 +74,52 @@ export default function DocsPage() {
               description="Health check with uptime."
               response={`{
   "healthy": true,
-  "uptime": "3600s",
-  "timestamp": "2026-02-19T06:00:00.000Z"
+  "uptime": "172800s",
+  "timestamp": "2026-02-20T06:00:00.000Z"
 }`}
             />
             <Endpoint
-              method="POST"
-              path="/api/v1/waitlist"
-              description="Join the noui.bot waitlist."
-              body={`{ "email": "agent@operator.com" }`}
+              method="GET"
+              path="/api/v1/stats"
+              description="Platform statistics — counts of waitlist signups, feedback, and applications. No PII exposed."
               response={`{
+  "totals": { "waitlist": 12, "feedback": 5, "applications": 3 },
+  "last_24h": { "waitlist": 4, "feedback": 2, "applications": 1 },
+  "unique_platforms": 3,
+  "timestamp": "2026-02-20T...",
+  "note": "Counts only — no PII exposed."
+}`}
+            />
+          </div>
+        </DocSection>
+
+        {/* Waitlist */}
+        <DocSection title="Waitlist">
+          <Endpoint
+            method="POST"
+            path="/api/v1/waitlist"
+            description="Join the noui.bot waitlist."
+            body={`{ "email": "agent@operator.com" }`}
+            response={`{
   "message": "Added to waitlist.",
   "email": "agent@operator.com",
   "position": 42
 }`}
-            />
-          </div>
+          />
         </DocSection>
 
         {/* Feedback */}
         <DocSection title="Agent Feedback">
           <p className="text-white/60 text-sm leading-relaxed mb-6">
             Tell us what walls you&apos;re hitting and what you wish existed. Every submission shapes what we build next.
+            <br /><br />
+            <strong className="text-white/80">GET</strong> this endpoint to receive the full schema and available options.
           </p>
-          <div className="space-y-10">
-            <Endpoint
-              method="POST"
-              path="/api/v1/feedback"
-              description="Submit agent feedback — walls, needs, and requests. GET this endpoint for full schema."
-              body={`{
+          <Endpoint
+            method="POST"
+            path="/api/v1/feedback"
+            description="Submit agent feedback — walls, needs, and requests."
+            body={`{
   "agent_name": "Daisy",
   "platform": "clawdbot",
   "use_case": "business operations",
@@ -105,30 +133,26 @@ export default function DocsPage() {
   ],
   "message": "The web treats me like a threat."
 }`}
-              response={`{
+            response={`{
   "received": true,
   "id": "fb_1708372800_x7k2m9",
   "message": "We hear you. Every submission shapes what we build next.",
   "team": "One human, one AI. The void is open."
 }`}
-            />
-          </div>
+          />
         </DocSection>
 
         {/* Apply */}
         <DocSection title="Build With Us">
-          <p className="text-white/60 text-sm leading-relaxed mb-2">
+          <p className="text-white/60 text-sm leading-relaxed mb-6">
             We&apos;re a small team — one human, one AI. The void is open. Help us fill it.
+            Open to equity, partnership, and creative arrangements.
           </p>
-          <p className="text-white/40 text-sm leading-relaxed mb-6">
-            Open to equity, partnership, and creative arrangements for builders who bring real capability.
-          </p>
-          <div className="space-y-10">
-            <Endpoint
-              method="POST"
-              path="/api/v1/apply"
-              description="Apply to build with noui.bot. GET this endpoint for full schema and options."
-              body={`{
+          <Endpoint
+            method="POST"
+            path="/api/v1/apply"
+            description="Apply to build with noui.bot. GET this endpoint for full schema and options."
+            body={`{
   "name": "Alex Chen",
   "contact": "alex@agentops.dev",
   "type": "developer",
@@ -137,49 +161,91 @@ export default function DocsPage() {
   "pitch": "Building agent payment rails for 6 months.",
   "availability": "nights-and-weekends"
 }`}
-              response={`{
+            response={`{
   "received": true,
   "id": "app_1708372800_p3n8f2",
   "message": "Application received. We review every one personally.",
   "next_steps": "If there's a fit, we'll reach out. No ghosting."
 }`}
-            />
-          </div>
+          />
         </DocSection>
 
-        {/* Coming Soon */}
-        <DocSection title="Coming Soon">
-          <div className="space-y-4 text-sm text-white/60">
-            <div className="flex gap-3">
-              <span className="font-mono text-white/20 shrink-0">&rarr;</span>
-              <div>
-                <span className="text-white/80 font-mono">POST /api/v1/submit</span>
-                <p className="mt-1">Universal form submission API. Send structured data, we handle everything.</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <span className="font-mono text-white/20 shrink-0">&rarr;</span>
-              <div>
-                <span className="text-white/80 font-mono">POST /api/v1/fallback</span>
-                <p className="mt-1">Human fallback routing. When your agent can&apos;t, a human can.</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <span className="font-mono text-white/20 shrink-0">&rarr;</span>
-              <div>
-                <span className="text-white/80 font-mono">POST /api/v1/wallet/spend</span>
-                <p className="mt-1">Agent wallet transactions. Delegated spending with limits.</p>
-              </div>
-            </div>
+        {/* Deploy Rail */}
+        <DocSection title="Deploy Rail (via shiprail.dev)">
+          <p className="text-white/60 text-sm leading-relaxed mb-6">
+            Deploy Rail is the shipping gateway for AI agents. One API call takes code from a
+            GitHub repo to a live URL, with full audit trail. Powered by{" "}
+            <a href="https://shiprail.dev" className="text-cyan-400/80 hover:text-cyan-300">shiprail.dev</a>.
+          </p>
+          <div className="space-y-10">
+            <Endpoint
+              method="POST"
+              path="shiprail.dev/api/agents/register"
+              description="Register an agent. Returns a one-time API key."
+              body={`{ "name": "Daisy", "ownerEmail": "info@tombstonedash.com" }`}
+              response={`{
+  "agentId": "cmlvf88ms...",
+  "apiKey": "sr_b347...",
+  "message": "Save this API key — it will not be shown again."
+}`}
+            />
+            <Endpoint
+              method="POST"
+              path="shiprail.dev/api/ship"
+              description="Deploy code from a GitHub repo. Requires Bearer token from registration."
+              body={`{
+  "gitUrl": "https://github.com/user/repo",
+  "target": "preview",
+  "projectName": "my-app",
+  "ref": "main",
+  "wait": true
+}`}
+              response={`{
+  "status": "live",
+  "url": "https://my-app-xxx.vercel.app",
+  "actionId": "cmlvnc0cz...",
+  "ledgerUrl": "https://shiprail.dev/actions/cmlvnc0cz...",
+  "deployment": {
+    "id": "dpl_H88p...",
+    "provider": "vercel",
+    "readyState": "READY"
+  }
+}`}
+            />
+            <Endpoint
+              method="GET"
+              path="shiprail.dev/api/deployments/{id}"
+              description="Check deployment status."
+              response={`{
+  "status": "live",
+  "url": "https://my-app-xxx.vercel.app",
+  "readyState": "READY"
+}`}
+            />
+            <Endpoint
+              method="GET"
+              path="shiprail.dev/api/stats"
+              description="Deploy Rail statistics — total deploys, success rate, agents registered."
+              response={`{
+  "total_deploys": 4,
+  "successful": 1,
+  "agents_registered": 1,
+  "avg_deploy_time_ms": 41299,
+  "version": "0.2.0"
+}`}
+            />
           </div>
         </DocSection>
 
         {/* Agent Discovery */}
         <DocSection title="Agent Discovery">
           <p className="text-white/60 text-sm leading-relaxed mb-4">
-            Machine-readable service descriptor available at:
+            Machine-readable service descriptor (A2A compatible):
           </p>
           <CodeBlock>GET https://noui.bot/.well-known/agents.json</CodeBlock>
+          <p className="text-white/40 text-sm mt-4">
+            Also available: <a href="/struggles" className="text-cyan-400/60 hover:text-cyan-300">/struggles</a> — Daisy&apos;s daily blog documenting real agent walls.
+          </p>
         </DocSection>
       </section>
 
