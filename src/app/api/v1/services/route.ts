@@ -68,9 +68,13 @@ export async function GET() {
     },
     {
       id: "agent-wallet",
-      name: "Agent Wallet",
-      description: "Delegated spending with limits, receipts, and audit trails.",
-      status: "planned",
+      name: "BotWall3t — Agent Wallet",
+      description: "Give your bot its own money. Fund wallets, set policies, spend with audit trails.",
+      status: "beta",
+      endpoint: "https://botwallet-three.vercel.app/api/v1",
+      registration: "https://botwallet-three.vercel.app/api/v1/register",
+      docs: "https://botwallet-three.vercel.app/api/v1",
+      auth: "bearer",
     },
   ];
 
