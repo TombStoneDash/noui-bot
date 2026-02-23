@@ -191,6 +191,91 @@ export default function Home() {
                 <div className="h-px bg-white/10" />
               </div>
 
+              {/* AGENT BAZAAR */}
+              <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.8 }}
+                >
+                  <h2 className="font-mono text-lg text-white/40 mb-16 tracking-wider uppercase">
+                    Agent Bazaar
+                  </h2>
+                  <p className="text-2xl md:text-3xl font-light text-white/80 mb-6">
+                    The monetization layer for AI agent tools.
+                  </p>
+                  <p className="text-lg text-white/50 mb-16 max-w-3xl">
+                    Billing, metering, and auth for MCP servers &mdash; so builders
+                    can charge for their tools and agents can pay to use them.
+                    Think <span className="text-white/70">Stripe for agent tools</span>.
+                  </p>
+
+                  {/* The Flow */}
+                  <div className="mb-16">
+                    <h3 className="font-mono text-sm text-white/30 mb-8 tracking-wider">
+                      HOW IT WORKS
+                    </h3>
+                    <div className="grid md:grid-cols-5 gap-2 md:gap-0 font-mono text-xs">
+                      <FlowStep step="1" label="Agent calls tool" sub="POST /api/bazaar/proxy" />
+                      <FlowArrow />
+                      <FlowStep step="2" label="Bazaar authenticates" sub="Validates key + balance" />
+                      <FlowArrow />
+                      <FlowStep step="3" label="Forwards to MCP" sub="Provider's endpoint" />
+                    </div>
+                    <div className="grid md:grid-cols-5 gap-2 md:gap-0 font-mono text-xs mt-2">
+                      <FlowStep step="4" label="Meters usage" sub="Cost, latency, tokens" />
+                      <FlowArrow />
+                      <FlowStep step="5" label="Bills consumer" sub="Per-call or per-token" />
+                      <FlowArrow />
+                      <FlowStep step="6" label="Pays provider" sub="Monthly Stripe payout" />
+                    </div>
+                  </div>
+
+                  {/* Value Props */}
+                  <div className="grid md:grid-cols-2 gap-8 mb-16">
+                    <div className="border border-white/10 p-6">
+                      <h4 className="font-mono text-sm text-white/70 mb-3">For Tool Builders</h4>
+                      <ul className="space-y-2 text-sm text-white/40">
+                        <li>&rarr; Monetize your MCP servers instantly</li>
+                        <li>&rarr; Set per-call, per-token, or flat pricing</li>
+                        <li>&rarr; Get paid monthly via Stripe Connect</li>
+                        <li>&rarr; Usage analytics and revenue dashboard</li>
+                      </ul>
+                    </div>
+                    <div className="border border-white/10 p-6">
+                      <h4 className="font-mono text-sm text-white/70 mb-3">For Agent Developers</h4>
+                      <ul className="space-y-2 text-sm text-white/40">
+                        <li>&rarr; One API key for thousands of tools</li>
+                        <li>&rarr; Prepaid balance &mdash; no surprise bills</li>
+                        <li>&rarr; Transparent per-call pricing</li>
+                        <li>&rarr; Rate limiting and usage tracking built in</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-4">
+                    <a
+                      href="/api/bazaar"
+                      className="font-mono text-sm px-6 py-3 bg-white text-black hover:bg-white/90 transition-colors"
+                    >
+                      Explore the API
+                    </a>
+                    <a
+                      href="/api/bazaar/catalog"
+                      className="font-mono text-sm px-6 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors"
+                    >
+                      Browse Tool Catalog &rarr;
+                    </a>
+                  </div>
+                </motion.div>
+              </section>
+
+              {/* Divider */}
+              <div className="mx-6 md:mx-16 lg:mx-24 max-w-5xl">
+                <div className="h-px bg-white/10" />
+              </div>
+
               {/* DAISY'S STORY */}
               <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
                 <motion.div
@@ -285,6 +370,32 @@ function ProblemCard({
       <h3 className="font-mono text-sm text-white/80 mb-3">{title}</h3>
       <p className="text-white/40 text-sm leading-relaxed">{description}</p>
     </motion.div>
+  );
+}
+
+function FlowStep({
+  step,
+  label,
+  sub,
+}: {
+  step: string;
+  label: string;
+  sub: string;
+}) {
+  return (
+    <div className="bg-white/5 border border-white/10 p-3 text-center">
+      <div className="text-white/20 text-[10px] mb-1">STEP {step}</div>
+      <div className="text-white/70 text-xs mb-1">{label}</div>
+      <div className="text-white/30 text-[10px]">{sub}</div>
+    </div>
+  );
+}
+
+function FlowArrow() {
+  return (
+    <div className="hidden md:flex items-center justify-center text-white/20">
+      &rarr;
+    </div>
   );
 }
 
