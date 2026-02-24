@@ -8,7 +8,7 @@ INSERT INTO bazaar_providers (
   pricing_model, default_price_cents,
   active, verified
 ) VALUES (
-  'b0771337-b0t0-4000-a000-000000000001',
+  'b0771337-b070-4000-a000-000000000001',
   'BotWall3t',
   'ops@noui.bot',
   'https://noui.bot/api/v1',
@@ -28,8 +28,8 @@ INSERT INTO bazaar_tools (
   price_cents_override, input_schema, active
 ) VALUES
 (
-  'b0771337-b0t0-4000-b001-000000000001',
-  'b0771337-b0t0-4000-a000-000000000001',
+  'b0771337-b070-4000-b001-000000000001',
+  'b0771337-b070-4000-a000-000000000001',
   'wallet.balance',
   'Wallet Balance',
   'Check the token balance of an agent wallet. Returns balances across supported chains.',
@@ -39,8 +39,8 @@ INSERT INTO bazaar_tools (
   true
 ),
 (
-  'b0771337-b0t0-4000-b002-000000000002',
-  'b0771337-b0t0-4000-a000-000000000001',
+  'b0771337-b070-4000-b002-000000000002',
+  'b0771337-b070-4000-a000-000000000001',
   'wallet.transfer',
   'Wallet Transfer',
   'Transfer tokens between agent wallets. Requires sender authorization.',
@@ -50,8 +50,8 @@ INSERT INTO bazaar_tools (
   true
 ),
 (
-  'b0771337-b0t0-4000-b003-000000000003',
-  'b0771337-b0t0-4000-a000-000000000001',
+  'b0771337-b070-4000-b003-000000000003',
+  'b0771337-b070-4000-a000-000000000001',
   'access.verify',
   'Access Verify',
   'Verify if a wallet meets token-gating requirements for a specific resource. Returns boolean access decision with reason.',
