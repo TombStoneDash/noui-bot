@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   return NextResponse.json({
     name: "Agent Bazaar",
-    version: "0.1.0",
+    version: "0.3.0",
     tagline: "The monetization layer for AI agent tools",
     description: "Billing, metering, and auth for MCP servers — so builders can charge for their tools and agents can pay to use them.",
     base_url: "/api/bazaar",
@@ -14,6 +14,10 @@ export async function GET() {
       "POST /api/bazaar/register-consumer":  "Sign up as an agent developer, get API key",
       "POST /api/bazaar/proxy":              "Proxy an MCP tool call (authenticated, metered, billed)",
       "GET  /api/bazaar/usage":              "View usage and costs (consumer or provider)",
+      "GET  /api/bazaar/usage/summary":       "Aggregate usage stats — total spend, top tools, calls by day",
+      "POST /api/bazaar/billing/provider-summary": "Provider earnings, pending payout, platform fee breakdown",
+      "POST /api/bazaar/connect":             "Start Stripe Connect onboarding for provider payouts",
+      "GET  /api/bazaar/connect":             "Check Stripe Connect onboarding status",
     },
     flow: [
       "1. Provider registers MCP server → gets provider key",
