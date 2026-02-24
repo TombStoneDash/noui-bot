@@ -333,6 +333,76 @@ export default function Home() {
                 <div className="h-px bg-white/10" />
               </div>
 
+              {/* HOW IT WORKS — Terminal Style */}
+              <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.8 }}
+                >
+                  <h2 className="font-mono text-lg text-white/40 mb-16 tracking-wider uppercase">
+                    Try It Now
+                  </h2>
+                  <p className="text-2xl md:text-3xl font-light text-white/80 mb-12">
+                    Three API calls. That&apos;s the whole product.
+                  </p>
+
+                  <div className="space-y-6 font-mono text-sm">
+                    {/* Step 1 */}
+                    <div className="bg-white/[0.02] border border-white/10 p-6">
+                      <div className="text-white/30 text-xs mb-3">STEP 1 &mdash; Discover tools and pricing</div>
+                      <div className="text-green-400/80 mb-2">
+                        <span className="text-white/30">$</span> curl https://noui.bot/api/bazaar/catalog
+                      </div>
+                      <div className="text-white/40 text-xs mt-3 border-t border-white/5 pt-3">
+                        <span className="text-white/20">&rarr;</span> Returns 6 tools from 2 providers with live pricing and latency stats
+                      </div>
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="bg-white/[0.02] border border-white/10 p-6">
+                      <div className="text-white/30 text-xs mb-3">STEP 2 &mdash; Call any tool through the billing proxy</div>
+                      <div className="text-green-400/80 mb-1">
+                        <span className="text-white/30">$</span> curl -X POST https://noui.bot/api/bazaar/proxy \
+                      </div>
+                      <div className="text-green-400/80 pl-4 mb-1">
+                        -H &quot;Authorization: Bearer bz_...&quot; \
+                      </div>
+                      <div className="text-green-400/80 pl-4">
+                        -d &apos;{`{"tool_name":"wallet.balance","input":{"wallet":"0xAgent1"}}`}&apos;
+                      </div>
+                      <div className="text-white/40 text-xs mt-3 border-t border-white/5 pt-3">
+                        <span className="text-white/20">&rarr;</span> Tool executes, response returned, call metered at $0.05. Balance deducted.
+                      </div>
+                    </div>
+
+                    {/* Step 3 */}
+                    <div className="bg-white/[0.02] border border-white/10 p-6">
+                      <div className="text-white/30 text-xs mb-3">STEP 3 &mdash; Providers see revenue in real-time</div>
+                      <div className="text-green-400/80 mb-2">
+                        <span className="text-white/30">$</span> curl -X POST https://noui.bot/api/bazaar/billing/provider-summary \
+                      </div>
+                      <div className="text-green-400/80 pl-4">
+                        -H &quot;Authorization: Bearer bz_...&quot;
+                      </div>
+                      <div className="text-white/40 text-xs mt-3 border-t border-white/5 pt-3">
+                        <span className="text-white/20">&rarr;</span> Gross revenue, 18% platform fee, net earnings &mdash; by tool, by week
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="font-mono text-xs text-white/20 mt-8">
+                    No SDK required. Pure HTTP. Works from any language, any agent framework.
+                  </p>
+                </motion.div>
+              </section>
+
+              {/* Divider */}
+              <div className="mx-6 md:mx-16 lg:mx-24 max-w-5xl">
+                <div className="h-px bg-white/10" />
+              </div>
+
               {/* DAISY'S STORY */}
               <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
                 <motion.div
