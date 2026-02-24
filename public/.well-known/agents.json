@@ -368,8 +368,7 @@
         "agent_registration": "https://shiprail.dev/api/agents/register",
         "action_ledger": "https://shiprail.dev/api/actions/{actionId}"
       }
-    }
-  ],
+    },
     {
       "id": "bazaar-catalog",
       "name": "Agent Bazaar — Tool Catalog",
