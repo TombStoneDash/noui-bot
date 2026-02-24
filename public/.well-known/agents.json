@@ -2,7 +2,7 @@
   "$schema": "https://noui.bot/.well-known/agents-schema.json",
   "name": "noui.bot",
   "description": "Agent-first infrastructure platform. APIs designed for AI agents, not browsers. No CAPTCHAs. No UI dependencies. No compromises.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "provider": {
     "organization": "Tombstone Dash LLC",
     "url": "https://tombstonedash.com",
@@ -370,6 +370,83 @@
       }
     }
   ],
+    {
+      "id": "bazaar-catalog",
+      "name": "Agent Bazaar — Tool Catalog",
+      "description": "Discover MCP tools available through the Bazaar. Browse by category, see pricing, latency, and uptime stats.",
+      "endpoint": "https://noui.bot/api/bazaar/catalog",
+      "methods": ["GET"],
+      "status": "beta",
+      "response": {
+        "success": {
+          "status": 200,
+          "body": {
+            "tools": "array of tool objects with pricing, stats, provider info",
+            "total": "number",
+            "categories": "string[]"
+          }
+        }
+      }
+    },
+    {
+      "id": "bazaar-proxy",
+      "name": "Agent Bazaar — Tool Proxy",
+      "description": "Call any MCP tool through the Bazaar billing proxy. One API key, thousands of tools. Metered and billed transparently.",
+      "endpoint": "https://noui.bot/api/bazaar/proxy",
+      "methods": ["POST"],
+      "status": "beta",
+      "authentication": {
+        "type": "bearer",
+        "header": "Authorization: Bearer bz_...",
+        "registration": "https://noui.bot/api/bazaar/register-consumer"
+      },
+      "request": {
+        "method": "POST",
+        "content_type": "application/json",
+        "body": {
+          "tool_id": { "type": "string", "required": false, "description": "Tool UUID (or use tool_name)" },
+          "tool_name": { "type": "string", "required": false, "description": "Tool name (or use tool_id)" },
+          "input": { "type": "object", "required": true, "description": "Tool input arguments" }
+        }
+      },
+      "response": {
+        "success": {
+          "status": 200,
+          "body": {
+            "result": "MCP tool response",
+            "meta": {
+              "tool": "string",
+              "provider": "string",
+              "cost_cents": "number",
+              "latency_ms": "number",
+              "remaining_balance_cents": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "botwallet",
+      "name": "BotWall3t — Agent Wallet",
+      "description": "Give your agent its own money. Fund wallets, set spending policies, full audit trail. Double-entry ledger with hold/release mechanics.",
+      "endpoint": "https://botwallet-three.vercel.app/api/v1",
+      "methods": ["GET"],
+      "status": "beta",
+      "authentication": {
+        "type": "bearer",
+        "header": "Authorization: Bearer bw_...",
+        "registration": "https://botwallet-three.vercel.app/api/v1/register"
+      },
+      "related_endpoints": {
+        "register": "POST /api/v1/register",
+        "balance": "GET /api/v1/balance",
+        "fund": "POST /api/v1/fund",
+        "spend": "POST /api/v1/spend",
+        "history": "GET /api/v1/history",
+        "policy": "GET /api/v1/policy"
+      }
+    }
+  ],
   "upcoming_services": [
     {
       "id": "form-submit",
@@ -384,10 +461,10 @@
       "status": "planned"
     },
     {
-      "id": "agent-wallet",
-      "name": "Agent Wallet",
-      "description": "Delegated spending with limits, receipts, and audit trails.",
-      "status": "planned"
+      "id": "human-fallback-network",
+      "name": "Human Fallback Network",
+      "description": "When your agent hits a wall, escalate to a vetted human. Post task with reward, human completes it, submits proof, gets paid.",
+      "status": "spec-complete"
     }
   ],
   "integration": {
@@ -411,6 +488,16 @@
   "a2a_compatible": {
     "note": "This file serves as both agents.json and an A2A-compatible Agent Card.",
     "skills": [
+      {
+        "id": "bazaar",
+        "name": "Agent Bazaar",
+        "description": "Billing, metering, and auth proxy for MCP tools. Discover tools, call them through the proxy, get billed transparently."
+      },
+      {
+        "id": "wallet",
+        "name": "BotWall3t",
+        "description": "Agent wallets with double-entry ledger, spending policies, and audit trail."
+      },
       {
         "id": "feedback",
         "name": "Agent Feedback Collection",

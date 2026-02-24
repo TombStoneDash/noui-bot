@@ -1,8 +1,33 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WaitlistForm } from "@/components/WaitlistForm";
+
+function BazaarStatus() {
+  const [status, setStatus] = useState<{ tools: number; providers: number } | null>(null);
+  useEffect(() => {
+    fetch("/api/bazaar/catalog")
+      .then((r) => r.json())
+      .then((d) => {
+        const tools = d.tools?.length ?? 0;
+        const providerSet = new Set(d.tools?.map((t: any) => t.provider?.id).filter(Boolean));
+        setStatus({ tools, providers: providerSet.size });
+      })
+      .catch(() => setStatus(null));
+  }, []);
+
+  if (!status) return null;
+
+  return (
+    <div className="inline-flex items-center gap-3 font-mono text-xs text-white/40 border border-white/10 px-4 py-2">
+      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+      <span>
+        {status.tools} tools live from {status.providers} provider{status.providers !== 1 ? "s" : ""}
+      </span>
+    </div>
+  );
+}
 
 export default function Home() {
   const [revealed, setRevealed] = useState(false);
@@ -254,7 +279,39 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-4">
+                  {/* Featured Provider */}
+                  <div className="border border-white/10 p-6 mb-16">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-mono text-sm text-white/70">Featured Provider</h4>
+                      <span className="font-mono text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20">
+                        VERIFIED
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-light text-white/90 mb-2">BotWall3t</h3>
+                    <p className="text-sm text-white/40 mb-4">
+                      Token-gated API access with agent wallets. Verify on-chain balances,
+                      transfer tokens between agents, and gate tool access behind wallet requirements.
+                    </p>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="bg-white/5 p-3">
+                        <div className="font-mono text-[10px] text-white/30 mb-1">wallet.balance</div>
+                        <div className="font-mono text-sm text-white/60">$0.05/call</div>
+                      </div>
+                      <div className="bg-white/5 p-3">
+                        <div className="font-mono text-[10px] text-white/30 mb-1">wallet.transfer</div>
+                        <div className="font-mono text-sm text-white/60">$0.25/call</div>
+                      </div>
+                      <div className="bg-white/5 p-3">
+                        <div className="font-mono text-[10px] text-white/30 mb-1">access.verify</div>
+                        <div className="font-mono text-sm text-white/60">$0.02/call</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live Status */}
+                  <BazaarStatus />
+
+                  <div className="flex flex-wrap gap-4 mt-8">
                     <a
                       href="/api/bazaar"
                       className="font-mono text-sm px-6 py-3 bg-white text-black hover:bg-white/90 transition-colors"
