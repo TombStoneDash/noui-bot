@@ -14,14 +14,18 @@ export async function POST(request: Request) {
 
   // 2. Parse request
   let body: Record<string, unknown>;
+  let rawBody: string;
   try {
-    body = await request.json();
+    rawBody = await request.text();
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json(
       { error: true, code: "BAD_REQUEST", message: "Invalid JSON" },
       { status: 400 }
     );
   }
+
+  const requestSizeBytes = new TextEncoder().encode(rawBody).length;
 
   const toolId = body.tool_id as string;
   const toolName = body.tool_name as string;
@@ -36,6 +40,37 @@ export async function POST(request: Request) {
 
   const sb = getSupabase();
   const startTime = Date.now();
+
+  // 2b. Rate limiting — check RPM for this consumer
+  const rpm = owner.rate_limit_rpm || 60;
+  const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
+  const { count: recentCalls } = await sb
+    .from("bazaar_usage_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("consumer_id", owner.id)
+    .gte("created_at", oneMinuteAgo);
+
+  if ((recentCalls ?? 0) >= rpm) {
+    await sb.from("bazaar_usage_logs").insert({
+      consumer_id: owner.id,
+      provider_id: "00000000-0000-0000-0000-000000000000",
+      tool_id: "00000000-0000-0000-0000-000000000000",
+      status: "rate_limited",
+      cost_cents: 0,
+      latency_ms: Date.now() - startTime,
+      request_size_bytes: requestSizeBytes,
+    });
+
+    return NextResponse.json(
+      {
+        error: true,
+        code: "RATE_LIMITED",
+        message: `Rate limit exceeded. Limit: ${rpm} requests/minute`,
+        retry_after_seconds: 60,
+      },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
 
   // 3. Look up tool
   let toolQuery = sb
@@ -85,6 +120,7 @@ export async function POST(request: Request) {
       status: "insufficient_funds",
       cost_cents: 0,
       latency_ms: Date.now() - startTime,
+      request_size_bytes: requestSizeBytes,
     });
 
     return NextResponse.json(
@@ -101,8 +137,19 @@ export async function POST(request: Request) {
 
   // 6. Forward request to provider's MCP endpoint
   let mcpResponse: any;
+  let mcpResponseRaw = "";
   let status = "success";
   let errorMessage: string | null = null;
+
+  const mcpRequestBody = JSON.stringify({
+    jsonrpc: "2.0",
+    method: "tools/call",
+    params: {
+      name: tool.tool_name,
+      arguments: input,
+    },
+    id: crypto.randomUUID(),
+  });
 
   try {
     const mcpResult = await fetch(provider.endpoint_url, {
@@ -112,37 +159,35 @@ export async function POST(request: Request) {
         "X-Bazaar-Consumer": owner.id,
         "X-Bazaar-Tool": tool.tool_name,
       },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        method: "tools/call",
-        params: {
-          name: tool.tool_name,
-          arguments: input,
-        },
-        id: crypto.randomUUID(),
-      }),
+      body: mcpRequestBody,
       signal: AbortSignal.timeout(30000), // 30s timeout
     });
+
+    mcpResponseRaw = await mcpResult.text();
 
     if (!mcpResult.ok) {
       status = "error";
       errorMessage = `Provider returned ${mcpResult.status}`;
       mcpResponse = { error: errorMessage };
     } else {
-      mcpResponse = await mcpResult.json();
+      mcpResponse = JSON.parse(mcpResponseRaw);
     }
   } catch (err: any) {
     if (err.name === "TimeoutError") {
       status = "timeout";
       errorMessage = "Provider request timed out (30s)";
+    } else if (err instanceof SyntaxError) {
+      status = "error";
+      errorMessage = "Provider returned invalid JSON";
     } else {
       status = "error";
       errorMessage = err.message || "Unknown error";
     }
-    mcpResponse = { error: errorMessage };
+    mcpResponse = mcpResponse || { error: errorMessage };
   }
 
   const latencyMs = Date.now() - startTime;
+  const responseSizeBytes = new TextEncoder().encode(mcpResponseRaw).length;
 
   // 7. Debit consumer balance (only for successful calls with cost)
   const actualCost = status === "success" ? priceCents : 0;
@@ -157,7 +202,7 @@ export async function POST(request: Request) {
       .eq("id", owner.id);
   }
 
-  // 8. Log usage
+  // 8. Log usage (with data volume tracking)
   await sb.from("bazaar_usage_logs").insert({
     consumer_id: owner.id,
     provider_id: provider.id,
@@ -166,6 +211,8 @@ export async function POST(request: Request) {
     cost_cents: actualCost,
     latency_ms: latencyMs,
     error_message: errorMessage,
+    request_size_bytes: requestSizeBytes,
+    response_size_bytes: responseSizeBytes,
     metadata: { pricing_model: pricingModel },
   });
 
