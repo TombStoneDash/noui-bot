@@ -30,7 +30,8 @@ export async function GET(request: Request) {
         description,
         pricing_model,
         default_price_cents,
-        verified
+        verified,
+        health_status
       )
     `)
     .eq("active", true)
@@ -66,6 +67,7 @@ export async function GET(request: Request) {
           id: provider?.id,
           name: provider?.name,
           verified: provider?.verified,
+          health: provider?.health_status || "healthy",
         },
         pricing: {
           model: pricingModel,

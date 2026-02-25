@@ -140,6 +140,9 @@ export async function POST(request: Request) {
   let mcpResponseRaw = "";
   let status = "success";
   let errorMessage: string | null = null;
+  let retried = false;
+
+  const PROXY_TIMEOUT_MS = 10_000; // 10s timeout per directive
 
   const mcpRequestBody = JSON.stringify({
     jsonrpc: "2.0",
@@ -151,23 +154,37 @@ export async function POST(request: Request) {
     id: crypto.randomUUID(),
   });
 
-  try {
+  const consumerId = owner.id;
+  async function callProvider(): Promise<{ ok: boolean; status: number; body: string }> {
     const mcpResult = await fetch(provider.endpoint_url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Bazaar-Consumer": owner.id,
+        "X-Bazaar-Consumer": consumerId,
         "X-Bazaar-Tool": tool.tool_name,
       },
       body: mcpRequestBody,
-      signal: AbortSignal.timeout(30000), // 30s timeout
+      signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
     });
+    const text = await mcpResult.text();
+    return { ok: mcpResult.ok, status: mcpResult.status, body: text };
+  }
 
-    mcpResponseRaw = await mcpResult.text();
+  try {
+    let result = await callProvider();
 
-    if (!mcpResult.ok) {
+    // Retry once on 5xx with 1s delay
+    if (!result.ok && result.status >= 500 && result.status < 600) {
+      retried = true;
+      await new Promise(r => setTimeout(r, 1000));
+      result = await callProvider();
+    }
+
+    mcpResponseRaw = result.body;
+
+    if (!result.ok) {
       status = "error";
-      errorMessage = `Provider returned ${mcpResult.status}`;
+      errorMessage = `Provider returned ${result.status}${retried ? " (after retry)" : ""}`;
       mcpResponse = { error: errorMessage };
     } else {
       mcpResponse = JSON.parse(mcpResponseRaw);
@@ -175,7 +192,7 @@ export async function POST(request: Request) {
   } catch (err: any) {
     if (err.name === "TimeoutError") {
       status = "timeout";
-      errorMessage = "Provider request timed out (30s)";
+      errorMessage = `Provider request timed out (${PROXY_TIMEOUT_MS / 1000}s)`;
     } else if (err instanceof SyntaxError) {
       status = "error";
       errorMessage = "Provider returned invalid JSON";
@@ -184,6 +201,36 @@ export async function POST(request: Request) {
       errorMessage = err.message || "Unknown error";
     }
     mcpResponse = mcpResponse || { error: errorMessage };
+  }
+
+  // 6b. Track provider health — consecutive failures
+  if (status !== "success") {
+    const { data: recentLogs } = await sb
+      .from("bazaar_usage_logs")
+      .select("status")
+      .eq("provider_id", provider.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    const recentFailures = (recentLogs || []).filter(
+      (l: { status: string }) => l.status !== "success"
+    ).length;
+
+    // If this failure makes 5+ consecutive failures, mark provider as degraded
+    if (recentFailures >= 4) {
+      await sb
+        .from("bazaar_providers")
+        .update({ health_status: "degraded", updated_at: new Date().toISOString() })
+        .eq("id", provider.id);
+    }
+  } else {
+    // Success — reset health if it was degraded
+    if (provider.health_status === "degraded") {
+      await sb
+        .from("bazaar_providers")
+        .update({ health_status: "healthy", updated_at: new Date().toISOString() })
+        .eq("id", provider.id);
+    }
   }
 
   const latencyMs = Date.now() - startTime;
@@ -228,31 +275,42 @@ export async function POST(request: Request) {
     })
     .eq("id", tool.id);
 
-  // 10. Return response
+  // 10. Return response with enrichment headers
+  const enrichmentHeaders: Record<string, string> = {
+    "X-Bazaar-Cost": String(actualCost),
+    "X-Bazaar-Provider": provider.name,
+    "X-Bazaar-Latency": String(latencyMs),
+    "X-Bazaar-Tool": tool.tool_name,
+    ...(retried ? { "X-Bazaar-Retried": "true" } : {}),
+  };
+
   if (status !== "success") {
     return NextResponse.json(
       {
         error: true,
-        code: status === "timeout" ? "TIMEOUT" : "PROVIDER_ERROR",
+        code: status === "timeout" ? "PROXY_TIMEOUT" : "PROVIDER_ERROR",
         message: errorMessage,
         tool: tool.tool_name,
         provider: provider.name,
         latency_ms: latencyMs,
         cost_cents: actualCost,
       },
-      { status: status === "timeout" ? 504 : 502 }
+      { status: status === "timeout" ? 504 : 502, headers: enrichmentHeaders }
     );
   }
 
-  return NextResponse.json({
-    result: mcpResponse.result || mcpResponse,
-    meta: {
-      tool: tool.tool_name,
-      provider: provider.name,
-      cost_cents: actualCost,
-      cost: actualCost === 0 ? "Free" : `$${(actualCost / 100).toFixed(4)}`,
-      latency_ms: latencyMs,
-      remaining_balance_cents: (owner.balance_cents ?? 0) - actualCost,
+  return NextResponse.json(
+    {
+      result: mcpResponse.result || mcpResponse,
+      meta: {
+        tool: tool.tool_name,
+        provider: provider.name,
+        cost_cents: actualCost,
+        cost: actualCost === 0 ? "Free" : `$${(actualCost / 100).toFixed(4)}`,
+        latency_ms: latencyMs,
+        remaining_balance_cents: (owner.balance_cents ?? 0) - actualCost,
+      },
     },
-  });
+    { headers: enrichmentHeaders }
+  );
 }
