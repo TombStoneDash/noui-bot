@@ -29,17 +29,36 @@ export async function GET() {
     bazaar: {
       description: "Agent Bazaar — billing, metering, and auth for MCP servers",
       base_url: "https://noui.bot/api/bazaar",
+      moat: "Metering + billing for MCP tools. Sub-cent precision. 18% platform fee.",
       endpoints: {
+        // Public (no auth)
         "GET  /api/bazaar":                   "Bazaar index — overview, flow, and endpoint listing",
         "GET  /api/bazaar/catalog":           "Public tool catalog with prices and stats",
+        "GET  /api/v1/bazaar/stats":          "Public dashboard — invocations, revenue, providers, tools",
+        "GET  /api/v1/bazaar/pricing":        "Public tool pricing — per-call costs, free tiers",
+        // Registration (no auth)
         "POST /api/bazaar/register-provider": "Register an MCP server, set pricing, get API key",
         "POST /api/bazaar/register-consumer": "Sign up as an agent developer, get API key",
-        "POST /api/bazaar/proxy":             "Proxy an MCP tool call (authenticated, metered, billed)",
-        "GET  /api/bazaar/usage":             "View usage and costs (consumer or provider)",
-        "GET  /api/bazaar/usage/summary":     "Aggregate usage stats — total spend, top tools, calls by day",
+        // Authenticated
+        "POST /api/bazaar/proxy":             "Proxy an MCP tool call (metered, billed, retried on 5xx)",
+        "POST /api/bazaar/tools":             "Register tools for your provider (provider key required)",
+        "POST /api/v1/bazaar/meter":          "Record a tool invocation (MCP middleware integration)",
+        "GET  /api/v1/bazaar/balance":        "Check agent's current balance (consumer key required)",
+        "GET  /api/v1/bazaar/usage":          "View usage and costs (consumer or provider)",
+        "GET  /api/v1/bazaar/usage/summary":  "Aggregate usage stats — total spend, top tools, calls by day",
         "POST /api/bazaar/billing/provider-summary": "Provider earnings, pending payout, platform fee breakdown",
+        // Stripe Connect (provider payouts)
         "POST /api/bazaar/connect":           "Start Stripe Connect onboarding for provider payouts",
         "GET  /api/bazaar/connect":           "Check Stripe Connect onboarding status",
+        "POST /api/bazaar/balance/load":      "Load consumer balance (Stripe Checkout or dry-run)",
+        "POST /api/bazaar/payouts":           "Trigger provider payout ($10 minimum)",
+        "GET  /api/bazaar/payouts":           "Payout history and pending balance",
+      },
+      self_service: {
+        providers: "https://noui.bot/providers/register",
+        provider_dashboard: "https://noui.bot/providers/dashboard",
+        developers: "https://noui.bot/developers/register",
+        developer_dashboard: "https://noui.bot/developers/dashboard",
       },
     },
     links: {
