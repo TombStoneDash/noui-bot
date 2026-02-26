@@ -203,7 +203,7 @@ export async function POST(request: Request) {
     mcpResponse = mcpResponse || { error: errorMessage };
   }
 
-  // 6b. Track provider health — consecutive failures
+  // 6b. Track provider health — consecutive failures (logged in usage_logs metadata)
   if (status !== "success") {
     const { data: recentLogs } = await sb
       .from("bazaar_usage_logs")
@@ -216,20 +216,9 @@ export async function POST(request: Request) {
       (l: { status: string }) => l.status !== "success"
     ).length;
 
-    // If this failure makes 5+ consecutive failures, mark provider as degraded
+    // Log degraded status in usage metadata (don't update provider table — column may not exist)
     if (recentFailures >= 4) {
-      await sb
-        .from("bazaar_providers")
-        .update({ health_status: "degraded", updated_at: new Date().toISOString() })
-        .eq("id", provider.id);
-    }
-  } else {
-    // Success — reset health if it was degraded
-    if (provider.health_status === "degraded") {
-      await sb
-        .from("bazaar_providers")
-        .update({ health_status: "healthy", updated_at: new Date().toISOString() })
-        .eq("id", provider.id);
+      console.warn(`[bazaar] Provider ${provider.name} (${provider.id}) degraded: ${recentFailures + 1} consecutive failures`);
     }
   }
 
