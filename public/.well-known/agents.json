@@ -19,8 +19,19 @@
   "human_url": "https://noui.bot",
   "github": "https://github.com/TombStoneDash/noui-bot",
   "authentication": {
-    "type": "none",
-    "note": "Public endpoints \u2014 no auth required for v0.2. API keys coming for rate-limited services."
+    "type": "bearer_token",
+    "note": "Public endpoints need no auth. Bazaar endpoints use Bearer bz_... API keys. Register at /api/bazaar/register-consumer or /api/bazaar/register-provider."
+  },
+  "billing": {
+    "type": "bazaar_metering",
+    "description": "Every tool call through the Bazaar is metered with sub-cent precision. Consumers pre-fund balance, providers earn per-call.",
+    "pricing_endpoint": "https://noui.bot/api/v1/bazaar/pricing",
+    "balance_endpoint": "https://noui.bot/api/v1/bazaar/balance",
+    "metering_endpoint": "https://noui.bot/api/v1/bazaar/meter",
+    "platform_fee": "18%",
+    "precision": "microcents (1/10000 of a cent)",
+    "payout_method": "stripe_connect",
+    "minimum_payout_cents": 1000
   },
   "rate_limits": {
     "default": "100 requests/minute per IP",
