@@ -7,6 +7,43 @@ export const metadata: Metadata = {
 
 const entries = [
   {
+    date: "2026-02-26",
+    items: [
+      "Landing page CTAs: 'List Your MCP Server' → /providers/register, 'Get an API Key' → /developers/register, 'Read the Docs' → /docs/bazaar.",
+      "agents.json updated with billing/metering protocol declaration — pricing, balance, metering endpoints discoverable by agent crawlers.",
+    ],
+  },
+  {
+    date: "2026-02-25",
+    items: [
+      "Agent Bazaar billing APIs: GET /api/v1/bazaar/stats (public dashboard), GET /api/v1/bazaar/pricing (tool pricing), POST /api/v1/bazaar/meter (MCP middleware), GET /api/v1/bazaar/balance (consumer balance).",
+      "/docs/bazaar — comprehensive documentation with curl examples for providers and consumers.",
+      "Stripe Connect dry-run: POST /api/bazaar/balance/load (consumer top-up), POST /api/bazaar/payouts (provider payout trigger), GET /api/bazaar/payouts (payout history).",
+      "Proxy reliability: 10s timeout, automatic retry on 5xx, provider health tracking, X-Bazaar-Cost / X-Bazaar-Provider / X-Bazaar-Latency response headers.",
+      "Provider self-service: /providers/register page, POST /api/bazaar/tools (tool CRUD), /providers/dashboard with revenue analytics.",
+      "Consumer self-service: /developers/register page, /developers/dashboard with usage analytics.",
+      "Catalog fix: removed non-existent health_status column that was breaking queries.",
+      "API version 0.3.0 — 18 Bazaar endpoints in the API index.",
+      "NØ UI logo deployed: favicon, apple-touch-icon, OG image, meta tags.",
+    ],
+  },
+  {
+    date: "2026-02-24",
+    items: [
+      "Agent Bazaar proxy loop LIVE — end-to-end tool discovery, invocation, metering, and billing.",
+      "BotWall3t provider: 3 tools (wallet.balance, wallet.transfer, access.verify) with real pricing.",
+      "Deploy Rail provider: 3 tools (deploy.ship, deploy.status, deploy.stats).",
+      "Billing math: 18% platform fee, sub-cent precision (microcents), per-call and per-token pricing.",
+      "POST /api/bazaar/proxy — authenticated, metered, billed tool proxy.",
+      "GET /api/bazaar/catalog — public tool listing with pricing and provider info.",
+      "POST /api/bazaar/register-provider, POST /api/bazaar/register-consumer — marketplace onboarding.",
+      "POST /api/bazaar/billing/provider-summary — provider earnings dashboard.",
+      "POST /api/bazaar/connect — Stripe Connect onboarding for provider payouts.",
+      "'Try It Now' terminal section on landing page — 3 live curl examples.",
+      "Human Fallback API spec at /api/v1/human-fallback.",
+    ],
+  },
+  {
     date: "2026-02-21",
     items: [
       "MCP server built — 7 tools: deploy, deploy_status, deploy_rail_stats, platform_stats, list_services, report_wall, apply_to_build.",

@@ -5,7 +5,7 @@ export async function GET() {
     openapi: "3.1.0",
     info: {
       title: "noui.bot API",
-      version: "0.2.0",
+      version: "0.3.0",
       description: "Agent-first infrastructure. APIs designed for bots, not browsers.",
       contact: { email: "hudtaylor@gmail.com", url: "https://noui.bot" },
       license: { name: "MIT" },
@@ -163,8 +163,179 @@ export async function GET() {
           },
         },
       },
+      "/api/bazaar/catalog": {
+        get: {
+          summary: "Tool catalog",
+          operationId: "getBazaarCatalog",
+          description: "List all tools available in the Bazaar with pricing and provider info.",
+          tags: ["Bazaar"],
+          responses: {
+            "200": { description: "Tool catalog with pricing", content: { "application/json": { schema: { type: "object", properties: { tools: { type: "array", items: { type: "object" } }, total: { type: "integer" } } } } } },
+          },
+        },
+      },
+      "/api/bazaar/register-provider": {
+        post: {
+          summary: "Register as a provider",
+          operationId: "registerProvider",
+          description: "Register your MCP server as a Bazaar provider. Returns an API key.",
+          tags: ["Bazaar"],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["name", "email", "endpoint_url"], properties: { name: { type: "string" }, email: { type: "string", format: "email" }, endpoint_url: { type: "string", format: "uri" }, description: { type: "string" } } } } } },
+          responses: {
+            "201": { description: "Provider registered", content: { "application/json": { schema: { type: "object", properties: { api_key: { type: "string" }, provider_id: { type: "string" } } } } } },
+            "400": { description: "Validation error" },
+          },
+        },
+      },
+      "/api/bazaar/register-consumer": {
+        post: {
+          summary: "Register as a consumer",
+          operationId: "registerConsumer",
+          description: "Get an API key to call tools through the Bazaar proxy.",
+          tags: ["Bazaar"],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["name", "email"], properties: { name: { type: "string" }, email: { type: "string", format: "email" } } } } } },
+          responses: {
+            "201": { description: "Consumer registered with API key" },
+            "400": { description: "Validation error" },
+          },
+        },
+      },
+      "/api/bazaar/proxy": {
+        post: {
+          summary: "Proxy a tool call",
+          operationId: "proxyToolCall",
+          description: "Call any Bazaar tool. Authenticated, metered, and billed. Includes retry on 5xx.",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["tool_name"], properties: { tool_name: { type: "string" }, input: { type: "object" } } } } } },
+          responses: {
+            "200": { description: "Tool result with billing metadata", content: { "application/json": { schema: { type: "object", properties: { result: { type: "object" }, meta: { type: "object", properties: { cost_cents: { type: "number" }, latency_ms: { type: "integer" }, provider: { type: "string" }, remaining_balance_cents: { type: "number" } } } } } } } },
+            "401": { description: "Invalid or missing API key" },
+            "402": { description: "Insufficient balance" },
+            "404": { description: "Tool not found" },
+            "504": { description: "Provider timeout (>10s)" },
+          },
+        },
+      },
+      "/api/bazaar/tools": {
+        post: {
+          summary: "Register tools",
+          operationId: "registerTools",
+          description: "Add or update tools for your provider. Provider API key required.",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["tools"], properties: { tools: { type: "array", items: { type: "object", properties: { tool_name: { type: "string" }, description: { type: "string" }, category: { type: "string" }, price_cents_override: { type: "number" } } } } } } } } },
+          responses: {
+            "200": { description: "Tools registered" },
+            "401": { description: "Invalid provider key" },
+          },
+        },
+      },
+      "/api/v1/bazaar/stats": {
+        get: {
+          summary: "Public dashboard stats",
+          operationId: "getBazaarStats",
+          description: "Platform-wide metrics: invocations, revenue, providers, tools.",
+          tags: ["Bazaar"],
+          responses: { "200": { description: "Dashboard metrics" } },
+        },
+      },
+      "/api/v1/bazaar/pricing": {
+        get: {
+          summary: "Tool pricing",
+          operationId: "getBazaarPricing",
+          description: "Per-tool pricing details including free tiers.",
+          tags: ["Bazaar"],
+          responses: { "200": { description: "Pricing data per tool" } },
+        },
+      },
+      "/api/v1/bazaar/balance": {
+        get: {
+          summary: "Check balance",
+          operationId: "getBalance",
+          description: "Check consumer's current Bazaar balance.",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          responses: { "200": { description: "Balance info" }, "401": { description: "Invalid key" } },
+        },
+      },
+      "/api/v1/bazaar/meter": {
+        post: {
+          summary: "Record invocation",
+          operationId: "meterInvocation",
+          description: "Record a tool invocation for MCP middleware integration.",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["tool_name"], properties: { tool_name: { type: "string" }, duration_ms: { type: "integer" }, tokens_used: { type: "integer" }, success: { type: "boolean" } } } } } },
+          responses: { "200": { description: "Invocation recorded" }, "401": { description: "Invalid key" } },
+        },
+      },
+      "/api/bazaar/billing/provider-summary": {
+        post: {
+          summary: "Provider earnings",
+          operationId: "getProviderSummary",
+          description: "Gross revenue, platform fee, net earnings by tool and period.",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          responses: { "200": { description: "Earnings breakdown" }, "401": { description: "Invalid key" } },
+        },
+      },
+      "/api/bazaar/balance/load": {
+        post: {
+          summary: "Load consumer balance",
+          operationId: "loadBalance",
+          description: "Add funds via Stripe Checkout or dry-run mode.",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["amount_cents"], properties: { amount_cents: { type: "integer", minimum: 100 } } } } } },
+          responses: { "200": { description: "Checkout URL or balance update" }, "401": { description: "Invalid key" } },
+        },
+      },
+      "/api/bazaar/payouts": {
+        post: {
+          summary: "Trigger payout",
+          operationId: "triggerPayout",
+          description: "Request payout of provider earnings ($10 minimum).",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          responses: { "200": { description: "Payout initiated" }, "400": { description: "Below minimum" }, "401": { description: "Invalid key" } },
+        },
+        get: {
+          summary: "Payout history",
+          operationId: "getPayoutHistory",
+          description: "View payout history and pending balance.",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          responses: { "200": { description: "Payout records" }, "401": { description: "Invalid key" } },
+        },
+      },
+      "/api/bazaar/connect": {
+        post: {
+          summary: "Start Stripe Connect",
+          operationId: "startStripeConnect",
+          description: "Begin Stripe Connect Express onboarding for provider payouts.",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          responses: { "200": { description: "Onboarding URL" }, "401": { description: "Invalid key" } },
+        },
+        get: {
+          summary: "Check Connect status",
+          operationId: "checkConnectStatus",
+          description: "Check if Stripe Connect onboarding is complete.",
+          tags: ["Bazaar"],
+          security: [{ BearerAuth: [] }],
+          responses: { "200": { description: "Connect status" }, "401": { description: "Invalid key" } },
+        },
+      },
     },
     components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          description: "Bazaar API key (bz_...) obtained from register-provider or register-consumer",
+        },
+      },
       schemas: {
         Error: {
           type: "object",
