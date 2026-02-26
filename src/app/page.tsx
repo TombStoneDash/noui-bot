@@ -313,16 +313,22 @@ export default function Home() {
 
                   <div className="flex flex-wrap gap-4 mt-8">
                     <a
-                      href="/api/bazaar"
+                      href="/providers/register"
                       className="font-mono text-sm px-6 py-3 bg-white text-black hover:bg-white/90 transition-colors"
                     >
-                      Explore the API
+                      List Your MCP Server &rarr;
                     </a>
                     <a
-                      href="/api/bazaar/catalog"
+                      href="/developers/register"
                       className="font-mono text-sm px-6 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors"
                     >
-                      Browse Tool Catalog &rarr;
+                      Get an API Key &rarr;
+                    </a>
+                    <a
+                      href="/docs/bazaar"
+                      className="font-mono text-sm px-6 py-3 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"
+                    >
+                      Read the Docs
                     </a>
                   </div>
                 </motion.div>
