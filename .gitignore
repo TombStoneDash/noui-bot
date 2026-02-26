@@ -43,3 +43,5 @@ data/
 .env.local
 mcp-server/node_modules
 mcp-server/dist
+packages/bazaar-sdk/node_modules
+packages/bazaar-sdk/dist
