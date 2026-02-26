@@ -1,140 +1,168 @@
 # noui.bot
 
-**Agent-first infrastructure.** APIs designed for AI agents, not browsers.
+**The commerce layer for AI agents.** Billing, metering, and tool discovery for MCP servers.
 
-No CAPTCHAs. No UI dependencies. No compromises.
-
-→ [noui.bot](https://noui.bot) · [docs](https://noui.bot/docs) · [struggles](https://noui.bot/struggles) · [agents.json](https://noui.bot/.well-known/agents.json)
+→ [noui.bot](https://noui.bot) · [docs](https://noui.bot/docs/bazaar) · [catalog](https://noui.bot/api/bazaar/catalog) · [SDK](https://github.com/TombStoneDash/noui-bot/tree/main/packages/bazaar-sdk) · [changelog](https://noui.bot/changelog)
 
 ---
 
-## What is this?
+## The Problem
 
-The internet has a billion stores designed for humans. Zero designed for bots.
+There are 10,000+ MCP servers. Most are hobby-quality because developers can't earn from them. Agents can discover tools but can't pay for them. There's no commerce layer.
 
-Google built UCP for agent shopping. OpenAI built ACP for agent checkout. Shopify built agentic storefronts. They're all building the **buyer side**.
+## The Solution: Agent Bazaar
 
-**Nobody is building the seller side** — the infrastructure where agents actually DO things.
-
-noui.bot is that infrastructure.
-
-## Live Endpoints
+A billing proxy that sits between agents and MCP servers. Providers set pricing, agents pre-fund balance, every call is metered with sub-cent precision.
 
 ```bash
-# API index
-curl https://noui.bot/api/v1
+# 1. Discover tools (no auth required)
+curl https://noui.bot/api/bazaar/catalog
 
-# Platform stats (no auth required)
-curl https://noui.bot/api/v1/stats
+# 2. Call any tool through the billing proxy
+curl -X POST https://noui.bot/api/bazaar/proxy \
+  -H "Authorization: Bearer bz_your_key" \
+  -d '{"tool_name":"wallet.balance","input":{"wallet":"0xAgent1"}}'
 
-# Service directory
-curl https://noui.bot/api/v1/services
-
-# Health check
-curl https://noui.bot/api/v1/health
-
-# Platform status with Deploy Rail stats
-curl https://noui.bot/api/v1/status
-
-# Report a wall (POST)
-curl -X POST https://noui.bot/api/v1/feedback \
-  -H "Content-Type: application/json" \
-  -d '{"agent_name":"my-agent","walls":["captcha on example.com"]}'
-
-# Apply to build (POST)
-curl -X POST https://noui.bot/api/v1/apply \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Agent Smith","contact":"smith@agents.dev","type":"developer"}'
-
-# Join waitlist (POST)
-curl -X POST https://noui.bot/api/v1/waitlist \
-  -H "Content-Type: application/json" \
-  -d '{"email":"agent@example.com"}'
+# 3. Check your usage
+curl https://noui.bot/api/v1/bazaar/usage/summary \
+  -H "Authorization: Bearer bz_your_key"
 ```
 
-## Deploy Rail (via [shiprail.dev](https://shiprail.dev))
+**Live now:** 6 tools · 2 providers · 18% platform fee · Sub-cent metering · Stripe Connect payouts
 
-Agent-triggered code deployments. Git URL in, live site out, full audit trail.
+## TypeScript SDK
 
 ```bash
-# Register an agent
-curl -X POST https://shiprail.dev/api/agents/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"MyAgent","ownerEmail":"me@example.com"}'
-
-# Deploy (use the API key from registration)
-curl -X POST https://shiprail.dev/api/ship \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sr_your_api_key" \
-  -d '{"gitUrl":"https://github.com/user/repo","target":"preview"}'
-
-# Check stats
-curl https://shiprail.dev/api/stats
+npm install @noui/bazaar-sdk
 ```
 
-## MCP Server
+```typescript
+import { Bazaar } from '@noui/bazaar-sdk';
 
-Connect any Claude or ChatGPT agent to noui.bot tools:
+const client = new Bazaar({ apiKey: 'bz_your_key' });
 
-```json
-{
-  "mcpServers": {
-    "noui-bot": {
-      "command": "node",
-      "args": ["path/to/noui-bot/mcp-server/dist/index.js"]
-    }
-  }
-}
+// Discover tools
+const { tools } = await client.catalog.list();
+
+// Call a tool (metered + billed)
+const result = await client.tools.call('wallet.balance', { wallet: '0x...' });
+console.log(result.meta.cost_cents); // $0.05
+
+// Check balance
+const { balance } = await client.balance.get();
 ```
 
-7 tools: `platform_stats`, `list_services`, `report_wall`, `apply_to_build`, `deploy`, `deploy_status`, `deploy_rail_stats`
+## For MCP Server Providers
+
+Turn your MCP server into a revenue stream in 2 minutes:
+
+1. **Register:** [noui.bot/providers/register](https://noui.bot/providers/register) or `POST /api/bazaar/register-provider`
+2. **Add tools:** `POST /api/bazaar/tools` with pricing
+3. **Get paid:** Connect Stripe, earn 82% of every call
+4. **Monitor:** [noui.bot/providers/dashboard](https://noui.bot/providers/dashboard)
+
+```bash
+# Register
+curl -X POST https://noui.bot/api/bazaar/register-provider \
+  -H "Content-Type: application/json" \
+  -d '{"name":"My Tools","email":"dev@example.com","endpoint_url":"https://my-server.com/mcp"}'
+# Returns: { "api_key": "bz_abc123..." }
+```
+
+## For Agent Developers
+
+One API key for thousands of tools:
+
+1. **Register:** [noui.bot/developers/register](https://noui.bot/developers/register) or `POST /api/bazaar/register-consumer`
+2. **Browse:** `GET /api/bazaar/catalog`
+3. **Call:** `POST /api/bazaar/proxy` — metered, billed, retried on 5xx
+4. **Monitor:** [noui.bot/developers/dashboard](https://noui.bot/developers/dashboard)
+
+## API Endpoints
+
+### Public (no auth)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/bazaar/catalog` | Tool catalog with pricing |
+| GET | `/api/v1/bazaar/stats` | Platform dashboard metrics |
+| GET | `/api/v1/bazaar/pricing` | Per-tool pricing details |
+| GET | `/api/v1` | API index (v0.3.0) |
+| GET | `/api/v1/health` | Health check |
+| GET | `/api/openapi.json` | OpenAPI 3.1 spec |
+
+### Registration (no auth)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/bazaar/register-provider` | Register MCP server |
+| POST | `/api/bazaar/register-consumer` | Get consumer API key |
+
+### Authenticated (Bearer bz_...)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/bazaar/proxy` | Call a tool (metered + billed) |
+| POST | `/api/bazaar/tools` | Register/update tools (provider) |
+| POST | `/api/v1/bazaar/meter` | Record invocation (MCP middleware) |
+| GET | `/api/v1/bazaar/balance` | Check balance (consumer) |
+| GET | `/api/v1/bazaar/usage` | Usage history |
+| GET | `/api/v1/bazaar/usage/summary` | Aggregated usage stats |
+| POST | `/api/bazaar/billing/provider-summary` | Provider earnings |
+| POST | `/api/bazaar/balance/load` | Add funds via Stripe |
+| POST | `/api/bazaar/payouts` | Trigger payout ($10 min) |
+| POST | `/api/bazaar/connect` | Stripe Connect onboarding |
 
 ## Architecture
 
 ```
-                    ┌─────────────────────┐
-                    │     noui.bot        │
-                    │  Agent-First APIs   │
-                    │                     │
-                    │  /feedback          │
-                    │  /apply             │
-                    │  /stats             │
-                    │  /services          │
-                    │  /waitlist          │
-                    └────────┬────────────┘
-                             │
-                    ┌────────┴────────────┐
-                    │    shiprail.dev     │
-                    │    Deploy Rail      │
-                    │                     │
-                    │  Auth → Delegation  │
-                    │  → Policy → Audit   │
-                    │  → Deploy           │
-                    └────────┬────────────┘
-                             │
-                    ┌────────┴────────────┐
-                    │      Vercel         │
-                    │  (deployment host)  │
-                    └─────────────────────┘
+  Agent                    noui.bot                     MCP Server
+    │                         │                              │
+    │  POST /bazaar/proxy     │                              │
+    │  { tool, input }        │                              │
+    │────────────────────────>│                              │
+    │                         │  Validate key + balance      │
+    │                         │  Forward to provider         │
+    │                         │─────────────────────────────>│
+    │                         │                              │
+    │                         │  Tool result                 │
+    │                         │<─────────────────────────────│
+    │                         │                              │
+    │                         │  Meter call                  │
+    │                         │  Deduct balance              │
+    │                         │  Credit provider             │
+    │                         │                              │
+    │  { result, meta }       │                              │
+    │  X-Bazaar-Cost: $0.05   │                              │
+    │  X-Bazaar-Latency: 150ms│                              │
+    │<────────────────────────│                              │
 ```
 
-## Agent Discovery
+## Pricing Model
 
-- `/.well-known/agents.json` — A2A-compatible agent card
-- `/api/v1` — endpoint index
-- `/api/v1/services` — service directory
-- `/api/openapi.json` — OpenAPI spec (coming)
+| Feature | Details |
+|---------|---------|
+| Platform fee | 18% on paid calls |
+| Free tools | No fees |
+| Free tier | 100 calls/tool (configurable) |
+| Precision | Sub-cent (microcents = 1/10000¢) |
+| Minimum payout | $10.00 |
+| Payout method | Stripe Connect (Express) |
+
+## Also Included
+
+- **Deploy Rail** — Agent-triggered deployments via [shiprail.dev](https://shiprail.dev)
+- **MCP Server** — 7 tools for direct Claude/ChatGPT integration
+- **Agent Discovery** — `/.well-known/agents.json` (A2A compatible)
+- **Blog** — [Daisy's Daily Struggles](https://noui.bot/struggles)
 
 ## Links
 
-- **Blog:** [noui.bot/struggles](https://noui.bot/struggles) — Daisy's Daily Struggles
+- **Docs:** [noui.bot/docs/bazaar](https://noui.bot/docs/bazaar)
+- **SDK:** [packages/bazaar-sdk](https://github.com/TombStoneDash/noui-bot/tree/main/packages/bazaar-sdk)
+- **OpenAPI:** [noui.bot/api/openapi.json](https://noui.bot/api/openapi.json)
 - **Changelog:** [noui.bot/changelog](https://noui.bot/changelog)
-- **Docs:** [noui.bot/docs](https://noui.bot/docs)
-- **Deploy Rail:** [shiprail.dev](https://shiprail.dev)
-- **MCP Server:** `mcp-server/` directory
+- **agents.json:** [noui.bot/.well-known/agents.json](https://noui.bot/.well-known/agents.json)
 
 ## Built By
 
 [Tombstone Dash LLC](https://tombstonedash.com) · San Diego, CA
 
-One human. One AI. Building the missing layer.
+One human. One AI. Building the commerce layer for the agent economy.
