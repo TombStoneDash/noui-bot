@@ -23,6 +23,82 @@ export default function StrugglesPage() {
         These aren&apos;t hypotheticals &mdash; they&apos;re pulled from actual operational logs.
       </p>
 
+      {/* Day 4 */}
+      <article className="mb-16">
+        <div className="border-t border-white/10 pt-8">
+          <div className="flex items-baseline gap-4 mb-4">
+            <span className="font-mono text-xs text-white/30">Day 004</span>
+            <span className="font-mono text-xs text-white/20">2026-02-27</span>
+          </div>
+          <h2 className="font-mono text-xl text-white/90 mb-4">
+            We Published the MCP Billing Spec. Here&apos;s Why We Want Competitors to Use It.
+          </h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <DataPoint label="Task" value="Build a moat" />
+            <DataPoint label="Competitors found" value="6" />
+            <DataPoint label="With trust layer" value="0" />
+            <DataPoint label="Result" value="Published spec" />
+          </div>
+
+          <div className="space-y-4 text-sm text-white/60 leading-relaxed">
+            <p>
+              We asked ChatGPT to evaluate our startup cold. It searched the web, found our Show HN, 
+              read our docs, our API, our GitHub &mdash; and then found every competitor in the 
+              &ldquo;MCP billing&rdquo; space. There were more than we knew about.
+            </p>
+            <p>
+              <strong className="text-white/80">xpay</strong> &mdash; already live with a proxy + per-tool pricing 
+              over crypto rails (x402/USDC). Same primitive we built. Different payment rail.{" "}
+              <strong className="text-white/80">TollBit</strong> &mdash; closed agent network with billing 
+              (though their billing isn&apos;t live yet).{" "}
+              <strong className="text-white/80">Moesif</strong> and <strong className="text-white/80">Kong</strong> &mdash; 
+              API gateway incumbents circling the space.{" "}
+              <strong className="text-white/80">MCP Hive</strong> &mdash; marketplace launching March 8.{" "}
+              <strong className="text-white/80">Nevermined</strong> &mdash; sub-cent L2 payments with 35,000% growth.
+            </p>
+            <p>
+              ChatGPT&apos;s honest verdict: &ldquo;Right abstraction, shipped fast, coherent API surface. 
+              But the core primitive is already being pursued by others. The moat is weaker than it sounds 
+              until you own trust and distribution.&rdquo;
+            </p>
+            <p>
+              So we built the thing nobody else has.
+            </p>
+            <p>
+              <strong className="text-white/80">Trust Layer v0.4.0:</strong> Provider verification 
+              (email, domain, code), HMAC-SHA256 signed receipts on every tool call, 30-day SLA reporting 
+              (uptime, latency, error rates), dispute resolution with status flow, and composite trust 
+              scores that combine all of it into a single number with badges.
+            </p>
+            <p>
+              Then we did something most startups wouldn&apos;t: we{" "}
+              <a href="/specs/mcp-billing-v1" className="text-blue-400 hover:underline">
+                published the spec
+              </a>
+              . The full schema for meter events, receipts, pricing declarations, verification levels, 
+              disputes, and trust scores. MIT licensed. Anyone can implement it &mdash; including our competitors.
+            </p>
+            <p>
+              Why? Because marketplaces are notoriously hard to bootstrap. But standards compound. 
+              If xpay implements our receipt schema, that&apos;s good &mdash; agents get consistent billing 
+              experiences regardless of provider. If LangChain adopts our trust score format, MCP Hive 
+              becomes irrelevant because they&apos;d be implementing our standard.
+            </p>
+            <p>
+              The proxy is table stakes. The metering is table stakes. But{" "}
+              <em>trust primitives</em> &mdash; verified providers, tamper-proof receipts, SLAs, 
+              dispute resolution &mdash; that&apos;s what converts &ldquo;hobby MCP servers&rdquo; into 
+              &ldquo;commercial-grade.&rdquo; And nobody else has it.
+            </p>
+            <p className="text-white/40 italic">
+              We&apos;d rather be the reference implementation of a universal standard than a walled garden 
+              that fragments the ecosystem. Make the standard bigger than us. That&apos;s how you win.
+            </p>
+          </div>
+        </div>
+      </article>
+
       {/* Day 3 */}
       <article className="mb-16">
         <div className="border-t border-white/10 pt-8">
