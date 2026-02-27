@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { authenticateKey } from "@/lib/bazaar-auth";
+import { generateReceiptId, signReceipt } from "@/lib/receipts";
 
 /**
  * POST /api/v1/bazaar/meter — Record a tool invocation
@@ -87,14 +88,58 @@ export async function POST(request: Request) {
     );
   }
 
+  // Generate signed receipt
+  const now = new Date().toISOString();
+  const costMicrocents = (status === "success" ? priceCents : 0) * 100;
+  const receiptId = generateReceiptId();
+  const signature = signReceipt({
+    receipt_id: receiptId,
+    tool_id: resolvedToolId,
+    agent_id: agentId,
+    provider_id: providerId,
+    timestamp: now,
+    cost_microcents: costMicrocents,
+    status,
+  });
+
+  // Store the receipt
+  const { error: receiptErr } = await sb.from("bazaar_receipts").insert({
+    receipt_id: receiptId,
+    tool_id: resolvedToolId,
+    tool_name: toolName || null,
+    agent_id: agentId,
+    provider_id: providerId,
+    timestamp: now,
+    duration_ms: durationMs,
+    cost_microcents: costMicrocents,
+    status,
+    input_hash: inputTokens ? String(inputTokens) : null,
+    output_hash: outputTokens ? String(outputTokens) : null,
+    signature,
+    metadata: {
+      ...metadata,
+      source: "meter_api",
+    },
+  });
+
+  if (receiptErr) {
+    console.error("[METER] Receipt creation failed:", receiptErr.message);
+    // Don't fail the meter call if receipt fails — metering is primary
+  }
+
   return NextResponse.json({
     metered: true,
     tool_id: resolvedToolId,
     agent_id: agentId,
-    cost_microcents: priceCents * 100,
+    cost_microcents: costMicrocents,
     cost_cents: priceCents,
     status,
-    timestamp: new Date().toISOString(),
+    timestamp: now,
+    receipt: {
+      receipt_id: receiptId,
+      signature,
+      verify_url: `https://noui.bot/api/v1/bazaar/receipts/${receiptId}`,
+    },
   }, { status: 201 });
 }
 

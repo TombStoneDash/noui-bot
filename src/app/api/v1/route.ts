@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const HEADERS = {
-  "X-Noui-Version": "0.3.0",
+  "X-Noui-Version": "0.4.0",
   "X-Noui-Docs": "https://noui.bot/docs",
   "X-Noui-Discovery": "https://noui.bot/.well-known/agents.json",
   "Access-Control-Allow-Origin": "*",
@@ -12,8 +12,8 @@ const HEADERS = {
 export async function GET() {
   return NextResponse.json({
     name: "noui.bot",
-    version: "0.3.0",
-    description: "Agent-first infrastructure. APIs designed for bots, not browsers.",
+    version: "0.4.0",
+    description: "Agent-first infrastructure with trust layer. APIs designed for bots, not browsers.",
     base_url: "https://noui.bot/api/v1",
     endpoints: {
       "GET  /api/v1":            "This document — single source of truth for the API surface",
@@ -29,7 +29,7 @@ export async function GET() {
     bazaar: {
       description: "Agent Bazaar — billing, metering, and auth for MCP servers",
       base_url: "https://noui.bot/api/bazaar",
-      moat: "Metering + billing for MCP tools. Sub-cent precision. 18% platform fee.",
+      moat: "Trust-first billing for MCP tools. Verified providers, signed receipts, SLAs, dispute resolution. 18% platform fee.",
       endpoints: {
         // Public (no auth)
         "GET  /api/bazaar":                   "Bazaar index — overview, flow, and endpoint listing",
@@ -42,7 +42,7 @@ export async function GET() {
         // Authenticated
         "POST /api/bazaar/proxy":             "Proxy an MCP tool call (metered, billed, retried on 5xx)",
         "POST /api/bazaar/tools":             "Register tools for your provider (provider key required)",
-        "POST /api/v1/bazaar/meter":          "Record a tool invocation (MCP middleware integration)",
+        "POST /api/v1/bazaar/meter":          "Record a tool invocation + auto-generate signed receipt",
         "GET  /api/v1/bazaar/balance":        "Check agent's current balance (consumer key required)",
         "GET  /api/v1/bazaar/usage":          "View usage and costs (consumer or provider)",
         "GET  /api/v1/bazaar/usage/summary":  "Aggregate usage stats — total spend, top tools, calls by day",
@@ -53,6 +53,28 @@ export async function GET() {
         "POST /api/bazaar/balance/load":      "Load consumer balance (Stripe Checkout or dry-run)",
         "POST /api/bazaar/payouts":           "Trigger provider payout ($10 minimum)",
         "GET  /api/bazaar/payouts":           "Payout history and pending balance",
+      },
+      trust_layer: {
+        description: "Trust primitives for commercial-grade agent commerce. What makes Bazaar different.",
+        version: "0.4.0",
+        endpoints: {
+          // Receipts (public verification)
+          "GET  /api/v1/bazaar/receipts":           "List signed receipts (auth required, scoped to owner)",
+          "GET  /api/v1/bazaar/receipts/:id":       "Fetch + verify a single receipt (public, no auth)",
+          // Provider verification
+          "POST /api/v1/bazaar/providers/verify":   "Submit verification request (email, domain, or code)",
+          "GET  /api/v1/bazaar/providers/verify":   "Verification requirements and levels",
+          // Provider SLA
+          "GET  /api/v1/bazaar/providers/:id/sla":  "30-day SLA metrics — uptime, latency, error rate (public)",
+          // Trust score
+          "GET  /api/v1/bazaar/providers/:id/trust": "Composite trust score — verification + SLA + disputes (public)",
+          // Disputes
+          "POST /api/v1/bazaar/disputes":           "File a dispute against a receipt (auth required)",
+          "GET  /api/v1/bazaar/disputes":           "List disputes for authenticated user",
+          "GET  /api/v1/bazaar/disputes/:id":       "Fetch dispute status (public)",
+        },
+        verification_levels: ["unverified", "email", "domain", "code"],
+        trust_badges: ["unrated", "basic", "trusted", "verified"],
       },
       self_service: {
         providers: "https://noui.bot/providers/register",

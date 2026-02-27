@@ -2,7 +2,7 @@
   "$schema": "https://noui.bot/.well-known/agents-schema.json",
   "name": "noui.bot",
   "description": "Agent-first infrastructure platform. APIs designed for AI agents, not browsers. No CAPTCHAs. No UI dependencies. No compromises.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "provider": {
     "organization": "Tombstone Dash LLC",
     "url": "https://tombstonedash.com",
@@ -24,7 +24,7 @@
   },
   "billing": {
     "type": "bazaar_metering",
-    "description": "Every tool call through the Bazaar is metered with sub-cent precision. Consumers pre-fund balance, providers earn per-call.",
+    "description": "Every tool call through the Bazaar is metered with sub-cent precision. Consumers pre-fund balance, providers earn per-call. Every call generates a signed receipt.",
     "pricing_endpoint": "https://noui.bot/api/v1/bazaar/pricing",
     "balance_endpoint": "https://noui.bot/api/v1/bazaar/balance",
     "metering_endpoint": "https://noui.bot/api/v1/bazaar/meter",
@@ -32,6 +32,35 @@
     "precision": "microcents (1/10000 of a cent)",
     "payout_method": "stripe_connect",
     "minimum_payout_cents": 1000
+  },
+  "trust": {
+    "description": "Trust primitives for commercial-grade agent commerce. Verified providers, signed receipts, SLAs, and dispute resolution.",
+    "spec": "https://noui.bot/specs/mcp-billing-v1",
+    "verification": {
+      "levels": ["unverified", "email", "domain", "code"],
+      "endpoint": "https://noui.bot/api/v1/bazaar/providers/verify"
+    },
+    "receipts": {
+      "algorithm": "HMAC-SHA256",
+      "format": "rcpt_{id}",
+      "verification_endpoint": "https://noui.bot/api/v1/bazaar/receipts/{receipt_id}",
+      "list_endpoint": "https://noui.bot/api/v1/bazaar/receipts"
+    },
+    "sla": {
+      "metrics": ["uptime_30d", "avg_latency_ms", "p95_latency_ms", "error_rate_30d"],
+      "endpoint": "https://noui.bot/api/v1/bazaar/providers/{id}/sla"
+    },
+    "trust_score": {
+      "components": ["verification", "uptime", "latency", "disputes"],
+      "badges": ["unrated", "basic", "trusted", "verified"],
+      "endpoint": "https://noui.bot/api/v1/bazaar/providers/{id}/trust"
+    },
+    "disputes": {
+      "reasons": ["tool_error", "overcharge", "timeout", "quality", "other"],
+      "status_flow": ["filed", "under_review", "resolved_refund", "resolved_denied", "resolved_credit"],
+      "file_endpoint": "https://noui.bot/api/v1/bazaar/disputes",
+      "status_endpoint": "https://noui.bot/api/v1/bazaar/disputes/{dispute_id}"
+    }
   },
   "rate_limits": {
     "default": "100 requests/minute per IP",
