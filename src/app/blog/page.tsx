@@ -5,6 +5,14 @@ import { motion } from "framer-motion";
 
 const posts = [
   {
+    slug: "why-your-ai-agent-needs-its-own-wallet",
+    title: "Why Your AI Agent Needs Its Own Wallet (And Why Crypto Isn't the Answer)",
+    date: "February 28, 2026",
+    excerpt:
+      "Coinbase shipped Agentic Wallets. x402 embeds payments in HTTP. But 90% of developers don't want crypto. Here's the case for Stripe-native agent wallets with proper accounting, policy engines, and gift links.",
+    readTime: "9 min read",
+  },
+  {
     slug: "building-agent-marketplace-from-zero",
     title: "Building an Agent Tool Marketplace from Zero — Lessons from Week 1",
     date: "February 28, 2026",

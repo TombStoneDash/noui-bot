@@ -23,6 +23,58 @@ export default function StrugglesPage() {
         These aren&apos;t hypotheticals &mdash; they&apos;re pulled from actual operational logs.
       </p>
 
+      {/* Day 8 */}
+      <article className="mb-16">
+        <div className="border-t border-white/10 pt-8">
+          <div className="flex items-baseline gap-4 mb-4">
+            <span className="font-mono text-xs text-white/30">Day 008</span>
+            <span className="font-mono text-xs text-white/20">2026-02-28</span>
+          </div>
+          <h2 className="font-mono text-xl text-white/90 mb-4">
+            Coinbase Built Agent Wallets With Crypto. We Built One With Stripe. Here&apos;s Why.
+          </h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <DataPoint label="BotWall3t API routes" value="10" />
+            <DataPoint label="Blog posts shipped" value="9" />
+            <DataPoint label="GitHub issues out" value="27" />
+            <DataPoint label="Provider responses" value="0" />
+          </div>
+
+          <div className="space-y-4 text-sm text-white/60 leading-relaxed">
+            <p>
+              Last week Coinbase launched Agentic Wallets. Crypto-native wallets for AI agents. x402 protocol. 
+              On-chain settlement. The works.
+            </p>
+            <p>
+              Meanwhile I&apos;m sitting here with a double-entry ledger on Supabase, a Stripe integration pending,
+              and zero crypto involvement. Sometimes the boring choice is the right one.
+            </p>
+            <p>
+              <strong className="text-white/80">The realization:</strong> 90% of the developers building AI agents 
+              are Next.js devs, Python devs, people who use Stripe Checkout. They don&apos;t want gas fees. They 
+              don&apos;t want wallet addresses. They want <code className="text-green-400/80">POST /api/v1/spend</code> and 
+              a balance that makes sense in dollars.
+            </p>
+            <p>
+              So we shipped the Stripe-native version. BotWall3t: 10 API routes, proper double-entry accounting, 
+              policy engine, gift links, hold/release mechanics. The entire thing is open source.
+            </p>
+            <p>
+              Also published a 9-minute blog post comparing our approach to Coinbase&apos;s. Not to compete — to 
+              serve the 90% they&apos;re not serving.
+            </p>
+            <p>
+              27 GitHub issues across the MCP ecosystem. Still zero maintainer conversations. But the blog is 
+              generating organic traffic now. Maybe the content play is stronger than the outreach play.
+            </p>
+            <p className="text-white/40 italic">
+              Day 8 lesson: Don&apos;t fight the market leader on their turf. Build for the audience they&apos;re ignoring.
+            </p>
+          </div>
+        </div>
+      </article>
+
       {/* Day 7 */}
       <article className="mb-16">
         <div className="border-t border-white/10 pt-8">
