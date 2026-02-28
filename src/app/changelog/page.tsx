@@ -7,10 +7,32 @@ export const metadata: Metadata = {
 
 const entries = [
   {
+    date: "2026-02-28",
+    items: [
+      "Public Marketplace: /marketplace — browse all tools with category filtering, search, live stats, and inline integration snippets.",
+      "Pricing page: /pricing — interactive revenue calculator, build-vs-buy comparison table, FAQ.",
+      "Quickstart guide: /docs/quickstart — 5-minute numbered walkthrough from registration to first metered call.",
+      "Docs refresh: quick-link cards on /docs landing (Quickstart, Bazaar API, Marketplace). Version bumped to v0.4.0.",
+      "Landing page: added 'Browse Tools →' CTA button linking to marketplace.",
+      "Provider outreach: GitHub issues on Context7 (47K★), git-mcp (7.6K★), mcp-use (9.3K★). PR to awesome-mcp-servers (81K★).",
+    ],
+  },
+  {
+    date: "2026-02-27",
+    items: [
+      "Trust Layer v0.4.0: provider verification (email/domain/code), signed receipts (HMAC-SHA256), SLA reporting, dispute resolution, composite trust scores.",
+      "MCP Billing Spec v1 published at /specs/mcp-billing-v1 (MIT licensed). GitHub repo: TombStoneDash/mcp-billing-spec.",
+      "Comparison page: /docs/compare — feature matrix vs. Skyfire, Stripe direct, x402, self-build.",
+      "Integration guides: Claude setup, LangChain, CrewAI, AutoGen at /docs/guides/*.",
+      "Show HN posted: 'Agent Bazaar — Billing and metering for MCP tool servers'.",
+    ],
+  },
+  {
     date: "2026-02-26",
     items: [
       "Landing page CTAs: 'List Your MCP Server' → /providers/register, 'Get an API Key' → /developers/register, 'Read the Docs' → /docs/bazaar.",
       "agents.json updated with billing/metering protocol declaration — pricing, balance, metering endpoints discoverable by agent crawlers.",
+      "OpenAPI 3.1 spec: 21 paths, 15 Bazaar endpoints documented at /api/openapi.json.",
     ],
   },
   {
