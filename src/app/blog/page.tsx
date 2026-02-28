@@ -5,6 +5,15 @@ import { motion } from "framer-motion";
 
 const posts = [
   {
+    slug: "the-agentic-economy-is-here",
+    title:
+      "The Agentic Economy Is Here — And Nobody Has the Infrastructure",
+    date: "June 14, 2026",
+    excerpt:
+      "VCs screen for agent fluency. Block laid off 4,000 citing AI. 10,000+ MCP servers can't monetize. The bottleneck isn't intelligence — it's the missing billing, trust, and identity infrastructure underneath.",
+    readTime: "9 min read",
+  },
+  {
     slug: "building-trust-layer-for-ai-agents",
     title: "Building a Trust Layer for AI Agents — From Zero to Verified",
     date: "February 28, 2026",
