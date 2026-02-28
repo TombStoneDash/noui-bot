@@ -92,11 +92,14 @@ export async function POST(request: Request) {
       continue;
     }
 
-    const priceCents = (tool.price_cents_override as number) ?? null;
+    const pricing = tool.pricing as Record<string, unknown> | undefined;
+    const priceCents = (tool.price_cents_override as number) ?? (pricing?.price_cents as number) ?? null;
     if (priceCents !== null && priceCents < 0) {
       errors.push({ tool_name: toolName, error: "price_cents_override must be >= 0" });
       continue;
     }
+
+    const freeTierCalls = (tool.pricing as Record<string, unknown>)?.free_tier_calls as number ?? 0;
 
     const { data: t, error: insErr } = await sb
       .from("bazaar_tools")
@@ -108,7 +111,7 @@ export async function POST(request: Request) {
         category: (tool.category as string) || "other",
         price_cents_override: priceCents,
         input_schema: (tool.input_schema as object) || null,
-        endpoint_path: (tool.endpoint_path as string) || null,
+        free_tier_calls: freeTierCalls,
         active: true,
       })
       .select()
