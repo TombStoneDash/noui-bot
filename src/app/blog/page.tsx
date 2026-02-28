@@ -5,6 +5,15 @@ import { motion } from "framer-motion";
 
 const posts = [
   {
+    slug: "mcp-billing-standard-explained",
+    title:
+      "The Open MCP Billing Standard — How AI Agents Pay for Tools",
+    date: "June 13, 2026",
+    excerpt:
+      "A deep dive into the open MCP billing standard: meter events, receipts, pricing schemas, and trust scores — the primitives that give every MCP server a real business model.",
+    readTime: "9 min read",
+  },
+  {
     slug: "why-mcp-servers-need-billing",
     title: "Why MCP Servers Need a Billing Layer",
     date: "February 23, 2026",
