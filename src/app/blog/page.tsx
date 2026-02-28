@@ -5,6 +5,14 @@ import { motion } from "framer-motion";
 
 const posts = [
   {
+    slug: "building-trust-layer-for-ai-agents",
+    title: "Building a Trust Layer for AI Agents — From Zero to Verified",
+    date: "February 28, 2026",
+    excerpt:
+      "How we built provider verification, SLA tracking, dispute resolution, and composite trust scores. A deep technical walkthrough of the trust primitives no one else is building.",
+    readTime: "10 min read",
+  },
+  {
     slug: "how-to-monetize-your-mcp-server",
     title: "How to Monetize Your MCP Server in 5 Minutes",
     date: "February 28, 2026",
