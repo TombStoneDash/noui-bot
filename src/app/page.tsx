@@ -325,6 +325,12 @@ export default function Home() {
                       Get an API Key &rarr;
                     </a>
                     <a
+                      href="/marketplace"
+                      className="font-mono text-sm px-6 py-3 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"
+                    >
+                      Browse Tools &rarr;
+                    </a>
+                    <a
                       href="/docs/bazaar"
                       className="font-mono text-sm px-6 py-3 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"
                     >
