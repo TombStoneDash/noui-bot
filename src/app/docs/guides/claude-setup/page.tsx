@@ -141,10 +141,18 @@ curl https://noui.bot/api/v1/bazaar/providers/{provider_id}/trust`}
               <h3 className="font-mono text-sm text-white/80 mb-2">Windsurf</h3>
               <p className="text-xs text-white/40">Add MCP server in Windsurf settings → MCP Servers.</p>
             </div>
-            <div className="border border-white/10 rounded p-4">
-              <h3 className="font-mono text-sm text-white/80 mb-2">LangChain / CrewAI / AutoGen</h3>
-              <p className="text-xs text-white/40">Point your MCP client at the Bazaar proxy endpoint. Metering is transparent.</p>
-            </div>
+            <a href="/docs/guides/langchain-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
+              <h3 className="font-mono text-sm text-white/80 mb-2">LangChain</h3>
+              <p className="text-xs text-white/40">MCP tools as LangChain StructuredTools.</p>
+            </a>
+            <a href="/docs/guides/crewai-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
+              <h3 className="font-mono text-sm text-white/80 mb-2">CrewAI</h3>
+              <p className="text-xs text-white/40">Multi-agent crews with Bazaar tools.</p>
+            </a>
+            <a href="/docs/guides/autogen-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
+              <h3 className="font-mono text-sm text-white/80 mb-2">AutoGen</h3>
+              <p className="text-xs text-white/40">Microsoft AutoGen + Bazaar tools.</p>
+            </a>
           </div>
         </section>
       </div>

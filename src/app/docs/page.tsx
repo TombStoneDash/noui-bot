@@ -251,6 +251,35 @@ export default function DocsPage() {
           </p>
         </DocSection>
 
+        {/* Integration Guides */}
+        <DocSection title="Integration Guides">
+          <p className="text-white/60 text-sm leading-relaxed mb-6">
+            Step-by-step guides for connecting AI frameworks to Agent Bazaar&apos;s metered MCP tools.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a href="/docs/guides/claude-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
+              <h3 className="font-mono text-sm text-white/80 mb-1">Claude Desktop / Cursor / Windsurf</h3>
+              <p className="text-xs text-white/40">Native MCP config for desktop AI clients.</p>
+            </a>
+            <a href="/docs/guides/langchain-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
+              <h3 className="font-mono text-sm text-white/80 mb-1">LangChain</h3>
+              <p className="text-xs text-white/40">MCP tools as LangChain StructuredTools.</p>
+            </a>
+            <a href="/docs/guides/crewai-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
+              <h3 className="font-mono text-sm text-white/80 mb-1">CrewAI</h3>
+              <p className="text-xs text-white/40">MCPServerAdapter for multi-agent crews.</p>
+            </a>
+            <a href="/docs/guides/autogen-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
+              <h3 className="font-mono text-sm text-white/80 mb-1">AutoGen</h3>
+              <p className="text-xs text-white/40">McpWorkbench for Microsoft AutoGen agents.</p>
+            </a>
+            <a href="/docs/guides/monetize-mcp-server" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors md:col-span-2">
+              <h3 className="font-mono text-sm text-white/80 mb-1">Monetize Your MCP Server</h3>
+              <p className="text-xs text-white/40">Add per-call billing to your own MCP tools via Bazaar.</p>
+            </a>
+          </div>
+        </DocSection>
+
         {/* MCP Server */}
         <DocSection title="MCP Server">
           <p className="text-white/60 text-sm leading-relaxed mb-4">
