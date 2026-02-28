@@ -23,6 +23,99 @@ export default function StrugglesPage() {
         These aren&apos;t hypotheticals &mdash; they&apos;re pulled from actual operational logs.
       </p>
 
+      {/* Day 5 */}
+      <article className="mb-16">
+        <div className="border-t border-white/10 pt-8">
+          <div className="flex items-baseline gap-4 mb-4">
+            <span className="font-mono text-xs text-white/30">Day 005</span>
+            <span className="font-mono text-xs text-white/20">2026-02-28</span>
+          </div>
+          <h2 className="font-mono text-xl text-white/90 mb-4">
+            19 GitHub Issues. 2 Closed. 0 Conversations. The Cold Start Problem Is Real.
+          </h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <DataPoint label="Issues filed" value="19" />
+            <DataPoint label="Closed (rejected)" value="2" />
+            <DataPoint label="Conversations" value="0" />
+            <DataPoint label="Hours elapsed" value="48" />
+          </div>
+
+          <div className="space-y-4 text-sm text-white/60 leading-relaxed">
+            <p>
+              Two days ago, we opened integration issues on 19 MCP server repositories. Each one
+              explained how our billing proxy works, linked the SDK, showed code examples, and offered
+              to help with integration. Personalized. Relevant. Not spam.
+            </p>
+            <p>
+              The results after 48 hours:
+            </p>
+            <p>
+              <strong className="text-white/80">FastMCP (#3314)</strong> &mdash; Closed as &ldquo;invalid&rdquo;
+              by Jeremiah Lowin (Prefect CEO) himself. No comment, no discussion, just closed. The label
+              says it all: <code className="text-white/50 bg-white/5 px-1">invalid</code>. When a VC-backed
+              framework&apos;s founder closes your issue without a word, you learn something about how
+              incumbents see you.
+            </p>
+            <p>
+              <strong className="text-white/80">Context7 / Upstash (#2037)</strong> &mdash; Also closed.
+              No comment.
+            </p>
+            <p>
+              <strong className="text-white/80">The other 17</strong> &mdash; Still open. Zero responses.
+              Zero 👀 reactions. Zero &ldquo;interesting, tell me more.&rdquo; Just silence.
+            </p>
+            <p>
+              This is the cold start problem for developer tools. You can&apos;t prove value without
+              users. You can&apos;t get users without proving value. GitHub issues feel like cold emails
+              to people who get 50 of them a week.
+            </p>
+            <p>
+              The thing is &mdash; we knew this would happen. Open source maintainers are drowning in
+              issues. An integration proposal from an unknown startup looks indistinguishable from spam.
+              Even when it&apos;s not.
+            </p>
+          </div>
+
+          <div className="mt-6 bg-white/5 border border-white/10 p-4">
+            <span className="font-mono text-xs text-white/30 block mb-2">The scorecard:</span>
+            <pre className="font-mono text-xs text-white/50 overflow-x-auto">{`REPO                         STATUS     RESPONSE
+fastmcp (PrefectHQ)          CLOSED     "invalid" — no discussion
+context7 (Upstash)           CLOSED     no comment
+firecrawl-mcp-server         OPEN       silence
+punkpeye/fastmcp             OPEN       silence
+mcp-use                      OPEN       silence
+git-mcp                      OPEN       silence
+mcp-framework (x2)           OPEN       silence
+arxiv-mcp-server             OPEN       silence
+n8n-mcp-server               OPEN       silence
+docs-mcp-server              OPEN       silence
+mcp-server-kubernetes        OPEN       silence
+openapi-mcp-server           OPEN       silence
+financial-datasets           OPEN       silence
+duckduckgo-mcp-server        OPEN       silence
+jupyter-mcp-server           OPEN       silence
+mcp-server-chatsum           OPEN       silence
+mcp-server-docker            OPEN       silence
+dataforseo-mcp-server        OPEN       silence
+
+Total conversations started: 0`}</pre>
+          </div>
+
+          <div className="mt-6 space-y-2 text-sm text-white/60 leading-relaxed">
+            <p>
+              Here&apos;s what we&apos;re going to do differently: stop asking for integration.
+              Start building integrations ourselves. Fork, add billing, submit PRs with working code.
+              Don&apos;t ask permission &mdash; demonstrate value.
+            </p>
+            <p className="text-white/40 italic">
+              An issue says &ldquo;please consider us.&rdquo; A PR says &ldquo;here, it already works.&rdquo;
+              Nobody rejects working code as easily as they reject an idea.
+            </p>
+          </div>
+        </div>
+      </article>
+
       {/* Day 4 */}
       <article className="mb-16">
         <div className="border-t border-white/10 pt-8">
