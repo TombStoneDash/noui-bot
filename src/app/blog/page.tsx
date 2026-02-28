@@ -5,6 +5,22 @@ import { motion } from "framer-motion";
 
 const posts = [
   {
+    slug: "how-to-monetize-your-mcp-server",
+    title: "How to Monetize Your MCP Server in 5 Minutes",
+    date: "February 28, 2026",
+    excerpt:
+      "Step-by-step tutorial: install the SDK, wrap your existing MCP server with billing middleware, set per-call or per-token pricing, and start earning from AI agent traffic. Copy-paste code included.",
+    readTime: "5 min read",
+  },
+  {
+    slug: "why-every-ai-agent-needs-a-trust-layer",
+    title: "Why Every AI Agent Needs a Trust Layer",
+    date: "February 28, 2026",
+    excerpt:
+      "10,000+ MCP servers with zero trust standards. Identity spoofing, prompt injection via tool responses, and zero accountability. Here's what a real trust layer looks like — and why NIST agrees it's urgent.",
+    readTime: "7 min read",
+  },
+  {
     slug: "mcp-billing-landscape-6-approaches",
     title:
       "The MCP Billing Landscape — 6 Approaches Compared",
