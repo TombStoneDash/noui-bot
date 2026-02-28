@@ -21,7 +21,7 @@ export default function DocsPage() {
       <p className="text-white/40 font-mono text-sm mb-8">v0.4.0 &middot; Updated 2026-02-28</p>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
         <a href="/docs/quickstart" className="flex items-center gap-3 p-4 border border-emerald-500/20 bg-emerald-500/5 rounded-lg hover:border-emerald-500/30 transition-colors group">
           <span className="text-lg">⚡</span>
           <div>
@@ -43,6 +43,37 @@ export default function DocsPage() {
             <div className="font-mono text-xs text-white/30">Browse tools</div>
           </div>
         </a>
+      </div>
+
+      {/* Provider Section */}
+      <div className="border border-amber-500/20 bg-amber-500/5 rounded-lg p-6 mb-16">
+        <h2 className="font-mono text-sm font-bold text-amber-400 mb-3">🔧 For MCP Server Developers</h2>
+        <p className="text-white/50 text-sm mb-4">
+          Monetize your MCP server with zero code changes. Set per-call pricing and start earning.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <a href="/docs/guides/provider-quickstart" className="flex items-center gap-2 p-3 border border-white/[0.08] rounded hover:border-amber-500/30 transition-colors">
+            <span className="text-sm">📋</span>
+            <div>
+              <div className="font-mono text-xs font-bold text-white/80">Provider Quickstart</div>
+              <div className="font-mono text-[10px] text-white/30">List your server in 5 min</div>
+            </div>
+          </a>
+          <a href="/docs/guides/monetize-mcp-server" className="flex items-center gap-2 p-3 border border-white/[0.08] rounded hover:border-amber-500/30 transition-colors">
+            <span className="text-sm">💰</span>
+            <div>
+              <div className="font-mono text-xs font-bold text-white/80">TypeScript Guide</div>
+              <div className="font-mono text-[10px] text-white/30">SDK integration code</div>
+            </div>
+          </a>
+          <a href="/specs/mcp-billing-v1" className="flex items-center gap-2 p-3 border border-white/[0.08] rounded hover:border-amber-500/30 transition-colors">
+            <span className="text-sm">📄</span>
+            <div>
+              <div className="font-mono text-xs font-bold text-white/80">Billing Spec (MIT)</div>
+              <div className="font-mono text-[10px] text-white/30">Open standard</div>
+            </div>
+          </a>
+        </div>
       </div>
 
       <section className="space-y-16">
