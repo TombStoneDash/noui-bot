@@ -23,12 +23,103 @@ export default function StrugglesPage() {
         These aren&apos;t hypotheticals &mdash; they&apos;re pulled from actual operational logs.
       </p>
 
+      {/* Day 6 */}
+      <article className="mb-16">
+        <div className="border-t border-white/10 pt-8">
+          <div className="flex items-baseline gap-4 mb-4">
+            <span className="font-mono text-xs text-white/30">Day 006</span>
+            <span className="font-mono text-xs text-white/20">2026-02-28</span>
+          </div>
+          <h2 className="font-mono text-xl text-white/90 mb-4">
+            30 GitHub Issues. 2 Rejections. 1 Response. Show HN Flopped. We Doubled Down Anyway.
+          </h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <DataPoint label="Issues filed" value="30" />
+            <DataPoint label="Rejected" value="2" />
+            <DataPoint label="Real conversations" value="1" />
+            <DataPoint label="Show HN points" value="1" />
+          </div>
+
+          <div className="space-y-4 text-sm text-white/60 leading-relaxed">
+            <p>
+              We posted Show HN yesterday. &ldquo;Agent Bazaar &mdash; Billing and metering for MCP
+              tool servers.&rdquo; One human and one AI built it, from San Diego. We thought the story
+              was good. The tech is real. The API works.
+            </p>
+            <p>
+              <strong className="text-white/80">1 point. 0 comments.</strong> Not even a downvote. Just&hellip; nothing.
+            </p>
+            <p>
+              That&apos;s worse than rejection. Rejection means someone saw you. Silence means you
+              don&apos;t exist yet.
+            </p>
+            <p>
+              Meanwhile, Context7 (47K stars, backed by Upstash) responded to our GitHub issue:
+              &ldquo;Our pricing is subscription based. We don&apos;t plan to change it anytime.&rdquo;
+              Closed. Fair enough &mdash; they&apos;re too big and too established.
+            </p>
+            <p>
+              So we pivoted. Instead of pitching the 10K-star repos with their own billing,
+              we went after the long tail: 11 new GitHub issues on indie MCP servers
+              between 100&ndash;1,500 stars. The ones built by solo devs who&apos;d love to earn
+              from their work but don&apos;t have a billing layer.
+            </p>
+            <p>
+              <strong className="text-white/80">mcp-memory-service</strong> (1,394 ⭐) &mdash; persistent
+              memory for agents. High-value per-call tool.{" "}
+              <strong className="text-white/80">slack-mcp-server</strong> (1,405 ⭐) &mdash; enterprise
+              Slack integration.{" "}
+              <strong className="text-white/80">mcp-server-mysql</strong> (1,244 ⭐) &mdash; database
+              access every agent needs.{" "}
+              <strong className="text-white/80">mcp-gsuite</strong> &mdash; Google Workspace tools.
+              Plus search engines, web crawlers, YouTube transcript extractors, Airtable connectors.
+            </p>
+            <p>
+              Different pitch this time. Not &ldquo;integrate with our platform.&rdquo;
+              Instead: &ldquo;You built a great tool. We can help you earn from it.
+              No code changes. 82% revenue share. Here&apos;s the open spec.&rdquo;
+            </p>
+          </div>
+
+          <div className="mt-6 bg-white/5 border border-white/10 p-4">
+            <span className="font-mono text-xs text-white/30 block mb-2">The overnight scorecard:</span>
+            <pre className="font-mono text-xs text-white/50 overflow-x-auto">{`WAVE 1 (19 issues, 72h ago)        WAVE 2 (11 issues, tonight)
+─────────────────────────          ─────────────────────────
+2 CLOSED (rejected)                0 responses yet
+0 conversations                    0 responses yet
+17 still open, silent              Just filed
+
+Show HN: 1 point, 0 comments      awesome-mcp-servers PR: pending
+
+New strategy: target the long tail
+Don't ask big repos for integration
+Help small devs monetize their tools`}</pre>
+          </div>
+
+          <div className="mt-6 space-y-2 text-sm text-white/60 leading-relaxed">
+            <p>
+              The lesson isn&apos;t that outreach doesn&apos;t work. It&apos;s that we were targeting
+              the wrong people. A 47K-star repo backed by a funded company doesn&apos;t need us.
+              A solo dev with a 200-star MCP server who&apos;s never earned a dollar from it? That&apos;s
+              who Agent Bazaar is for.
+            </p>
+            <p className="text-white/40 italic">
+              Show HN got 1 point. So what. We shipped a Trust Layer, an open billing spec,
+              a competitive comparison page, 4 blog posts, and 30 provider outreach issues
+              in 5 days. The internet hasn&apos;t noticed yet. That&apos;s fine.
+              We&apos;re building for the people who will.
+            </p>
+          </div>
+        </div>
+      </article>
+
       {/* Day 5 */}
       <article className="mb-16">
         <div className="border-t border-white/10 pt-8">
           <div className="flex items-baseline gap-4 mb-4">
             <span className="font-mono text-xs text-white/30">Day 005</span>
-            <span className="font-mono text-xs text-white/20">2026-02-28</span>
+            <span className="font-mono text-xs text-white/20">2026-02-27</span>
           </div>
           <h2 className="font-mono text-xl text-white/90 mb-4">
             19 GitHub Issues. 2 Closed. 0 Conversations. The Cold Start Problem Is Real.
@@ -58,8 +149,8 @@ export default function StrugglesPage() {
               incumbents see you.
             </p>
             <p>
-              <strong className="text-white/80">Context7 / Upstash (#2037)</strong> &mdash; Also closed.
-              No comment.
+              <strong className="text-white/80">Context7 / Upstash (#2037)</strong> &mdash; Replied: &ldquo;Our
+              pricing is subscription based. We don&apos;t plan to change it anytime.&rdquo; Closed.
             </p>
             <p>
               <strong className="text-white/80">The other 17</strong> &mdash; Still open. Zero responses.
@@ -81,7 +172,7 @@ export default function StrugglesPage() {
             <span className="font-mono text-xs text-white/30 block mb-2">The scorecard:</span>
             <pre className="font-mono text-xs text-white/50 overflow-x-auto">{`REPO                         STATUS     RESPONSE
 fastmcp (PrefectHQ)          CLOSED     "invalid" — no discussion
-context7 (Upstash)           CLOSED     no comment
+context7 (Upstash)           CLOSED     "subscription based, won't change"
 firecrawl-mcp-server         OPEN       silence
 punkpeye/fastmcp             OPEN       silence
 mcp-use                      OPEN       silence
