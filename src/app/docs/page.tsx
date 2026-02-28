@@ -18,7 +18,32 @@ export default function DocsPage() {
       <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-2">
         API Documentation
       </h1>
-      <p className="text-white/40 font-mono text-sm mb-16">v0.2.0 &middot; Updated 2026-02-20</p>
+      <p className="text-white/40 font-mono text-sm mb-8">v0.4.0 &middot; Updated 2026-02-28</p>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-16">
+        <a href="/docs/quickstart" className="flex items-center gap-3 p-4 border border-emerald-500/20 bg-emerald-500/5 rounded-lg hover:border-emerald-500/30 transition-colors group">
+          <span className="text-lg">⚡</span>
+          <div>
+            <div className="font-mono text-sm font-bold text-emerald-400">Quickstart</div>
+            <div className="font-mono text-xs text-white/30">5-minute guide</div>
+          </div>
+        </a>
+        <a href="/docs/bazaar" className="flex items-center gap-3 p-4 border border-white/[0.08] rounded-lg hover:border-white/[0.15] transition-colors group">
+          <span className="text-lg">🏪</span>
+          <div>
+            <div className="font-mono text-sm font-bold text-white/80">Bazaar API</div>
+            <div className="font-mono text-xs text-white/30">Full reference</div>
+          </div>
+        </a>
+        <a href="/marketplace" className="flex items-center gap-3 p-4 border border-white/[0.08] rounded-lg hover:border-white/[0.15] transition-colors group">
+          <span className="text-lg">🔍</span>
+          <div>
+            <div className="font-mono text-sm font-bold text-white/80">Marketplace</div>
+            <div className="font-mono text-xs text-white/30">Browse tools</div>
+          </div>
+        </a>
+      </div>
 
       <section className="space-y-16">
         {/* Base URL */}
