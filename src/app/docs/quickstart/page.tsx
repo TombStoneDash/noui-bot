@@ -163,8 +163,8 @@ export default function QuickstartPage() {
         <h2 className="font-mono text-lg font-bold mb-4">
           Using the TypeScript SDK
         </h2>
-        <CodeBlock title="Install">{`npm install @noui/bazaar-sdk`}</CodeBlock>
-        <CodeBlock title="Usage">{`import { BazaarClient } from '@noui/bazaar-sdk';
+        <CodeBlock title="Install">{`npm install @forthebots/bazaar-sdk`}</CodeBlock>
+        <CodeBlock title="Usage">{`import { BazaarClient } from '@forthebots/bazaar-sdk';
 
 const bazaar = new BazaarClient({
   apiKey: 'bz_live_your_key_here'

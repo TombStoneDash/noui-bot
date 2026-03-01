@@ -308,7 +308,7 @@ This spec creates a common language. If xpay, TollBit, MCP Hive, and Bazaar all 
 The Agent Bazaar at [noui.bot](https://noui.bot) is the reference implementation of this spec.
 
 - API: `https://noui.bot/api/v1`
-- SDK: `npm install @noui/bazaar-sdk`
+- SDK: `npm install @forthebots/bazaar-sdk`
 - OpenAPI: `https://noui.bot/api/openapi.json`
 - GitHub: `https://github.com/TombStoneDash/noui-bot`
 

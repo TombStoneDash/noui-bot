@@ -43,16 +43,16 @@ export default function MonetizeMCPServerPage() {
         </Section>
 
         <Section title="Step 1: Install the SDK">
-          <Code>{`npm install @noui/bazaar-sdk
+          <Code>{`npm install @forthebots/bazaar-sdk
 # or
-yarn add @noui/bazaar-sdk
+yarn add @forthebots/bazaar-sdk
 # or
-pnpm add @noui/bazaar-sdk`}</Code>
+pnpm add @forthebots/bazaar-sdk`}</Code>
         </Section>
 
         <Section title="Step 2: Register as a Provider">
           <Code>{`// register-provider.ts
-import { BazaarClient } from '@noui/bazaar-sdk';
+import { BazaarClient } from '@forthebots/bazaar-sdk';
 
 const bazaar = new BazaarClient({
   baseUrl: 'https://noui.bot/api/v1',
@@ -80,7 +80,7 @@ register();`}</Code>
 
         <Section title="Step 3: List Your Tools with Pricing">
           <Code>{`// list-tools.ts
-import { BazaarClient } from '@noui/bazaar-sdk';
+import { BazaarClient } from '@forthebots/bazaar-sdk';
 
 const bazaar = new BazaarClient({
   baseUrl: 'https://noui.bot/api/v1',
@@ -143,7 +143,7 @@ listTools();`}</Code>
 
         <Section title="Step 4: Verify Your Identity">
           <Code>{`// verify.ts
-import { BazaarClient } from '@noui/bazaar-sdk';
+import { BazaarClient } from '@forthebots/bazaar-sdk';
 
 const bazaar = new BazaarClient({
   baseUrl: 'https://noui.bot/api/v1',
@@ -168,7 +168,7 @@ verify();`}</Code>
 
         <Section title="Step 5: Monitor Earnings">
           <Code>{`// dashboard.ts
-import { BazaarClient } from '@noui/bazaar-sdk';
+import { BazaarClient } from '@forthebots/bazaar-sdk';
 
 const bazaar = new BazaarClient({
   baseUrl: 'https://noui.bot/api/v1',

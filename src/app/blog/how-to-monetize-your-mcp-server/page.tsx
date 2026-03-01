@@ -116,7 +116,7 @@ export default function MonetizeMCPServer() {
             package.
           </p>
 
-          <CodeBlock language="bash" code="npm install @noui/bazaar-sdk" />
+          <CodeBlock language="bash" code="npm install @forthebots/bazaar-sdk" />
 
           <p>
             If you&apos;re using Python, the SDK supports the{" "}
@@ -184,7 +184,7 @@ export default function MonetizeMCPServer() {
           <CodeBlock
             language="typescript"
             code={`import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { withBilling } from "@noui/bazaar-sdk";
+import { withBilling } from "@forthebots/bazaar-sdk";
 
 const server = new McpServer({
   name: "my-weather-tools",

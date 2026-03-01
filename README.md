@@ -33,11 +33,11 @@ curl https://noui.bot/api/v1/bazaar/usage/summary \
 ## TypeScript SDK
 
 ```bash
-npm install @noui/bazaar-sdk
+npm install @forthebots/bazaar-sdk
 ```
 
 ```typescript
-import { Bazaar } from '@noui/bazaar-sdk';
+import { Bazaar } from '@forthebots/bazaar-sdk';
 
 const client = new Bazaar({ apiKey: 'bz_your_key' });
 
