@@ -1,4 +1,4 @@
-# @noui/bazaar-sdk
+# @forthebots/bazaar-sdk
 
 TypeScript SDK for the [noui.bot Agent Bazaar](https://noui.bot/docs/bazaar) — billing, metering, and tool proxy for MCP servers.
 
@@ -7,13 +7,13 @@ One API key. Thousands of tools. Sub-cent precision.
 ## Install
 
 ```bash
-npm install @noui/bazaar-sdk
+npm install @forthebots/bazaar-sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { Bazaar } from '@noui/bazaar-sdk';
+import { Bazaar } from '@forthebots/bazaar-sdk';
 
 const client = new Bazaar({ apiKey: 'bz_your_consumer_key' });
 
@@ -38,7 +38,7 @@ console.log(`Total spend: ${usage.total_spend}`);
 ## For Providers
 
 ```typescript
-import { Bazaar, registerProvider } from '@noui/bazaar-sdk';
+import { Bazaar, registerProvider } from '@forthebots/bazaar-sdk';
 
 // 1. Register your MCP server
 const { api_key } = await registerProvider({
@@ -69,7 +69,7 @@ console.log(`Complete onboarding: ${url}`);
 ## For Consumers (Agent Developers)
 
 ```typescript
-import { Bazaar, registerConsumer } from '@noui/bazaar-sdk';
+import { Bazaar, registerConsumer } from '@forthebots/bazaar-sdk';
 
 // 1. Register and get an API key
 const { api_key } = await registerConsumer({
@@ -102,7 +102,7 @@ const { url } = await client.balance.load(1000); // $10.00
 If you're building an MCP server and want to integrate Bazaar metering:
 
 ```typescript
-import { Bazaar } from '@noui/bazaar-sdk';
+import { Bazaar } from '@forthebots/bazaar-sdk';
 
 const bazaar = new Bazaar({ apiKey: 'bz_your_provider_key' });
 
@@ -156,7 +156,7 @@ await bazaar.meter.record({
 ## Error Handling
 
 ```typescript
-import { Bazaar, BazaarError } from '@noui/bazaar-sdk';
+import { Bazaar, BazaarError } from '@forthebots/bazaar-sdk';
 
 try {
   await client.tools.call('nonexistent_tool');

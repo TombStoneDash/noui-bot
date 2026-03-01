@@ -1,12 +1,12 @@
 /**
- * @noui/bazaar-sdk — TypeScript SDK for the noui.bot Agent Bazaar
+ * @forthebots/bazaar-sdk — TypeScript SDK for the noui.bot Agent Bazaar
  *
  * Billing, metering, and tool proxy for MCP servers.
  * One API key. Thousands of tools. Sub-cent precision.
  *
  * @example
  * ```ts
- * import { Bazaar } from '@noui/bazaar-sdk';
+ * import { Bazaar } from '@forthebots/bazaar-sdk';
  *
  * const client = new Bazaar({ apiKey: 'bz_consumer_...' });
  * const tools = await client.catalog.list();
@@ -221,7 +221,7 @@ export class Bazaar {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "User-Agent": "@noui/bazaar-sdk/0.1.0",
+      "User-Agent": "@forthebots/bazaar-sdk/0.1.0",
     };
     if (!opts?.noAuth) {
       headers["Authorization"] = `Bearer ${this.apiKey}`;
