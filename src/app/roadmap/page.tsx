@@ -146,7 +146,7 @@ export default function RoadmapPage() {
             />
             <TimelineItem
               date="Q2 2026"
-              event="SDK packages — @forthebots/bazaar-sdk, @noui/wallet-sdk"
+              event="SDK packages — @forthebots/bazaar-sdk, @forthebots/wallet-sdk"
             />
             <TimelineItem
               date="Q2 2026"

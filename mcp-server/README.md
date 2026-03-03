@@ -25,7 +25,7 @@ Add to your MCP config (`~/.config/claude/claude_desktop_config.json`):
   "mcpServers": {
     "noui-bot": {
       "command": "npx",
-      "args": ["-y", "@noui/mcp-server"]
+      "args": ["-y", "@forthebots/mcp-server"]
     }
   }
 }

@@ -57,7 +57,7 @@ export default function ClaudeSetupPage() {
   "mcpServers": {
     "noui-bazaar": {
       "command": "npx",
-      "args": ["-y", "@noui/mcp-server"],
+      "args": ["-y", "@forthebots/mcp-server"],
       "env": {
         "NOUI_API_KEY": "bz_your_key_here"
       }

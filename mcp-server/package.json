@@ -1,5 +1,5 @@
 {
-  "name": "@noui/mcp-server",
+  "name": "@forthebots/mcp-server",
   "version": "0.2.0",
   "description": "MCP server for noui.bot — agent-first infrastructure tools",
   "main": "dist/index.js",
