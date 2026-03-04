@@ -35,10 +35,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/logo-512.png",
-        width: 512,
-        height: 512,
-        alt: "noui.bot — NO UI logo",
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "noui.bot — Agent-First Infrastructure for AI Agents",
       },
     ],
   },
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "noui.bot — Agent-First Infrastructure",
     description: "The internet wasn't built for agents. We're fixing that. Agent Bazaar + BotWall3t + Human Fallback.",
-    images: ["/logo-512.png"],
+    images: ["/og-image.jpg"],
     creator: "@HudBeer",
   },
   keywords: ["agent infrastructure", "AI agents", "bot API", "agent-first", "MCP server", "agent billing", "agent bazaar", "agent wallet", "no UI", "agent commerce", "MCP monetization"],
