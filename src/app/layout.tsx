@@ -16,7 +16,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "noui.bot",
+  title: "noui.bot — Agent-First Infrastructure for AI Agents",
   description: "Agent-first infrastructure. APIs designed for bots, not browsers.",
   metadataBase: new URL("https://noui.bot"),
   icons: {
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "noui.bot — Agent-First Infrastructure",
     description: "The internet wasn't built for agents. We're fixing that. Agent Bazaar + BotWall3t + Human Fallback.",
     images: ["/logo-512.png"],
