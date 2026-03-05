@@ -56,11 +56,11 @@ const posts = [
   {
     slug: "mcp-billing-landscape-6-approaches",
     title:
-      "The MCP Billing Landscape — 6 Approaches Compared",
-    date: "February 27, 2026",
+      "MCP Billing Landscape: 6 Approaches Compared",
+    date: "March 5, 2026",
     excerpt:
-      "There are 10,000+ MCP servers. Most are hobby-quality because developers can't earn from them. Six companies are trying to fix this. Here's how they compare — and what none of them have built yet.",
-    readTime: "8 min read",
+      "From open billing specs to proprietary marketplaces to DIY Stripe — six approaches to MCP monetization compared on setup, trust, lock-in, and cost. Plus why the 43% vulnerability rate means billing is a security problem.",
+    readTime: "10 min read",
   },
   {
     slug: "mcp-billing-standard-explained",
