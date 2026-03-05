@@ -5,6 +5,14 @@ import { motion } from "framer-motion";
 
 const posts = [
   {
+    slug: "mcp-server-security-agent-trust",
+    title: "43% of MCP Servers Are Vulnerable — Why Agent Security Can't Wait",
+    date: "March 6, 2026",
+    excerpt:
+      "Adversa AI found 43% of MCP servers vulnerable to command injection. Schneier mapped a 7-stage promptware kill chain. OWASP released an agentic AI framework. The agent security crisis is here — and it demands trust infrastructure, not just patches.",
+    readTime: "8 min read",
+  },
+  {
     slug: "why-your-ai-agent-needs-its-own-wallet",
     title: "Why Your AI Agent Needs Its Own Wallet (And Why Crypto Isn't the Answer)",
     date: "February 28, 2026",
