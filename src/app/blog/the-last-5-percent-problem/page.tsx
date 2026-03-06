@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function Last5PercentPost() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black text-white overflow-x-hidden">
       <nav className="px-6 md:px-16 lg:px-24 py-8">
         <Link
           href="/blog"

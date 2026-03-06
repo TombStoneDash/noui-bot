@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function AgenticEconomyBlog() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black text-white overflow-x-hidden">
       <nav className="px-6 md:px-16 lg:px-24 py-8">
         <Link
           href="/blog"
@@ -42,7 +42,7 @@ export default function AgenticEconomyBlog() {
           <p className="font-mono text-xs text-white/30 mb-4">
             June 14, 2026 · 9 min read
           </p>
-          <h1 className="font-mono text-3xl md:text-4xl font-bold text-white/90 leading-tight mb-6">
+          <h1 className="font-mono text-2xl md:text-4xl font-bold text-white/90 leading-tight mb-6 break-words">
             The Agentic Economy Is Here — And Nobody Has the Infrastructure
           </h1>
           <p className="font-mono text-base text-white/50 leading-relaxed">

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function AgentWalletBlog() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black text-white overflow-x-hidden">
       <nav className="px-6 md:px-16 lg:px-24 py-8">
         <Link href="/blog" className="font-mono text-sm text-white/40 hover:text-white/70 transition-colors">
           &larr; Blog

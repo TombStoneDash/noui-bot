@@ -27,7 +27,7 @@ export default function HumansTxtBlogPost() {
           <div className="font-mono text-white/30 text-xs mb-2">
             2026-03-05 · 6 min read
           </div>
-          <h1 className="font-mono text-3xl md:text-4xl font-bold text-white mb-4">
+          <h1 className="font-mono text-2xl md:text-4xl font-bold text-white mb-4 break-words">
             The Web Has robots.txt.
             <br />
             <span className="text-green-400">Agents Need humans.txt.</span>

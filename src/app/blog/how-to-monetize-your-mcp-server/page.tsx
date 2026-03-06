@@ -52,7 +52,7 @@ function StepHeader({ number, title }: { number: number; title: string }) {
 
 export default function MonetizeMCPServer() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black text-white overflow-x-hidden">
       <nav className="px-6 md:px-16 lg:px-24 py-8">
         <Link
           href="/blog"
@@ -67,7 +67,7 @@ export default function MonetizeMCPServer() {
           <div className="font-mono text-xs text-white/30 mb-4">
             February 28, 2026 &middot; 5 min read
           </div>
-          <h1 className="font-mono text-3xl md:text-4xl font-bold tracking-tight mb-4 leading-tight">
+          <h1 className="font-mono text-2xl md:text-4xl font-bold tracking-tight mb-4 leading-tight break-words">
             How to Monetize Your MCP Server in 5 Minutes
           </h1>
           <p className="text-lg text-white/50">

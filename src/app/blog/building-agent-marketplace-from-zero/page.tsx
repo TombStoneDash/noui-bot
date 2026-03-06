@@ -21,7 +21,7 @@ export default function BlogPost() {
         ← blog
       </a>
 
-      <h1 className="font-mono text-2xl md:text-3xl font-bold mt-8 mb-3 leading-tight">
+      <h1 className="font-mono text-2xl md:text-3xl font-bold mt-8 mb-3 leading-tight break-words">
         Building an Agent Tool Marketplace from Zero — Lessons from Week 1
       </h1>
       <div className="flex items-center gap-4 text-xs text-white/30 font-mono mb-12">

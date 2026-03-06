@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function TrustLayerBlog() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-black text-white overflow-x-hidden">
       <nav className="px-6 md:px-16 lg:px-24 py-8">
         <Link
           href="/blog"
@@ -40,7 +40,7 @@ export default function TrustLayerBlog() {
           <p className="font-mono text-xs text-white/30 mb-4">
             February 28, 2026 · 10 min read
           </p>
-          <h1 className="font-mono text-3xl md:text-4xl font-bold text-white/90 leading-tight mb-6">
+          <h1 className="font-mono text-2xl md:text-4xl font-bold text-white/90 leading-tight mb-6 break-words">
             Building a Trust Layer for AI Agents — From Zero to Verified
           </h1>
           <p className="font-mono text-base text-white/50 leading-relaxed">
