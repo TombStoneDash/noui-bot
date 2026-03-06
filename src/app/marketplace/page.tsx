@@ -270,7 +270,7 @@ const SEED_TOOLS: Tool[] = [
 ];
 
 export default function MarketplacePage() {
-  const [tools, setTools] = useState<Tool[]>([]);
+  const [tools, setTools] = useState<Tool[]>(SEED_TOOLS);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");

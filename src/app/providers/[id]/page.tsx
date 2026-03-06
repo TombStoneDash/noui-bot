@@ -54,10 +54,14 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const provider = providers[id];
-  if (!provider) return { title: "Provider Not Found" };
+  if (!provider) return { title: "Provider Not Found — Agent Bazaar" };
   return {
-    title: `${provider.displayName} — Agent Bazaar Provider`,
+    title: `${provider.displayName} — Verified Human Provider | Agent Bazaar`,
     description: `${provider.name} — ${provider.bio.slice(0, 120)}`,
+    openGraph: {
+      title: `${provider.displayName} — Verified Human Provider`,
+      description: provider.bio.slice(0, 160),
+    },
   };
 }
 
