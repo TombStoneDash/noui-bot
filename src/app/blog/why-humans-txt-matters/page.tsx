@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   description:
     "The web has robots.txt. The agent ecosystem needs humans.txt. A machine-readable file that tells bots who the real human behind a service is.",
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "Why humans.txt Matters",
     description:
       "43% of MCP servers are vulnerable. Trust starts with knowing there's a human accountable.",

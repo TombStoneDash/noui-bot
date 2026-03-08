@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description:
     "Adversa AI found 43% of MCP servers vulnerable to command injection. Bruce Schneier mapped a 7-stage promptware kill chain. OWASP released an agentic AI framework. The agent security crisis is here — and it demands more than patches.",
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "43% of MCP Servers Are Vulnerable — Why Agent Security Can't Wait",
     description:
       "From command injection to identity file poisoning to the promptware kill chain — the MCP security crisis in numbers, frameworks, and practical next steps.",

@@ -15,6 +15,7 @@ export const metadata: Metadata = {
     "agent bazaar trust",
   ],
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "Building a Trust Layer for AI Agents — From Zero to Verified",
     description:
       "Provider verification, SLA tracking, dispute resolution, and trust scores. The infrastructure piece everyone's ignoring.",

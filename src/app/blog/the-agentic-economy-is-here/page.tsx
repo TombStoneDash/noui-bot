@@ -17,6 +17,7 @@ export const metadata: Metadata = {
     "AI billing infrastructure",
   ],
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "The Agentic Economy Is Here — And Nobody Has the Infrastructure",
     description:
       "VCs screen for agent fluency. Enterprises lay off thousands citing AI. 10,000+ MCP servers exist with no business model. The bottleneck isn't intelligence — it's infrastructure.",

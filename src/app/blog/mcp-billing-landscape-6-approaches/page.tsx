@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description:
     "From open billing specs to API gateways to doing nothing — six ways to monetize MCP servers, compared on setup, trust, lock-in, and cost. Plus why 43% of MCP servers have security vulnerabilities and what billing infrastructure can do about it.",
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "MCP Billing Landscape: 6 Approaches Compared",
     description:
       "Six approaches to MCP monetization compared. Open spec vs. marketplace vs. DIY vs. gateway vs. metering platform vs. free. One has a trust layer.",

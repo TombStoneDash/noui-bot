@@ -7,7 +7,12 @@ export async function POST(request: Request) {
   const owner = await authenticateKey(request);
   if (!owner || owner.type !== "consumer") {
     return NextResponse.json(
-      { error: true, code: "UNAUTHORIZED", message: "Valid consumer API key required" },
+      {
+        error: true,
+        code: "UNAUTHORIZED",
+        message: "Invalid or missing API key. Get yours at https://noui.bot/developers/register",
+        docs: "https://noui.bot/docs/bazaar",
+      },
       { status: 401 }
     );
   }

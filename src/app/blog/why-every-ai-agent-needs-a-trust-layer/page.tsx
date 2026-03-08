@@ -17,6 +17,7 @@ export const metadata: Metadata = {
     "NIST AI agent standards",
   ],
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "Why Every AI Agent Needs a Trust Layer",
     description:
       "10K+ MCP servers, zero trust standards. Prompt injection, spoofing, no accountability. The agent ecosystem needs trust primitives — here's how to build them.",

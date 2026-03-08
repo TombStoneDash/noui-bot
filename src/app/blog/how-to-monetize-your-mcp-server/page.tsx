@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     "AI tool marketplace",
   ],
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "How to Monetize Your MCP Server in 5 Minutes",
     description:
       "Turn your MCP server into a revenue stream. Register, wrap, price, earn. Full tutorial with code examples.",

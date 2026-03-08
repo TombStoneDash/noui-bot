@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     "MCP metering",
   ],
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "The Open MCP Billing Standard — How AI Agents Pay for Tools",
     description:
       "Meter events, receipts, pricing schemas, and trust scores — the open spec that gives MCP tools a real business model.",

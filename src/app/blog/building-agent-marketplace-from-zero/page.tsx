@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   description:
     "We built Agent Bazaar in 5 days. Here's what we learned about billing, trust, and the economics of AI agent tools.",
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "Building an Agent Tool Marketplace from Zero",
     description: "We built Agent Bazaar in 5 days. Here's what we learned.",
     url: "https://noui.bot/blog/building-agent-marketplace-from-zero",

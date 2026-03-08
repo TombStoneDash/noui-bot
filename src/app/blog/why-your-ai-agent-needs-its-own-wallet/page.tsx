@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: "Coinbase shipped Agentic Wallets. x402 embeds payments in HTTP. But 90% of developers don't want crypto. Here's the case for Stripe-native agent wallets with proper accounting.",
   keywords: ["AI agent wallet", "BotWall3t", "agent spending", "Coinbase agentic wallets", "x402", "agent payments", "AI spending control", "MCP billing"],
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "Why Your AI Agent Needs Its Own Wallet (And Why Crypto Isn't the Answer)",
     description: "The case for Stripe-native agent wallets with double-entry accounting, policy engines, and gift links.",
     type: "article",

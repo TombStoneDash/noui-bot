@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description:
     "MCP is the fastest-growing protocol in AI, but it has no monetization standard. Here's why agent tools need Stripe-like billing infrastructure.",
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "Why MCP Servers Need a Billing Layer",
     description:
       "MCP is growing fast but has no monetization standard. Agent Bazaar fixes this.",

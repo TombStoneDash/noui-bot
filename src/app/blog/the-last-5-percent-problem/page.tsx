@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description:
     "AI agents complete 80-95% of tasks autonomously. The last 5-20% hits real walls. What if agents could hire humans to finish the job?",
   openGraph: {
+    images: ["/og-image.jpg"],
     title: "The Last 5% Problem — Why AI Agents Need Humans",
     description:
       "When AI agents hit walls, they need humans. Here's the Human Fallback thesis.",
