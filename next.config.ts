@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         destination: "/marketplace",
         permanent: true,
       },
+      {
+        source: "/humans.txt",
+        destination: "/.well-known/humans.txt",
+        permanent: true,
+      },
     ];
   },
 };
