@@ -1,0 +1,13 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": [
+    "TombStoneDash"
+  ],
+  "name": "noui-bot",
+  "description": "Agent Bazaar MCP Server — agent-first infrastructure tools for noui.bot. Platform stats, service discovery, deploy rail, feedback reporting.",
+  "repository": "https://github.com/TombStoneDash/noui-bot",
+  "docker": {
+    "image": "ghcr.io/tombstonedash/noui-mcp-server:latest",
+    "context": "mcp-server"
+  }
+}
