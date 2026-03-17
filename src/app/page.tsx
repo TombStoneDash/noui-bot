@@ -260,6 +260,45 @@ export default function Home() {
 
       <Divider />
 
+      {/* OPENCLAW-NATIVE */}
+      <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
+        <AnimatedSection>
+          <div className="border border-green-500/20 bg-green-500/[0.03] p-8 md:p-12">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="font-mono text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 tracking-wider">
+                OPENCLAW NATIVE
+              </span>
+            </div>
+            <h3 className="text-2xl md:text-3xl font-light text-white/90 mb-4">
+              Built for the OpenClaw era.
+            </h3>
+            <p className="text-lg text-white/50 mb-6 max-w-3xl leading-relaxed">
+              Jensen Huang called OpenClaw &ldquo;the OS for personal AI.&rdquo;
+              Every OS needs an App Store billing layer. Agent Bazaar provides
+              MCP billing infrastructure natively compatible with the emerging
+              personal AI ecosystem &mdash; including NemoClaw&apos;s enterprise
+              privacy model.
+            </p>
+            <div className="grid md:grid-cols-3 gap-4 font-mono text-xs">
+              <div className="bg-white/5 p-4">
+                <div className="text-white/30 mb-2">BILLING</div>
+                <div className="text-white/60">Native MCP metering. Per-call, per-token, flat-rate.</div>
+              </div>
+              <div className="bg-white/5 p-4">
+                <div className="text-white/30 mb-2">PRIVACY</div>
+                <div className="text-white/60">NemoClaw-compatible. Data stays on device. Billing stays transparent.</div>
+              </div>
+              <div className="bg-white/5 p-4">
+                <div className="text-white/30 mb-2">OPEN</div>
+                <div className="text-white/60">No vendor lock-in. Pure HTTP. Works with any OpenClaw-compatible agent.</div>
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+      </section>
+
+      <Divider />
+
       {/* HOW IT WORKS — Terminal Style */}
       <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
         <AnimatedSection>
