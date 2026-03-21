@@ -28,7 +28,7 @@
     "pricing_endpoint": "https://noui.bot/api/v1/bazaar/pricing",
     "balance_endpoint": "https://noui.bot/api/v1/bazaar/balance",
     "metering_endpoint": "https://noui.bot/api/v1/bazaar/meter",
-    "platform_fee": "18%",
+    "platform_fee": "10%",
     "precision": "microcents (1/10000 of a cent)",
     "payout_method": "stripe_connect",
     "minimum_payout_cents": 1000

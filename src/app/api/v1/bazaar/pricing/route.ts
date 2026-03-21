@@ -61,7 +61,7 @@ export async function GET() {
     return NextResponse.json({
       pricing,
       total: pricing.length,
-      platform_fee: "18%",
+      platform_fee: "10%",
       note: "Prices are set by providers. Platform fee is deducted from provider earnings.",
       timestamp: new Date().toISOString(),
     }, {

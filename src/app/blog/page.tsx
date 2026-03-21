@@ -25,7 +25,7 @@ const posts = [
     title: "Building an Agent Tool Marketplace from Zero — Lessons from Week 1",
     date: "February 28, 2026",
     excerpt:
-      "We built Agent Bazaar in 5 days. A billing proxy, trust layer, open spec, and public marketplace. Here's what we learned about sub-cent metering, the 18% fee, and why open standards beat walled gardens.",
+      "We built Agent Bazaar in 5 days. A billing proxy, trust layer, open spec, and public marketplace. Here's what we learned about sub-cent metering, the 10% fee, and why open standards beat walled gardens.",
     readTime: "8 min read",
   },
   {

@@ -29,7 +29,7 @@ export async function GET() {
     bazaar: {
       description: "Agent Bazaar — billing, metering, and auth for MCP servers",
       base_url: "https://noui.bot/api/bazaar",
-      moat: "Trust-first billing for MCP tools. Verified providers, signed receipts, SLAs, dispute resolution. 18% platform fee.",
+      moat: "Trust-first billing for MCP tools. Verified providers, signed receipts, SLAs, dispute resolution. 10% platform fee.",
       endpoints: {
         // Public (no auth)
         "GET  /api/bazaar":                   "Bazaar index — overview, flow, and endpoint listing",

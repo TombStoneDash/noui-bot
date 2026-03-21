@@ -171,7 +171,7 @@ try {
 
 ## Pricing
 
-- **Platform fee:** 18% on paid calls
+- **Platform fee:** 10% on paid calls
 - **Free tools:** No fees
 - **Free tier:** 100 calls per tool (default)
 - **Precision:** Sub-cent (microcents = 1/10000 of a cent)

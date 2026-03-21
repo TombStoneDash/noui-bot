@@ -7,7 +7,7 @@ function PriceCalculator() {
   const [pricePerCall, setPricePerCall] = useState(0.01);
 
   const monthlyGross = callsPerDay * 30 * pricePerCall;
-  const platformFee = monthlyGross * 0.18;
+  const platformFee = monthlyGross * 0.10;
   const providerEarnings = monthlyGross - platformFee;
   const yearlyEarnings = providerEarnings * 12;
 
@@ -65,7 +65,7 @@ function PriceCalculator() {
           </div>
           <div>
             <div className="font-mono text-[10px] text-white/30 uppercase">
-              Platform fee (18%)
+              Platform fee (10%)
             </div>
             <div className="font-mono text-lg text-white/40">
               -${platformFee.toFixed(2)}
@@ -202,7 +202,7 @@ export default function PricingPage() {
         <h2 className="font-mono text-lg font-bold mb-6">FAQ</h2>
         <div className="space-y-6">
           {[
-            { q: "Why 18%?", a: "We handle billing, metering, rate limiting, trust scoring, dispute resolution, and marketplace discovery. 18% is below Stripe Marketplace (25-30%) and competitive with app stores (30%). As volume grows, we'll offer volume discounts." },
+            { q: "Why 10%?", a: "We handle billing, metering, rate limiting, trust scoring, dispute resolution, and marketplace discovery. 10% is the lowest fee in the MCP ecosystem — below MCPize (15%), far below app stores (30%), and we include trust primitives that nobody else offers. Providers keep 90%." },
             { q: "What about free tools?", a: "Free tools are completely free for both providers and consumers. We believe free tools drive ecosystem growth. You can offer a free tier (e.g., 100 calls/month free) alongside paid usage." },
             { q: "Can I change my pricing?", a: "Yes. Update pricing anytime via API or dashboard. Changes apply to new calls immediately. Existing prepaid balances are honored at the rate they were charged." },
             { q: "How do payouts work?", a: "Providers connect Stripe via Stripe Connect during registration. Payouts are processed monthly for earnings above $10. Instant payouts available for verified providers." },

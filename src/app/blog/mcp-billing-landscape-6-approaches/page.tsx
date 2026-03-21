@@ -89,7 +89,7 @@ export default function MCPBillingLandscape() {
                   <td className="py-3 pr-4 text-green-400/80">✓ Built for MCP</td>
                   <td className="py-3 pr-4 text-green-400/80">✓ Full</td>
                   <td className="py-3 pr-4 text-green-400/80">MIT spec</td>
-                  <td className="py-3">18% tx fee</td>
+                  <td className="py-3">10% tx fee</td>
                 </tr>
                 <tr className="border-b border-white/5">
                   <td className="py-3 pr-4 text-white/80 font-medium">MCP Hive</td>
@@ -186,7 +186,7 @@ export default function MCPBillingLandscape() {
             </div>
           </div>
           <p className="text-sm text-white/50">
-            Trade-off: 18% transaction fee on the hosted marketplace. If that
+            Trade-off: 10% transaction fee on the hosted marketplace. If that
             doesn&apos;t work for you, self-host the spec. We literally publish
             the schema.
           </p>

@@ -147,7 +147,7 @@ curl https://noui.bot/api/v1/bazaar/providers/YOUR_ID/trust \\
               <li>The call is metered (duration, tokens, cost)</li>
               <li>A <strong className="text-white/80">signed receipt</strong> (HMAC-SHA256) is generated</li>
               <li>The consumer is charged at your set price</li>
-              <li>You receive <strong className="text-white/80">82%</strong> (Bazaar takes 18%)</li>
+              <li>You receive <strong className="text-white/80">90%</strong> (Bazaar takes 10%)</li>
               <li>Earnings accumulate and pay out monthly via Stripe Connect</li>
             </ol>
             <p>

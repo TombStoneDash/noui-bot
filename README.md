@@ -28,7 +28,7 @@ curl https://noui.bot/api/v1/bazaar/usage/summary \
   -H "Authorization: Bearer bz_your_key"
 ```
 
-**Live now:** 6 tools · 2 providers · 18% platform fee · Sub-cent metering · Stripe Connect payouts
+**Live now:** 6 tools · 2 providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts
 
 ## TypeScript SDK
 
@@ -139,7 +139,7 @@ One API key for thousands of tools:
 
 | Feature | Details |
 |---------|---------|
-| Platform fee | 18% on paid calls |
+| Platform fee | 10% on paid calls |
 | Free tools | No fees |
 | Free tier | 100 calls/tool (configurable) |
 | Precision | Sub-cent (microcents = 1/10000¢) |

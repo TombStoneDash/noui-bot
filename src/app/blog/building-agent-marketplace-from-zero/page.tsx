@@ -117,10 +117,10 @@ export default function BlogPost() {
         </ul>
 
         <h2 className="font-mono text-lg font-bold text-white mt-12 mb-4">
-          Lesson 4: The 18% number
+          Lesson 4: Finding the right fee
         </h2>
         <p>
-          We charge 18% on paid tool calls. Here&apos;s how we arrived at that:
+          We charge 10% on paid tool calls. Here&apos;s how we arrived at that:
         </p>
         <ul className="list-disc list-inside space-y-2 ml-4">
           <li>Apple/Google app stores: 30% (too high for API-first)</li>
@@ -129,10 +129,9 @@ export default function BlogPost() {
           <li>Gumroad: 10% (no metering, no real-time billing)</li>
         </ul>
         <p>
-          18% gives providers 82% of revenue while covering Stripe processing fees (~2.9%),
-          infrastructure costs, and leaving margin for the platform. It&apos;s low enough that
-          providers prefer us over building their own billing, and high enough to sustain the
-          business.
+          10% gives providers 90% of revenue while covering Stripe processing fees (~2.9%),
+          infrastructure costs, and leaving margin for the platform. It&apos;s the lowest fee
+          in the MCP ecosystem — providers keep more than anywhere else.
         </p>
 
         <h2 className="font-mono text-lg font-bold text-white mt-12 mb-4">

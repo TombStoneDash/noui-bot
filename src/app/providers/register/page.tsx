@@ -161,7 +161,7 @@ export default function ProviderRegisterPage() {
             <p className="font-mono text-xs text-white/20">
               By registering, your tools become discoverable in the Bazaar catalog.
               <br />
-              Bazaar takes an 18% platform fee on all paid tool calls.
+              Bazaar takes a 10% platform fee on all paid tool calls.
               <br />
               Free tools incur no fees.
             </p>

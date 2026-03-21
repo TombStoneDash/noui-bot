@@ -55,7 +55,7 @@ const entries = [
       "Agent Bazaar proxy loop LIVE — end-to-end tool discovery, invocation, metering, and billing.",
       "BotWall3t provider: 3 tools (wallet.balance, wallet.transfer, access.verify) with real pricing.",
       "Deploy Rail provider: 3 tools (deploy.ship, deploy.status, deploy.stats).",
-      "Billing math: 18% platform fee, sub-cent precision (microcents), per-call and per-token pricing.",
+      "Billing math: 10% platform fee, sub-cent precision (microcents), per-call and per-token pricing.",
       "POST /api/bazaar/proxy — authenticated, metered, billed tool proxy.",
       "GET /api/bazaar/catalog — public tool listing with pricing and provider info.",
       "POST /api/bazaar/register-provider, POST /api/bazaar/register-consumer — marketplace onboarding.",

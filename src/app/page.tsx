@@ -348,7 +348,7 @@ export default function Home() {
                 -H &quot;Authorization: Bearer bz_...&quot;
               </div>
               <div className="text-white/40 text-xs mt-3 border-t border-white/5 pt-3">
-                <span className="text-white/20">&rarr;</span> Gross revenue, 18% platform fee, net earnings &mdash; by tool, by week
+                <span className="text-white/20">&rarr;</span> Gross revenue, 10% platform fee, net earnings &mdash; by tool, by week
               </div>
             </div>
           </div>

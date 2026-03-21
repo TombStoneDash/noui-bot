@@ -22,5 +22,5 @@ export function getStripe(): Stripe | null {
 export const STRIPE_CONNECT_WEBHOOK_SECRET =
   process.env.STRIPE_CONNECT_WEBHOOK_SECRET || "";
 
-/** Platform fee rate charged to providers (18%) */
-export const PLATFORM_FEE_RATE = 0.18;
+/** Platform fee rate charged to providers (10%) */
+export const PLATFORM_FEE_RATE = 0.10;

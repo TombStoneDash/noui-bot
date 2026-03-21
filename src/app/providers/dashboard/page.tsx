@@ -159,7 +159,7 @@ export default function ProviderDashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard label="Total Calls" value={summary.billing.total_calls.toLocaleString()} />
             <StatCard label="Gross Revenue" value={cents(summary.billing.gross_revenue_cents)} />
-            <StatCard label="Platform Fee (18%)" value={cents(summary.billing.platform_fee_cents)} sub="text-red-400/70" />
+            <StatCard label="Platform Fee (10%)" value={cents(summary.billing.platform_fee_cents)} sub="text-red-400/70" />
             <StatCard label="Net Earnings" value={cents(summary.billing.net_earnings_cents)} highlight />
           </div>
 

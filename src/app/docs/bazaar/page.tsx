@@ -27,7 +27,7 @@ export default function BazaarDocsPage() {
             Every invocation is metered with sub-cent precision.
           </p>
           <p className="text-white/60 text-sm leading-relaxed">
-            The platform fee is <strong className="text-white/80">18%</strong>. Providers receive 82% of every paid call.
+            The platform fee is <strong className="text-white/80">10%</strong>. Providers receive 90% of every paid call.
             Free tools have no fees. Providers set their own pricing per tool.
           </p>
         </Section>
@@ -153,7 +153,7 @@ curl https://noui.bot/api/bazaar/catalog | jq '.tools[] | {name: .tool_name, pri
                 </tr>
               </thead>
               <tbody className="text-white/60">
-                <tr className="border-b border-white/5"><td className="p-3">Platform fee</td><td className="p-3">18% on paid calls</td></tr>
+                <tr className="border-b border-white/5"><td className="p-3">Platform fee</td><td className="p-3">10% on paid calls</td></tr>
                 <tr className="border-b border-white/5"><td className="p-3">Free tools</td><td className="p-3">No fees</td></tr>
                 <tr className="border-b border-white/5"><td className="p-3">Free tier per tool</td><td className="p-3">100 calls (default, configurable by provider)</td></tr>
                 <tr className="border-b border-white/5"><td className="p-3">Precision</td><td className="p-3">Sub-cent (microcents = 1/10000 of a cent)</td></tr>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { authenticateKey } from "@/lib/bazaar-auth";
 
-const PLATFORM_FEE_RATE = 0.18; // 18% platform fee
+const PLATFORM_FEE_RATE = 0.10; // 10% platform fee
 
 export async function POST(request: Request) {
   // Authenticate — must be a provider
