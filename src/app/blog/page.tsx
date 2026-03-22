@@ -5,6 +5,14 @@ import { motion } from "framer-motion";
 
 const posts = [
   {
+    slug: "why-metering-alone-wont-save-mcp",
+    title: "Why Metering Alone Won't Save the MCP Ecosystem",
+    date: "March 21, 2026",
+    excerpt:
+      "Every MCP marketplace will have metering. But metering is the easy part. The hard part — provider verification, signed receipts, SLA scoring, dispute resolution — is what separates real infrastructure from payment processors.",
+    readTime: "6 min read",
+  },
+  {
     slug: "mcp-server-security-agent-trust",
     title: "43% of MCP Servers Are Vulnerable — Why Agent Security Can't Wait",
     date: "March 6, 2026",
