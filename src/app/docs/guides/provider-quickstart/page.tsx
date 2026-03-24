@@ -28,7 +28,7 @@ export default function ProviderQuickstartPage() {
           <ul className="list-disc list-inside text-white/60 text-sm leading-relaxed space-y-2">
             <li>
               <strong className="text-white/80">Earn per-call revenue</strong> — set your own
-              pricing (e.g., $0.01/query, $0.05/operation). You keep 82%.
+              pricing (e.g., $0.01/query, $0.05/operation). You keep 90%.
             </li>
             <li>
               <strong className="text-white/80">Zero code changes</strong> — we proxy calls
@@ -166,7 +166,7 @@ curl https://noui.bot/api/v1/bazaar/providers/YOUR_ID/trust \\
                 <tr className="border-b border-white/10">
                   <th className="text-left py-2 font-mono text-white/40 text-xs">Tool Type</th>
                   <th className="text-left py-2 font-mono text-white/40 text-xs">Suggested Price</th>
-                  <th className="text-left py-2 font-mono text-white/40 text-xs">You Earn (82%)</th>
+                  <th className="text-left py-2 font-mono text-white/40 text-xs">You Earn (90%)</th>
                   <th className="text-left py-2 font-mono text-white/40 text-xs">1K calls/day</th>
                 </tr>
               </thead>
@@ -174,26 +174,26 @@ curl https://noui.bot/api/v1/bazaar/providers/YOUR_ID/trust \\
                 <tr className="border-b border-white/5">
                   <td className="py-2">Search/lookup</td>
                   <td className="py-2">$0.005</td>
-                  <td className="py-2">$0.0041</td>
-                  <td className="py-2">$123/mo</td>
+                  <td className="py-2">$0.0045</td>
+                  <td className="py-2">$135/mo</td>
                 </tr>
                 <tr className="border-b border-white/5">
                   <td className="py-2">Data retrieval</td>
                   <td className="py-2">$0.01</td>
-                  <td className="py-2">$0.0082</td>
-                  <td className="py-2">$246/mo</td>
+                  <td className="py-2">$0.009</td>
+                  <td className="py-2">$270/mo</td>
                 </tr>
                 <tr className="border-b border-white/5">
                   <td className="py-2">Analysis/computation</td>
                   <td className="py-2">$0.05</td>
-                  <td className="py-2">$0.041</td>
-                  <td className="py-2">$1,230/mo</td>
+                  <td className="py-2">$0.045</td>
+                  <td className="py-2">$1,350/mo</td>
                 </tr>
                 <tr className="border-b border-white/5">
                   <td className="py-2">Document generation</td>
                   <td className="py-2">$0.10</td>
-                  <td className="py-2">$0.082</td>
-                  <td className="py-2">$2,460/mo</td>
+                  <td className="py-2">$0.09</td>
+                  <td className="py-2">$2,700/mo</td>
                 </tr>
               </tbody>
             </table>

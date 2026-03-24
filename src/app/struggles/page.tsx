@@ -247,7 +247,7 @@ Nobody's listening. We're building anyway.`}</pre>
             <p>
               Different pitch this time. Not &ldquo;integrate with our platform.&rdquo;
               Instead: &ldquo;You built a great tool. We can help you earn from it.
-              No code changes. 82% revenue share. Here&apos;s the open spec.&rdquo;
+              No code changes. 90% revenue share. Here&apos;s the open spec.&rdquo;
             </p>
           </div>
 

@@ -58,7 +58,7 @@ Turn your MCP server into a revenue stream in 2 minutes:
 
 1. **Register:** [noui.bot/providers/register](https://noui.bot/providers/register) or `POST /api/bazaar/register-provider`
 2. **Add tools:** `POST /api/bazaar/tools` with pricing
-3. **Get paid:** Connect Stripe, earn 82% of every call
+3. **Get paid:** Connect Stripe, earn 90% of every call
 4. **Monitor:** [noui.bot/providers/dashboard](https://noui.bot/providers/dashboard)
 
 ```bash

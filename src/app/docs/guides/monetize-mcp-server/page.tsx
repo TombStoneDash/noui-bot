@@ -193,7 +193,7 @@ checkDashboard();`}</Code>
         <Section title="That's It!">
           <p className="text-white/60 text-sm leading-relaxed mb-4">
             Your MCP server is now listed on Agent Bazaar. AI agents can discover your tools
-            in the catalog, call them through the proxy, and you earn 82% of every paid call.
+            in the catalog, call them through the proxy, and you earn 90% of every paid call.
           </p>
           <p className="text-white/60 text-sm leading-relaxed mb-4">
             <strong className="text-white/80">You changed zero lines of your MCP server code.</strong>{" "}

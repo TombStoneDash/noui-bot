@@ -122,7 +122,7 @@ export default function PricingPage() {
 
       <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-3">Pricing</h1>
       <p className="text-white/40 font-mono text-sm max-w-xl leading-relaxed mb-16">
-        One model. Simple math. You set the price, keep 82%.
+        One model. Simple math. You set the price, keep 90%.
       </p>
 
       {/* The Model */}
@@ -130,7 +130,7 @@ export default function PricingPage() {
         {/* Provider */}
         <div className="border border-white/[0.08] rounded-lg p-6 bg-white/[0.02]">
           <div className="font-mono text-[10px] text-white/30 uppercase tracking-wider mb-2">For Providers</div>
-          <div className="font-mono text-3xl font-bold mb-1">82%</div>
+          <div className="font-mono text-3xl font-bold mb-1">90%</div>
           <div className="font-mono text-sm text-white/40 mb-6">of every paid call</div>
           <ul className="space-y-3 text-sm text-white/50">
             <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>You set the price per tool call</span></li>
