@@ -7,6 +7,52 @@ export const metadata: Metadata = {
 
 const entries = [
   {
+    date: "2026-03-26",
+    items: [
+      "Platform fee reduced: 18% → 10% — lowest in the MCP ecosystem. Providers keep 90% of revenue.",
+      "All site copy, docs, blog, and API responses updated to reflect 10% fee / 90% provider share.",
+      "@forthebots/mcp-server@0.2.0 published to npm — updated MCP server package.",
+      "@forthebots/bazaar-sdk@0.1.2 published to npm — SDK scope finalized under @forthebots org.",
+      "Glama listing claimed and verified — Agent Bazaar shows verified maintainer badge on glama.ai.",
+    ],
+  },
+  {
+    date: "2026-03-21",
+    items: [
+      "Blog: 'Why Metering Alone Won't Save the MCP Ecosystem' — trust primitives and why billing without verification is a house of cards.",
+      "OpenClaw-native positioning: added callout section for Jensen Huang's 'OS for personal AI' vision. Agent Bazaar as the billing layer for NemoClaw-compatible agents.",
+    ],
+  },
+  {
+    date: "2026-03-14",
+    items: [
+      "Glama listing: glama.json + Dockerfile added for MCP search discovery.",
+      "Redirect fix: /humans.txt → /.well-known/humans.txt for spec compliance.",
+      "Pre-launch hardening: validator tool, marketplace bugfixes, URL audit, proxy error CTAs.",
+      "Developer/provider redirect pages: /developers and /providers now route correctly.",
+      "Responsive fix: blog titles no longer clip on mobile (break-words + reduced font).",
+    ],
+  },
+  {
+    date: "2026-03-07",
+    items: [
+      "Verified Human stack: humans.txt spec, /humans verification page, provider trust profiles, blog post on human verification for AI agent infrastructure.",
+      "Homepage SSR fix: all content now crawlable for SEO — no more client-only rendering blocking Show HN bots.",
+      "Blog: '43% of MCP Servers Are Vulnerable' — security audit post on the MCP ecosystem.",
+      "Blog: MCP billing landscape comparison — Skyfire, x402, Stripe direct, self-build vs. Agent Bazaar.",
+    ],
+  },
+  {
+    date: "2026-03-03",
+    items: [
+      "/install page: one-click MCP client config generator for Claude Desktop, Windsurf, Cursor, and VS Code.",
+      "Package scope migration: all @noui/ refs updated to @forthebots/ org.",
+      "@forthebots/bazaar-sdk@0.1.1 published to npm.",
+      "OG image: new Agent Bazaar terminal card for social sharing and Show HN.",
+      "SEO: improved title tags and Twitter card metadata.",
+    ],
+  },
+  {
     date: "2026-02-28",
     items: [
       "Public Marketplace: /marketplace — browse all tools with category filtering, search, live stats, and inline integration snippets.",
