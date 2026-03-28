@@ -138,15 +138,31 @@ export default function RoadmapPage() {
             />
             <TimelineItem
               date="Mar 2026"
-              event="Bazaar Stripe integration — real billing, real payouts"
+              event="SDK packages published — @forthebots/bazaar-sdk + @forthebots/mcp-server on npm"
+              done
             />
             <TimelineItem
               date="Mar 2026"
-              event="Human Fallback API — task posting, claiming, proof, escrow"
+              event="Trust layer — provider verification, signed receipts, humans.txt spec"
+              done
+            />
+            <TimelineItem
+              date="Mar 2026"
+              event="Platform fee reduced to 10% — lowest in MCP ecosystem"
+              done
+            />
+            <TimelineItem
+              date="Mar 2026"
+              event="Glama.ai listing — verified maintainer, MCP search discoverable"
+              done
             />
             <TimelineItem
               date="Q2 2026"
-              event="SDK packages — @forthebots/bazaar-sdk, @forthebots/wallet-sdk"
+              event="Bazaar Stripe integration — real billing, real payouts"
+            />
+            <TimelineItem
+              date="Q2 2026"
+              event="Human Fallback API — task posting, claiming, proof, escrow"
             />
             <TimelineItem
               date="Q2 2026"
