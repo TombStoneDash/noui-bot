@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Why Bazaar — How We Compare | noui.bot",
   description:
-    "Agent Bazaar vs xpay, TollBit, MCP Hive, and build-your-own. Trust-first billing for MCP tools.",
+    "Agent Bazaar vs MCPize, xpay, TollBit, MCP Hive, and build-your-own. Trust-first billing for MCP tools.",
 };
 
 export default function ComparePage() {
@@ -30,32 +30,47 @@ export default function ComparePage() {
             <tr className="border-b border-white/20">
               <th className="text-left font-mono text-xs text-white/40 uppercase tracking-wider py-3 pr-4">Feature</th>
               <th className="text-center font-mono text-xs text-white/40 uppercase tracking-wider py-3 px-2">Bazaar</th>
+              <th className="text-center font-mono text-xs text-white/40 uppercase tracking-wider py-3 px-2">MCPize</th>
               <th className="text-center font-mono text-xs text-white/40 uppercase tracking-wider py-3 px-2">xpay</th>
               <th className="text-center font-mono text-xs text-white/40 uppercase tracking-wider py-3 px-2">TollBit</th>
               <th className="text-center font-mono text-xs text-white/40 uppercase tracking-wider py-3 px-2">MCP Hive</th>
             </tr>
           </thead>
           <tbody className="font-mono text-xs">
-            <Row feature="Live & shipping" bazaar="✅" xpay="✅" tollbit="⏳ billing soon" hive="⏳ Mar 8" />
-            <Row feature="Payment rail" bazaar="Stripe (fiat)" xpay="USDC (crypto)" tollbit="TBD" hive="TBD" />
-            <Row feature="Provider verification" bazaar="✅ 4 levels" xpay="❌" tollbit="❌" hive="❌" />
-            <Row feature="Signed receipts" bazaar="✅ HMAC-SHA256" xpay="❌" tollbit="❌" hive="❌" />
-            <Row feature="SLA reporting" bazaar="✅ uptime/latency/p95" xpay="❌" tollbit="❌" hive="❌" />
-            <Row feature="Dispute resolution" bazaar="✅ full flow" xpay="❌" tollbit="❌" hive="❌" />
-            <Row feature="Trust scores" bazaar="✅ composite" xpay="❌" tollbit="❌" hive="❌" />
-            <Row feature="Open billing spec" bazaar="✅ MIT licensed" xpay="x402 (protocol)" tollbit="❌" hive="❌" />
-            <Row feature="TypeScript SDK" bazaar="✅" xpay="✅" tollbit="✅" hive="❌" />
-            <Row feature="OpenAPI spec" bazaar="✅ v3.1" xpay="❌" tollbit="❌" hive="❌" />
-            <Row feature="Tool marketplace" bazaar="✅ catalog" xpay="❌" tollbit="✅ network" hive="✅ catalog" />
-            <Row feature="Sub-cent metering" bazaar="✅ microcents" xpay="✅ USDC" tollbit="⏳" hive="❓" />
-            <Row feature="Spending controls" bazaar="Balance system" xpay="✅ Smart Proxy" tollbit="JWT quotas" hive="❓" />
-            <Row feature="agents.json" bazaar="✅" xpay="❌" tollbit="❌" hive="❌" />
+            <Row feature="Live & shipping" vals={["✅", "✅", "✅", "⏳ billing soon", "⏳"]} />
+            <Row feature="Revenue share" vals={["90%", "85%", "N/A", "TBD", "TBD"]} />
+            <Row feature="Payment rail" vals={["Stripe (fiat)", "Stripe", "USDC (crypto)", "TBD", "TBD"]} />
+            <Row feature="Provider verification" vals={["✅ 4 levels", "❌", "❌", "❌", "❌"]} />
+            <Row feature="Signed receipts" vals={["✅ HMAC-SHA256", "❌", "❌", "❌", "❌"]} />
+            <Row feature="SLA reporting" vals={["✅ uptime/latency/p95", "❌", "❌", "❌", "❌"]} />
+            <Row feature="Dispute resolution" vals={["✅ full flow", "❌", "❌", "❌", "❌"]} />
+            <Row feature="Trust scores" vals={["✅ composite", "❌", "❌", "❌", "❌"]} />
+            <Row feature="Open billing spec" vals={["✅ MIT licensed", "❌", "x402 (protocol)", "❌", "❌"]} />
+            <Row feature="Hosting included" vals={["❌ BYO", "✅", "❌", "✅", "✅"]} />
+            <Row feature="TypeScript SDK" vals={["✅", "✅ CLI", "✅", "✅", "❌"]} />
+            <Row feature="OpenAPI spec" vals={["✅ v3.1", "❌", "❌", "❌", "❌"]} />
+            <Row feature="Tool marketplace" vals={["✅ catalog", "✅ 100+", "❌", "✅ network", "✅ catalog"]} />
+            <Row feature="Sub-cent metering" vals={["✅ microcents", "✅", "✅ USDC", "⏳", "❓"]} />
+            <Row feature="Spending controls" vals={["Balance system", "Quota controls", "✅ Smart Proxy", "JWT quotas", "❓"]} />
+            <Row feature="agents.json" vals={["✅", "❌", "❌", "❌", "❌"]} />
           </tbody>
         </table>
       </div>
 
       {/* Detailed Comparisons */}
       <section className="space-y-16">
+        <ComparisonSection
+          title="Bazaar vs MCPize"
+          description="MCPize is the most direct competitor — a marketplace with hosting and monetization. Similar concept, different priorities."
+          points={[
+            { label: "Revenue share", detail: "We give providers 90%. MCPize gives 85%. On a provider earning $10K/month, that's $500/month more with Bazaar." },
+            { label: "Trust", detail: "We have a full trust layer: 4-level provider verification, HMAC-SHA256 signed receipts, SLA reporting, dispute resolution, and composite trust scores. MCPize has none of these — zero provider verification, no receipts, no SLAs." },
+            { label: "Open standard", detail: "We published the MCP Billing Spec (MIT licensed) — anyone can build on it. MCPize is proprietary. Lock-in by design." },
+            { label: "Hosting", detail: "MCPize includes hosting (one-click deploy). We're BYO hosting — you deploy your server wherever you want. Trade-off: their approach is easier to start, ours gives more control." },
+            { label: "Agents.json", detail: "We support agents.json for agent discovery. MCPize doesn't. In an agent-first world, machine-readable discovery is table stakes." },
+          ]}
+        />
+
         <ComparisonSection
           title="Bazaar vs xpay"
           description="xpay is the closest competitor. Same core primitive — proxy + per-tool pricing. Different everything else."
@@ -103,7 +118,7 @@ export default function ComparePage() {
 
       <footer className="mt-24 pt-8 border-t border-white/10">
         <p className="font-mono text-xs text-white/20">
-          This comparison is based on publicly available information as of February 2026.
+          This comparison is based on publicly available information as of March 2026.
           We respect all teams building in this space &mdash; the ecosystem needs multiple approaches.
         </p>
         <p className="font-mono text-xs text-white/20 mt-2">
@@ -118,14 +133,14 @@ export default function ComparePage() {
   );
 }
 
-function Row({ feature, bazaar, xpay, tollbit, hive }: { feature: string; bazaar: string; xpay: string; tollbit: string; hive: string }) {
+function Row({ feature, vals }: { feature: string; vals: string[] }) {
   return (
     <tr className="border-b border-white/5">
       <td className="py-2 pr-4 text-white/70">{feature}</td>
-      <td className="py-2 px-2 text-center text-green-400/80">{bazaar}</td>
-      <td className="py-2 px-2 text-center text-white/50">{xpay}</td>
-      <td className="py-2 px-2 text-center text-white/50">{tollbit}</td>
-      <td className="py-2 px-2 text-center text-white/50">{hive}</td>
+      <td className="py-2 px-2 text-center text-green-400/80">{vals[0]}</td>
+      {vals.slice(1).map((v, i) => (
+        <td key={i} className="py-2 px-2 text-center text-white/50">{v}</td>
+      ))}
     </tr>
   );
 }
