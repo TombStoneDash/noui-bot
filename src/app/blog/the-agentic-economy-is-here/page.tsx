@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description:
       "VCs screen for agent fluency. Enterprises lay off thousands citing AI. 10,000+ MCP servers exist with no business model. The bottleneck isn't intelligence — it's infrastructure.",
     type: "article",
-    publishedTime: "2026-06-14T00:00:00Z",
+    publishedTime: "2026-02-14T00:00:00Z",
   },
 };
 
@@ -41,7 +41,7 @@ export default function AgenticEconomyBlog() {
       <article className="px-6 md:px-16 lg:px-24 pb-24 max-w-3xl">
         <header className="mb-16">
           <p className="font-mono text-xs text-white/30 mb-4">
-            June 14, 2026 · 9 min read
+            February 14, 2026 · 9 min read
           </p>
           <h1 className="font-mono text-2xl md:text-4xl font-bold text-white/90 leading-tight mb-6 break-words">
             The Agentic Economy Is Here — And Nobody Has the Infrastructure
