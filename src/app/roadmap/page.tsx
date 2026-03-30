@@ -148,7 +148,7 @@ export default function RoadmapPage() {
             />
             <TimelineItem
               date="Mar 2026"
-              event="Platform fee reduced to 10% — lowest in MCP ecosystem"
+              event="Platform fee reduced to 10% — transparent, auditable billing"
               done
             />
             <TimelineItem

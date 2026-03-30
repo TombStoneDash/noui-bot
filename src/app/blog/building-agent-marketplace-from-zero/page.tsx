@@ -130,8 +130,9 @@ export default function BlogPost() {
         </ul>
         <p>
           10% gives providers 90% of revenue while covering Stripe processing fees (~2.9%),
-          infrastructure costs, and leaving margin for the platform. It&apos;s the lowest fee
-          in the MCP ecosystem — providers keep more than anywhere else.
+          infrastructure costs, and leaving margin for the platform. We've prioritized
+          trust — exactly-once billing, dispute resolution, and SLA enforcement — over
+          undercutting on price alone.
         </p>
 
         <h2 className="font-mono text-lg font-bold text-white mt-12 mb-4">

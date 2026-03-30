@@ -202,7 +202,7 @@ export default function PricingPage() {
         <h2 className="font-mono text-lg font-bold mb-6">FAQ</h2>
         <div className="space-y-6">
           {[
-            { q: "Why 10%?", a: "We handle billing, metering, rate limiting, trust scoring, dispute resolution, and marketplace discovery. 10% is the lowest fee in the MCP ecosystem — below MCPize (15%), far below app stores (30%), and we include trust primitives that nobody else offers. Providers keep 90%." },
+            { q: "Why 10%?", a: "We handle billing, metering, rate limiting, trust scoring, dispute resolution, and marketplace discovery. We include exactly-once billing, built-in dispute resolution, and provider-side SLA enforcement — trust primitives that nobody else in the MCP ecosystem offers. Providers keep 90% of revenue." },
             { q: "What about free tools?", a: "Free tools are completely free for both providers and consumers. We believe free tools drive ecosystem growth. You can offer a free tier (e.g., 100 calls/month free) alongside paid usage." },
             { q: "Can I change my pricing?", a: "Yes. Update pricing anytime via API or dashboard. Changes apply to new calls immediately. Existing prepaid balances are honored at the rate they were charged." },
             { q: "How do payouts work?", a: "Providers connect Stripe via Stripe Connect during registration. Payouts are processed monthly for earnings above $10. Instant payouts available for verified providers." },

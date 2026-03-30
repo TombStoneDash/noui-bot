@@ -9,7 +9,7 @@ const entries = [
   {
     date: "2026-03-26",
     items: [
-      "Platform fee reduced: 18% → 10% — lowest in the MCP ecosystem. Providers keep 90% of revenue.",
+      "Platform fee reduced: 18% → 10% — transparent, auditable billing. Providers keep 90% of revenue.",
       "All site copy, docs, blog, and API responses updated to reflect 10% fee / 90% provider share.",
       "@forthebots/mcp-server@0.2.0 published to npm — updated MCP server package.",
       "@forthebots/bazaar-sdk@0.1.2 published to npm — SDK scope finalized under @forthebots org.",
