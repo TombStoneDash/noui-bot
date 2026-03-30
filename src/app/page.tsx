@@ -52,9 +52,9 @@ export default function Home() {
             noui.bot
           </h1>
           <p className="text-xl md:text-2xl lg:text-3xl text-white/70 font-light max-w-3xl leading-relaxed mb-12">
-            The internet wasn&apos;t built for agents.
+            The trust layer for paid AI tools.
             <br />
-            We&apos;re fixing that.
+            <span className="text-white/40">Metered billing. Dispute resolution. Delivery guarantees.</span>
           </p>
           <div className="flex flex-wrap gap-4">
             <a
@@ -146,12 +146,11 @@ export default function Home() {
             Agent Bazaar
           </h2>
           <p className="text-2xl md:text-3xl font-light text-white/80 mb-6">
-            The monetization layer for AI agent tools.
+            The trust layer for paid MCP tools.
           </p>
           <p className="text-lg text-white/50 mb-16 max-w-3xl">
-            Billing, metering, and auth for MCP servers &mdash; so builders
-            can charge for their tools and agents can pay to use them.
-            Think <span className="text-white/70">Stripe for agent tools</span>.
+            Exactly-once billing, dispute resolution, and delivery guarantees &mdash; so providers get paid and consumers get what they paid for.
+            <span className="text-white/70"> 10% platform fee. No hidden costs. No surprise charges.</span>
           </p>
 
           {/* The Flow */}
@@ -180,19 +179,19 @@ export default function Home() {
             <div className="border border-white/10 p-6">
               <h4 className="font-mono text-sm text-white/70 mb-3">For Tool Builders</h4>
               <ul className="space-y-2 text-sm text-white/40">
-                <li>&rarr; Monetize your MCP servers instantly</li>
-                <li>&rarr; Set per-call, per-token, or flat pricing</li>
-                <li>&rarr; Get paid monthly via Stripe Connect</li>
-                <li>&rarr; Usage analytics and revenue dashboard</li>
+                <li>&rarr; Exactly-once billing &mdash; no duplicate charges</li>
+                <li>&rarr; Built-in dispute resolution</li>
+                <li>&rarr; Provider SLA enforcement</li>
+                <li>&rarr; Get paid monthly via Stripe Connect (keep 90%)</li>
               </ul>
             </div>
             <div className="border border-white/10 p-6">
               <h4 className="font-mono text-sm text-white/70 mb-3">For Agent Developers</h4>
               <ul className="space-y-2 text-sm text-white/40">
-                <li>&rarr; One API key for thousands of tools</li>
+                <li>&rarr; Transparent audit trail for every call</li>
                 <li>&rarr; Prepaid balance &mdash; no surprise bills</li>
-                <li>&rarr; Transparent per-call pricing</li>
-                <li>&rarr; Rate limiting and usage tracking built in</li>
+                <li>&rarr; Delivery guarantees on paid tools</li>
+                <li>&rarr; One API key, rate limiting, usage tracking</li>
               </ul>
             </div>
           </div>
