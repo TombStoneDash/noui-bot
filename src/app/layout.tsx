@@ -66,6 +66,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${jetbrains.variable} ${spaceGrotesk.variable}`}>
       <head>
+        {/* Google Ads conversion tracking */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17975356477" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'AW-17975356477');
+            `,
+          }}
+        />
         <link rel="api" href="/api/v1" type="application/json" />
         <link rel="openapi" href="/api/openapi.json" type="application/json" />
         <link rel="alternate" href="/.well-known/agents.json" type="application/json" title="Agent Discovery" />
