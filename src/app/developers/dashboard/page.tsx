@@ -29,6 +29,8 @@ export default function DeveloperDashboardPage() {
   const [summary, setSummary] = useState<UsageSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [keyCopied, setKeyCopied] = useState(false);
 
   const fetchDashboard = useCallback(async (key: string) => {
     setLoading(true);
@@ -197,46 +199,89 @@ export default function DeveloperDashboardPage() {
             )}
           </div>
 
-          {/* Usage by Day */}
+          {/* Usage Graph — Last 30 Days */}
           {summary.by_day.length > 0 && (
             <div>
               <h2 className="font-mono text-sm text-white/50 uppercase tracking-wider mb-4">
-                Last 7 Days
+                Last 30 Days
               </h2>
-              <div className="grid grid-cols-7 gap-2">
-                {summary.by_day.slice(-7).map((day, i) => {
+              <div className="flex items-end gap-[2px] h-32">
+                {summary.by_day.slice(-30).map((day, i) => {
                   const maxCalls = Math.max(...summary.by_day.map((d) => d.calls), 1);
                   const pct = (day.calls / maxCalls) * 100;
                   return (
-                    <div key={i} className="text-center">
-                      <div className="h-24 flex items-end justify-center mb-2">
-                        <div
-                          className="w-full bg-white/20 rounded-t"
-                          style={{ height: `${Math.max(pct, 4)}%` }}
-                        />
-                      </div>
-                      <div className="font-mono text-xs text-white/40">{day.date.slice(5)}</div>
-                      <div className="font-mono text-xs font-bold">{day.calls}</div>
-                    </div>
+                    <div
+                      key={i}
+                      className="flex-1 bg-emerald-500/30 hover:bg-emerald-500/50 rounded-t transition-colors cursor-default group relative"
+                      style={{ height: `${Math.max(pct, 2)}%` }}
+                      title={`${day.date}: ${day.calls} calls (${cents(day.cost_cents)})`}
+                    />
                   );
                 })}
+              </div>
+              <div className="flex justify-between mt-2">
+                <span className="font-mono text-[10px] text-white/20">
+                  {summary.by_day.slice(-30)[0]?.date.slice(5)}
+                </span>
+                <span className="font-mono text-[10px] text-white/20">
+                  {summary.by_day[summary.by_day.length - 1]?.date.slice(5)}
+                </span>
               </div>
             </div>
           )}
 
+          {/* API Key Management */}
+          <div>
+            <h2 className="font-mono text-sm text-white/50 uppercase tracking-wider mb-4">
+              API Key
+            </h2>
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <code className="font-mono text-sm text-white/60 flex-1 overflow-x-auto">
+                  {showKey ? apiKey : `${apiKey.slice(0, 7)}${"•".repeat(20)}`}
+                </code>
+                <button
+                  onClick={() => setShowKey(!showKey)}
+                  className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
+                >
+                  {showKey ? "Hide" : "Show"}
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(apiKey);
+                    setKeyCopied(true);
+                    setTimeout(() => setKeyCopied(false), 2000);
+                  }}
+                  className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
+                >
+                  {keyCopied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+              <p className="font-mono text-xs text-white/20 mt-2">
+                Rate limit: 60 requests/minute
+              </p>
+            </div>
+          </div>
+
           {/* Quick Actions */}
-          <div className="border-t border-white/5 pt-8 flex gap-4">
+          <div className="border-t border-white/5 pt-8 flex gap-4 flex-wrap">
             <a
-              href="/api/bazaar/catalog"
+              href="/providers"
               className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
             >
-              Browse Catalog →
+              Browse Providers →
             </a>
             <a
               href="/docs/bazaar"
               className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
             >
               API Docs →
+            </a>
+            <a
+              href="/pricing"
+              className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
+            >
+              Upgrade Plan →
             </a>
           </div>
         </div>
