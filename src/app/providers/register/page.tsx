@@ -17,6 +17,7 @@ export default function ProviderRegisterPage() {
   const [email, setEmail] = useState("");
   const [endpointUrl, setEndpointUrl] = useState("");
   const [description, setDescription] = useState("");
+  const [pricingModel, setPricingModel] = useState("per_call");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RegistrationResult | null>(null);
   const [error, setError] = useState("");
@@ -37,6 +38,7 @@ export default function ProviderRegisterPage() {
           email: email.trim(),
           endpoint_url: endpointUrl.trim(),
           description: description.trim() || undefined,
+          pricing_model: pricingModel,
         }),
       });
 
@@ -141,6 +143,41 @@ export default function ProviderRegisterPage() {
               rows={3}
               className="w-full bg-white/5 border border-white/10 rounded px-4 py-3 font-mono text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors resize-none"
             />
+          </div>
+
+          {/* Pricing Model */}
+          <div>
+            <label className="font-mono text-xs text-white/50 uppercase tracking-wider block mb-2">
+              Pricing Model
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: "per_call", label: "Per Call", desc: "Charge per tool invocation" },
+                { value: "per_token", label: "Per Token", desc: "Charge based on token usage" },
+                { value: "flat_monthly", label: "Monthly", desc: "Flat monthly subscription" },
+                { value: "free", label: "Free", desc: "No charge for tool calls" },
+              ].map((option) => (
+                <label
+                  key={option.value}
+                  className={`flex flex-col p-3 border rounded cursor-pointer transition-colors ${
+                    pricingModel === option.value
+                      ? "border-white/30 bg-white/5"
+                      : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="pricing_model"
+                    value={option.value}
+                    checked={pricingModel === option.value}
+                    onChange={(e) => setPricingModel(e.target.value)}
+                    className="sr-only"
+                  />
+                  <span className="font-mono text-xs text-white/70">{option.label}</span>
+                  <span className="font-mono text-[10px] text-white/30 mt-1">{option.desc}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           {error && (
