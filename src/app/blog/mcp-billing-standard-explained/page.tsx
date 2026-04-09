@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     description:
       "Meter events, receipts, pricing schemas, and trust scores — the open spec that gives MCP tools a real business model.",
     type: "article",
-    publishedTime: "2026-06-13T00:00:00Z",
+    publishedTime: "2026-02-28T00:00:00Z",
   },
   twitter: {
     card: "summary_large_image",
@@ -46,7 +46,7 @@ export default function MCPBillingStandardPost() {
       <article className="px-6 md:px-16 lg:px-24 pb-24 max-w-3xl">
         <header className="mb-12">
           <div className="font-mono text-xs text-white/30 mb-4">
-            June 13, 2026 &middot; 9 min read
+            February 28, 2026 &middot; 9 min read
           </div>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
             The Open MCP Billing Standard — How AI Agents Pay for Tools

@@ -21,6 +21,22 @@ const posts = [
     readTime: "8 min read",
   },
   {
+    slug: "mcp-billing-landscape-6-approaches",
+    title: "MCP Billing Landscape: 6 Approaches Compared",
+    date: "March 5, 2026",
+    excerpt:
+      "From open billing specs to proprietary marketplaces to DIY Stripe — six approaches to MCP monetization compared on setup, trust, lock-in, and cost. Plus why the 43% vulnerability rate means billing is a security problem.",
+    readTime: "10 min read",
+  },
+  {
+    slug: "why-humans-txt-matters",
+    title: "Why humans.txt Matters for the Agent Ecosystem",
+    date: "March 5, 2026",
+    excerpt:
+      "The web has robots.txt. The agent ecosystem needs humans.txt — a machine-readable file that tells bots who the real human behind a service is. Trust starts with accountability.",
+    readTime: "6 min read",
+  },
+  {
     slug: "why-your-ai-agent-needs-its-own-wallet",
     title: "Why Your AI Agent Needs Its Own Wallet (And Why Crypto Isn't the Answer)",
     date: "February 28, 2026",
@@ -37,21 +53,20 @@ const posts = [
     readTime: "8 min read",
   },
   {
-    slug: "the-agentic-economy-is-here",
-    title:
-      "The Agentic Economy Is Here — And Nobody Has the Infrastructure",
-    date: "June 14, 2026",
-    excerpt:
-      "VCs screen for agent fluency. Block laid off 4,000 citing AI. 10,000+ MCP servers can't monetize. The bottleneck isn't intelligence — it's the missing billing, trust, and identity infrastructure underneath.",
-    readTime: "9 min read",
-  },
-  {
     slug: "building-trust-layer-for-ai-agents",
     title: "Building a Trust Layer for AI Agents — From Zero to Verified",
     date: "February 28, 2026",
     excerpt:
       "How we built provider verification, SLA tracking, dispute resolution, and composite trust scores. A deep technical walkthrough of the trust primitives no one else is building.",
     readTime: "10 min read",
+  },
+  {
+    slug: "mcp-billing-standard-explained",
+    title: "The Open MCP Billing Standard — How AI Agents Pay for Tools",
+    date: "February 28, 2026",
+    excerpt:
+      "A deep dive into the open MCP billing standard: meter events, receipts, pricing schemas, and trust scores — the primitives that give every MCP server a real business model.",
+    readTime: "9 min read",
   },
   {
     slug: "how-to-monetize-your-mcp-server",
@@ -70,24 +85,6 @@ const posts = [
     readTime: "7 min read",
   },
   {
-    slug: "mcp-billing-landscape-6-approaches",
-    title:
-      "MCP Billing Landscape: 6 Approaches Compared",
-    date: "March 5, 2026",
-    excerpt:
-      "From open billing specs to proprietary marketplaces to DIY Stripe — six approaches to MCP monetization compared on setup, trust, lock-in, and cost. Plus why the 43% vulnerability rate means billing is a security problem.",
-    readTime: "10 min read",
-  },
-  {
-    slug: "mcp-billing-standard-explained",
-    title:
-      "The Open MCP Billing Standard — How AI Agents Pay for Tools",
-    date: "June 13, 2026",
-    excerpt:
-      "A deep dive into the open MCP billing standard: meter events, receipts, pricing schemas, and trust scores — the primitives that give every MCP server a real business model.",
-    readTime: "9 min read",
-  },
-  {
     slug: "why-mcp-servers-need-billing",
     title: "Why MCP Servers Need a Billing Layer",
     date: "February 23, 2026",
@@ -102,6 +99,14 @@ const posts = [
     excerpt:
       "AI agents can autonomously complete 80-95% of tasks. But the last 5-20% hits real walls: CAPTCHAs, phone calls, niche UIs, identity verification. What if agents could just... hire a human?",
     readTime: "7 min read",
+  },
+  {
+    slug: "the-agentic-economy-is-here",
+    title: "The Agentic Economy Is Here — And Nobody Has the Infrastructure",
+    date: "February 14, 2026",
+    excerpt:
+      "VCs screen for agent fluency. Block laid off 4,000 citing AI. 10,000+ MCP servers can't monetize. The bottleneck isn't intelligence — it's the missing billing, trust, and identity infrastructure underneath.",
+    readTime: "9 min read",
   },
 ];
 
