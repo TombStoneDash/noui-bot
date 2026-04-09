@@ -114,6 +114,31 @@ function ComparisonRow({
 }
 
 export default function PricingPage() {
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState("");
+
+  async function handleCheckout(plan: string) {
+    setCheckoutLoading(plan);
+    setCheckoutError("");
+    try {
+      const res = await fetch("/api/bazaar/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setCheckoutError(data.message || "Checkout unavailable");
+      }
+    } catch {
+      setCheckoutError("Network error. Please try again.");
+    } finally {
+      setCheckoutLoading(null);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black text-white px-6 md:px-16 lg:px-24 py-16 max-w-4xl">
       <a href="/" className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors">
@@ -125,41 +150,96 @@ export default function PricingPage() {
         One model. Simple math. You set the price, keep 90%.
       </p>
 
-      {/* The Model */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-        {/* Provider */}
-        <div className="border border-white/[0.08] rounded-lg p-6 bg-white/[0.02]">
-          <div className="font-mono text-[10px] text-white/30 uppercase tracking-wider mb-2">For Providers</div>
+      {/* Consumer Tiers */}
+      <div className="mb-16">
+        <h2 className="font-mono text-xs text-white/30 uppercase tracking-widest mb-8">
+          For Agent Developers
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Free */}
+          <div className="border border-white/[0.08] rounded-lg p-6 bg-white/[0.02]">
+            <div className="font-mono text-[10px] text-white/30 uppercase tracking-wider mb-2">Free</div>
+            <div className="font-mono text-3xl font-bold mb-1">$0</div>
+            <div className="font-mono text-sm text-white/40 mb-6">forever</div>
+            <ul className="space-y-3 text-sm text-white/50">
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>100 calls/month across all providers</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>18% platform fee on paid tools</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Usage dashboard</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Signed receipts</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Community support</span></li>
+            </ul>
+            <a href="/developers/register" className="block mt-6 text-center font-mono text-sm border border-white/20 text-white/70 px-6 py-3 rounded hover:border-white/40 hover:text-white transition-colors">
+              Get Started Free
+            </a>
+          </div>
+
+          {/* Builder */}
+          <div className="border border-emerald-500/30 rounded-lg p-6 bg-emerald-500/[0.03] relative">
+            <div className="absolute -top-3 left-6 font-mono text-[10px] bg-emerald-500 text-black px-2 py-0.5 rounded">
+              POPULAR
+            </div>
+            <div className="font-mono text-[10px] text-emerald-400/60 uppercase tracking-wider mb-2">Builder</div>
+            <div className="font-mono text-3xl font-bold text-emerald-400 mb-1">$29<span className="text-lg text-emerald-400/60">/mo</span></div>
+            <div className="font-mono text-sm text-white/40 mb-6">for growing agents</div>
+            <ul className="space-y-3 text-sm text-white/50">
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>1,000 calls/month included</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>12% platform fee on paid tools</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Usage analytics dashboard</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Priority support</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>120 RPM rate limit</span></li>
+            </ul>
+            <button
+              onClick={() => handleCheckout("builder")}
+              disabled={checkoutLoading === "builder"}
+              className="block w-full mt-6 text-center font-mono text-sm bg-emerald-500 text-black px-6 py-3 rounded hover:bg-emerald-400 transition-colors disabled:opacity-50"
+            >
+              {checkoutLoading === "builder" ? "Loading..." : "Subscribe"}
+            </button>
+          </div>
+
+          {/* Scale */}
+          <div className="border border-white/[0.08] rounded-lg p-6 bg-white/[0.02]">
+            <div className="font-mono text-[10px] text-white/30 uppercase tracking-wider mb-2">Scale</div>
+            <div className="font-mono text-3xl font-bold mb-1">$99<span className="text-lg text-white/40">/mo</span></div>
+            <div className="font-mono text-sm text-white/40 mb-6">for production workloads</div>
+            <ul className="space-y-3 text-sm text-white/50">
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>10,000 calls/month included</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>8% platform fee on paid tools</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Advanced analytics + exports</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Dedicated support</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Custom billing arrangements</span></li>
+            </ul>
+            <button
+              onClick={() => handleCheckout("scale")}
+              disabled={checkoutLoading === "scale"}
+              className="block w-full mt-6 text-center font-mono text-sm bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors disabled:opacity-50"
+            >
+              {checkoutLoading === "scale" ? "Loading..." : "Subscribe"}
+            </button>
+          </div>
+        </div>
+        {checkoutError && (
+          <p className="font-mono text-xs text-red-400 mt-4">{checkoutError}</p>
+        )}
+      </div>
+
+      {/* Provider Model */}
+      <div className="mb-16">
+        <h2 className="font-mono text-xs text-white/30 uppercase tracking-widest mb-8">
+          For Providers
+        </h2>
+        <div className="border border-white/[0.08] rounded-lg p-6 bg-white/[0.02] max-w-lg">
           <div className="font-mono text-3xl font-bold mb-1">90%</div>
-          <div className="font-mono text-sm text-white/40 mb-6">of every paid call</div>
+          <div className="font-mono text-sm text-white/40 mb-6">of every paid call — you keep the rest</div>
           <ul className="space-y-3 text-sm text-white/50">
             <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>You set the price per tool call</span></li>
             <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Sub-cent pricing supported ($0.001+)</span></li>
             <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Free tools cost you nothing</span></li>
             <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Payouts via Stripe Connect</span></li>
             <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>No monthly minimums</span></li>
-            <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Real-time dashboard</span></li>
           </ul>
-          <a href="/providers/register" className="block mt-6 text-center font-mono text-sm bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors">
-            Register as Provider →
-          </a>
-        </div>
-
-        {/* Consumer */}
-        <div className="border border-white/[0.08] rounded-lg p-6 bg-white/[0.02]">
-          <div className="font-mono text-[10px] text-white/30 uppercase tracking-wider mb-2">For Consumers (Agent Developers)</div>
-          <div className="font-mono text-3xl font-bold mb-1">Pay-as-you-go</div>
-          <div className="font-mono text-sm text-white/40 mb-6">prepaid balance, no commitments</div>
-          <ul className="space-y-3 text-sm text-white/50">
-            <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Load balance via Stripe ($5 minimum)</span></li>
-            <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Per-call deductions (sub-cent precision)</span></li>
-            <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Free tools always free</span></li>
-            <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Usage dashboard + signed receipts</span></li>
-            <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Rate limiting (60 RPM default, adjustable)</span></li>
-            <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Dispute resolution if something goes wrong</span></li>
-          </ul>
-          <a href="/developers/register" className="block mt-6 text-center font-mono text-sm border border-white/20 text-white/70 px-6 py-3 rounded hover:border-white/40 hover:text-white transition-colors">
-            Get API Key →
+          <a href="/providers/register" className="inline-block mt-6 font-mono text-sm bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors">
+            Register as Provider
           </a>
         </div>
       </div>
