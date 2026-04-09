@@ -5,6 +5,22 @@ import { motion } from "framer-motion";
 
 const posts = [
   {
+    slug: "mcp-billing-missing-infrastructure",
+    title: "MCP Billing: The Missing Infrastructure for AI Agent Marketplaces",
+    date: "April 8, 2026",
+    excerpt:
+      "10,000+ MCP servers have no way to charge for their tools. MCP billing is the missing layer that turns open-source tools into sustainable businesses. The 7 primitives every billing solution needs.",
+    readTime: "8 min read",
+  },
+  {
+    slug: "agent-bazaar-vs-building-your-own",
+    title: "Agent Bazaar vs Building Your Own: When to Use an MCP Marketplace",
+    date: "April 8, 2026",
+    excerpt:
+      "Should you build your own MCP billing or use a marketplace? An honest comparison of time, cost, features, and trade-offs — including when building your own is the better call.",
+    readTime: "7 min read",
+  },
+  {
     slug: "why-metering-alone-wont-save-mcp",
     title: "Why Metering Alone Won't Save the MCP Ecosystem",
     date: "March 21, 2026",
