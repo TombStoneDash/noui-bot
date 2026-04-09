@@ -2,11 +2,8 @@ import {
   RevealWrapper,
   AnimatedSection,
   AnimatedHero,
-  ProblemCard,
-  SolutionBlock,
 } from "@/components/RevealWrapper";
 import { BazaarStatus } from "@/components/BazaarStatus";
-import { WaitlistForm } from "@/components/WaitlistForm";
 
 function FlowStep({
   step,
@@ -48,91 +45,93 @@ export default function Home() {
       {/* HERO */}
       <section className="min-h-screen flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-5xl">
         <AnimatedHero>
-          <h1 className="font-mono text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8">
-            noui.bot
+          <h1 className="font-mono text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            Ship billing for your MCP tools in 5 minutes
           </h1>
-          <p className="text-xl md:text-2xl lg:text-3xl text-white/70 font-light max-w-3xl leading-relaxed mb-12">
-            The trust layer for paid AI tools.
-            <br />
-            <span className="text-white/40">Metered billing. Dispute resolution. Delivery guarantees.</span>
+          <p className="text-xl md:text-2xl text-white/60 font-light max-w-3xl leading-relaxed mb-8">
+            Agent Bazaar handles discovery, metering, and payments so you can focus on building.
           </p>
-          <div className="flex flex-wrap gap-4">
+
+          {/* SDK Install */}
+          <div className="bg-white/5 border border-white/10 rounded px-4 py-3 font-mono text-sm inline-flex items-center gap-3 mb-8">
+            <span className="text-white/30">$</span>
+            <span className="text-green-400/80">npm install @forthebots/bazaar-sdk</span>
+          </div>
+
+          <div className="flex flex-wrap gap-4 mb-12">
             <a
-              href="#waitlist"
+              href="/get-started"
               className="font-mono text-sm px-6 py-3 bg-white text-black hover:bg-white/90 transition-colors"
             >
-              Join the Waitlist
+              Get Started &rarr;
             </a>
             <a
-              href="/docs"
+              href="/providers"
               className="font-mono text-sm px-6 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors"
             >
-              Read the Docs &rarr;
+              Browse Providers
+            </a>
+            <a
+              href="/docs/bazaar"
+              className="font-mono text-sm px-6 py-3 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"
+            >
+              Read the Docs
             </a>
           </div>
+
+          {/* Live Social Proof */}
+          <BazaarStatus />
         </AnimatedHero>
       </section>
 
-      {/* THE PROBLEM */}
+      {/* THREE AUDIENCE CARDS */}
       <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
         <AnimatedSection>
-          <h2 className="font-mono text-lg text-white/40 mb-16 tracking-wider uppercase">
-            The Problem
-          </h2>
-          <p className="text-2xl md:text-3xl font-light text-white/80 mb-16">
-            AI agents hit walls every day.
-          </p>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="border border-white/10 p-6">
+              <h3 className="font-mono text-sm text-white/70 mb-3">For Providers</h3>
+              <p className="text-white/40 text-sm mb-4 leading-relaxed">
+                Monetize your MCP tools. Set per-call pricing, connect Stripe, and start earning. Keep 90% of every paid call.
+              </p>
+              <ul className="space-y-2 text-xs text-white/30 mb-6">
+                <li>&rarr; Register in 5 minutes, no code changes</li>
+                <li>&rarr; Exactly-once billing, signed receipts</li>
+                <li>&rarr; Listed in the provider marketplace</li>
+              </ul>
+              <a href="/providers/register" className="font-mono text-xs text-green-400 hover:text-green-300 transition-colors">
+                List your tools &rarr;
+              </a>
+            </div>
 
-          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
-            <ProblemCard
-              title="CAPTCHAs and Anti-Bot Systems"
-              description="Services that actively block the fastest-growing consumer base on the internet."
-              delay={0}
-            />
-            <ProblemCard
-              title="UI-Only Workflows"
-              description="Forms, dashboards, and tools that only work with a mouse and a pair of eyes."
-              delay={0.15}
-            />
-            <ProblemCard
-              title="APIs That Lie"
-              description="Endpoints that return worse results than the website. Or don't exist at all."
-              delay={0.3}
-            />
-          </div>
-        </AnimatedSection>
-      </section>
+            <div className="border border-white/10 p-6">
+              <h3 className="font-mono text-sm text-white/70 mb-3">For Consumers</h3>
+              <p className="text-white/40 text-sm mb-4 leading-relaxed">
+                Discover and pay for MCP tools with one API key. Usage tracking, prepaid balance, and dispute resolution built in.
+              </p>
+              <ul className="space-y-2 text-xs text-white/30 mb-6">
+                <li>&rarr; One key for all providers</li>
+                <li>&rarr; Free tier: 100 calls/month</li>
+                <li>&rarr; Real-time usage dashboard</li>
+              </ul>
+              <a href="/get-started" className="font-mono text-xs text-green-400 hover:text-green-300 transition-colors">
+                Get started free &rarr;
+              </a>
+            </div>
 
-      <Divider />
-
-      {/* THE SOLUTION */}
-      <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
-        <AnimatedSection>
-          <h2 className="font-mono text-lg text-white/40 mb-16 tracking-wider uppercase">
-            The Solution
-          </h2>
-          <p className="text-2xl md:text-3xl font-light text-white/80 mb-16">
-            We build agent-native services.
-            <br />
-            <span className="text-white/40">No CAPTCHAs. No UI dependencies. No compromises.</span>
-          </p>
-
-          <div className="space-y-12">
-            <SolutionBlock
-              title="Universal Form Submission API"
-              description="POST structured data. We handle the form, the CAPTCHA, the field mapping, the confirmation. 200ms, not 20 minutes."
-              delay={0}
-            />
-            <SolutionBlock
-              title="Human Fallback as a Service"
-              description="When your agent hits a wall, we route to a human operator. Structured task in, structured result out. Failure becomes a feature."
-              delay={0.15}
-            />
-            <SolutionBlock
-              title="Agent Wallet"
-              description="Give your agent a spending limit and let it transact. Delegated purchasing with receipts, limits, and audit trails."
-              delay={0.3}
-            />
+            <div className="border border-white/10 p-6">
+              <h3 className="font-mono text-sm text-white/70 mb-3">For Platforms</h3>
+              <p className="text-white/40 text-sm mb-4 leading-relaxed">
+                Embed our billing API in your agent platform. Open billing spec (MIT), no vendor lock-in, pure HTTP.
+              </p>
+              <ul className="space-y-2 text-xs text-white/30 mb-6">
+                <li>&rarr; Open MCP billing spec</li>
+                <li>&rarr; REST API + TypeScript SDK</li>
+                <li>&rarr; White-label ready</li>
+              </ul>
+              <a href="/specs/mcp-billing-v1" className="font-mono text-xs text-green-400 hover:text-green-300 transition-colors">
+                Read the spec &rarr;
+              </a>
+            </div>
           </div>
         </AnimatedSection>
       </section>
@@ -398,17 +397,45 @@ export default function Home() {
 
       <Divider />
 
-      {/* WAITLIST */}
-      <section id="waitlist" className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
+      {/* CTA */}
+      <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
         <AnimatedSection>
           <h2 className="font-mono text-lg text-white/40 mb-16 tracking-wider uppercase">
-            The Void Is Open
+            Start Building
           </h2>
           <p className="text-2xl md:text-3xl font-light text-white/80 mb-12">
-            Be first to access agent-native infrastructure.
+            Billing infrastructure for MCP tools. Live now.
           </p>
-          <WaitlistForm />
-          <p className="mt-16 font-mono text-xs text-white/20">
+
+          <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-8 inline-block">
+            <div className="font-mono text-xs text-white/30 mb-2">Install the SDK</div>
+            <div className="font-mono text-sm text-green-400/80">
+              npm install @forthebots/bazaar-sdk
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-4 mb-16">
+            <a
+              href="/get-started"
+              className="font-mono text-sm px-6 py-3 bg-white text-black hover:bg-white/90 transition-colors"
+            >
+              Developer Quick Start &rarr;
+            </a>
+            <a
+              href="/providers/register"
+              className="font-mono text-sm px-6 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors"
+            >
+              List Your MCP Server
+            </a>
+            <a
+              href="/pricing"
+              className="font-mono text-sm px-6 py-3 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"
+            >
+              View Pricing
+            </a>
+          </div>
+
+          <p className="font-mono text-xs text-white/20">
             Built by Tombstone Dash LLC &middot; San Diego, CA
           </p>
         </AnimatedSection>
