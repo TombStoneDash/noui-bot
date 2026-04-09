@@ -37,7 +37,7 @@ export default function ComparePage() {
             </tr>
           </thead>
           <tbody className="font-mono text-xs">
-            <Row feature="Live & shipping" vals={["✅", "✅", "✅", "⏳ billing soon", "⏳"]} />
+            <Row feature="Live & shipping" vals={["✅", "✅", "✅", "⏳ billing soon", "✅"]} />
             <Row feature="Revenue share" vals={["90%", "85%", "N/A", "TBD", "TBD"]} />
             <Row feature="Payment rail" vals={["Stripe (fiat)", "Stripe", "USDC (crypto)", "TBD", "TBD"]} />
             <Row feature="Provider verification" vals={["✅ 4 levels", "❌", "❌", "❌", "❌"]} />
@@ -95,12 +95,13 @@ export default function ComparePage() {
 
         <ComparisonSection
           title="Bazaar vs MCP Hive"
-          description="MCP Hive launches March 8. Similar marketplace concept, different execution."
+          description="MCP Hive launched in March 2026 as a marketplace with a vetting-first model."
           points={[
-            { label: "Status", detail: "We're live with working billing. MCP Hive is pre-launch (Project Ignite is their early access program)." },
-            { label: "Trust", detail: "They mention 'vetted' providers but describe no verification system. We have 4 verification levels, signed receipts, and trust scores." },
-            { label: "Standard", detail: "We published an open billing spec. MCP Hive is proprietary." },
-            { label: "SDK", detail: "We have a TypeScript SDK and OpenAPI spec. MCP Hive has neither (publicly)." },
+            { label: "Status", detail: "Both are live. MCP Hive launched via Project Ignite (their early access program) and is building out their marketplace." },
+            { label: "Model", detail: "MCP Hive focuses on curated/vetted providers. Bazaar is open registration (list first, curate later) with trust scores and verification levels that let quality emerge organically." },
+            { label: "Trust", detail: "They mention 'vetted' providers but don't describe a formal verification system. We have 4 verification levels, HMAC-SHA256 signed receipts, SLA reporting, dispute resolution, and composite trust scores." },
+            { label: "Standard", detail: "We published an open billing spec (MIT). MCP Hive is proprietary." },
+            { label: "SDK", detail: "We have a TypeScript SDK (@forthebots/bazaar-sdk) and OpenAPI spec." },
           ]}
         />
 
@@ -118,7 +119,7 @@ export default function ComparePage() {
 
       <footer className="mt-24 pt-8 border-t border-white/10">
         <p className="font-mono text-xs text-white/20">
-          This comparison is based on publicly available information as of March 2026.
+          This comparison is based on publicly available information as of April 2026.
           We respect all teams building in this space &mdash; the ecosystem needs multiple approaches.
         </p>
         <p className="font-mono text-xs text-white/20 mt-2">
