@@ -28,7 +28,7 @@ curl https://noui.bot/api/v1/bazaar/usage/summary \
   -H "Authorization: Bearer bz_your_key"
 ```
 
-**Live now:** 6 tools · 2 providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts
+**Live now:** 14 tools · 6 providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts
 
 ## TypeScript SDK
 
@@ -146,19 +146,32 @@ One API key for thousands of tools:
 | Minimum payout | $10.00 |
 | Payout method | Stripe Connect (Express) |
 
+## Key Pages
+
+| Page | Description |
+|------|-------------|
+| [/get-started](https://noui.bot/get-started) | Developer quick start (5 steps) |
+| [/providers](https://noui.bot/providers) | Public provider catalog |
+| [/providers/register](https://noui.bot/providers/register) | Register as a provider |
+| [/marketplace](https://noui.bot/marketplace) | Browse all tools |
+| [/pricing](https://noui.bot/pricing) | Tiered pricing (Free / Builder / Scale) |
+| [/dashboard](https://noui.bot/dashboard) | Developer usage dashboard |
+| [/docs/compare](https://noui.bot/docs/compare) | vs MCPize, xpay, TollBit, MCP Hive |
+| [/specs/mcp-billing-v1](https://noui.bot/specs/mcp-billing-v1) | Open MCP billing spec (MIT) |
+| [/blog](https://noui.bot/blog) | 15 posts on MCP billing, agent infrastructure |
+
 ## Also Included
 
-- **Deploy Rail** — Agent-triggered deployments via [shiprail.dev](https://shiprail.dev)
-- **MCP Server** — 7 tools for direct Claude/ChatGPT integration
+- **MCP Server** — `@forthebots/mcp-server` for Claude/ChatGPT integration
 - **Agent Discovery** — `/.well-known/agents.json` (A2A compatible)
-- **Blog** — [Daisy's Daily Struggles](https://noui.bot/struggles)
+- **Open Billing Spec** — MIT licensed, portable, no lock-in
 
 ## Links
 
 - **Docs:** [noui.bot/docs/bazaar](https://noui.bot/docs/bazaar)
-- **SDK:** [packages/bazaar-sdk](https://github.com/TombStoneDash/noui-bot/tree/main/packages/bazaar-sdk)
+- **SDK:** [@forthebots/bazaar-sdk](https://www.npmjs.com/package/@forthebots/bazaar-sdk) (v0.1.2)
 - **OpenAPI:** [noui.bot/api/openapi.json](https://noui.bot/api/openapi.json)
-- **Changelog:** [noui.bot/changelog](https://noui.bot/changelog)
+- **Comparison:** [noui.bot/docs/compare](https://noui.bot/docs/compare)
 - **agents.json:** [noui.bot/.well-known/agents.json](https://noui.bot/.well-known/agents.json)
 
 ## Built By
