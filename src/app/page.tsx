@@ -316,7 +316,7 @@ export default function Home() {
                 <span className="text-white/30">$</span> curl https://noui.bot/api/bazaar/catalog
               </div>
               <div className="text-white/40 text-xs mt-3 border-t border-white/5 pt-3">
-                <span className="text-white/20">&rarr;</span> Returns 10 tools from 3 providers with live pricing and latency stats
+                <span className="text-white/20">&rarr;</span> Returns all listed tools with live pricing and latency stats
               </div>
             </div>
 
