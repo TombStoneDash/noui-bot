@@ -18,6 +18,8 @@ export default function ProviderRegisterPage() {
   const [endpointUrl, setEndpointUrl] = useState("");
   const [description, setDescription] = useState("");
   const [pricingModel, setPricingModel] = useState("per_call");
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [toolsJson, setToolsJson] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RegistrationResult | null>(null);
   const [error, setError] = useState("");
@@ -143,6 +145,40 @@ export default function ProviderRegisterPage() {
               rows={3}
               className="w-full bg-white/5 border border-white/10 rounded px-4 py-3 font-mono text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors resize-none"
             />
+          </div>
+
+          {/* Webhook URL */}
+          <div>
+            <label className="font-mono text-xs text-white/50 uppercase tracking-wider block mb-2">
+              Webhook URL
+            </label>
+            <input
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://your-server.com/webhooks/bazaar"
+              className="w-full bg-white/5 border border-white/10 rounded px-4 py-3 font-mono text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors"
+            />
+            <p className="font-mono text-xs text-white/20 mt-2">
+              Optional. Receive notifications for tool calls, disputes, and payouts.
+            </p>
+          </div>
+
+          {/* Initial Tools */}
+          <div>
+            <label className="font-mono text-xs text-white/50 uppercase tracking-wider block mb-2">
+              Initial Tools (JSON)
+            </label>
+            <textarea
+              value={toolsJson}
+              onChange={(e) => setToolsJson(e.target.value)}
+              placeholder={`[{"tool_name": "my_tool", "description": "What it does", "category": "utility", "price_cents_override": 1}]`}
+              rows={4}
+              className="w-full bg-white/5 border border-white/10 rounded px-4 py-3 font-mono text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors resize-none"
+            />
+            <p className="font-mono text-xs text-white/20 mt-2">
+              Optional. Register tools now or add them later via the API. Categories: weather, search, code, data, comms, finance, utility, other.
+            </p>
           </div>
 
           {/* Pricing Model */}
