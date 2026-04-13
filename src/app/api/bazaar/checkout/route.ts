@@ -5,17 +5,17 @@ const PLANS: Record<
   string,
   { name: string; priceAmountCents: number; callsPerMonth: number; feeRate: string }
 > = {
-  builder: {
-    name: "Agent Bazaar — Builder",
+  pro: {
+    name: "Agent Bazaar — Pro",
     priceAmountCents: 2900,
-    callsPerMonth: 1000,
-    feeRate: "12%",
+    callsPerMonth: 10_000,
+    feeRate: "8%",
   },
   scale: {
     name: "Agent Bazaar — Scale",
     priceAmountCents: 9900,
-    callsPerMonth: 10000,
-    feeRate: "8%",
+    callsPerMonth: 100_000,
+    feeRate: "5%",
   },
 };
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   if (!plan || !PLANS[plan]) {
     return NextResponse.json(
-      { error: true, message: "Invalid plan. Use 'builder' or 'scale'." },
+      { error: true, message: "Invalid plan. Use 'pro' or 'scale'." },
       { status: 400 }
     );
   }
