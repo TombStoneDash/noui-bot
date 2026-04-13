@@ -7,6 +7,31 @@ export const metadata: Metadata = {
 
 const entries = [
   {
+    date: "2026-04-13",
+    items: [
+      "/getting-started tutorial: 5-step guide with language tabs (curl, JavaScript, Python) and copy-to-clipboard.",
+      "/docs enhanced: Bazaar auth reference, full endpoint docs (catalog, proxy, register, usage, health), error code table (400-503), rate limit tiers.",
+      "/status page: real-time health dashboard polling /api/bazaar/health — provider count, tool count, uptime, incident log.",
+      "/compare page: top-level comparison — Agent Bazaar vs direct MCP vs MCP Hive with feature matrix.",
+      "/api-docs: Swagger/OpenAPI UI auto-generated from /api/openapi.json.",
+      "SEO: JSON-LD structured data (SoftwareApplication, Organization, FAQPage) on /pricing.",
+      "Email capture: launch notification signup on homepage via /api/v1/waitlist.",
+      "Performance: Cache-Control headers on all API endpoints — catalog (60s), usage (30s), health (no-store), public routes (5m).",
+      "/providers/register: added webhook URL and initial tools registration fields.",
+      "/pricing tiers updated: Free (100 calls/mo), Pro $29/mo (10K calls), Scale $99/mo (100K calls).",
+      "GET /api/bazaar/health endpoint: status, provider count, tool count, uptime. Returns 503 if degraded.",
+    ],
+  },
+  {
+    date: "2026-04-08",
+    items: [
+      "Blog: 'MCP Billing: The Missing Infrastructure for AI Agent Marketplaces' — 7 billing primitives every solution needs.",
+      "Blog: 'Agent Bazaar vs Building Your Own: When to Use an MCP Marketplace' — honest build-vs-buy comparison.",
+      "Homepage refresh: product-first hero, audience cards, SDK install CTA.",
+      "/dashboard redirect + enhanced developer dashboard.",
+    ],
+  },
+  {
     date: "2026-03-26",
     items: [
       "Platform fee reduced: 18% → 10% — transparent, auditable billing. Providers keep 90% of revenue.",
