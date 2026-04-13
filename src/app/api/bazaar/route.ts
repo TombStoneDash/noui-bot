@@ -9,6 +9,7 @@ export async function GET() {
     base_url: "/api/bazaar",
     endpoints: {
       "GET  /api/bazaar":                    "This document",
+      "GET  /api/bazaar/health":               "Health check — status, provider/tool counts, uptime",
       "GET  /api/bazaar/catalog":            "Public tool catalog with prices and stats",
       "POST /api/bazaar/register-provider":  "Register an MCP server, set pricing, get API key",
       "POST /api/bazaar/register-consumer":  "Sign up as an agent developer, get API key",
