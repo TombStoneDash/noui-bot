@@ -4,6 +4,7 @@ import {
   AnimatedHero,
 } from "@/components/RevealWrapper";
 import { BazaarStatus } from "@/components/BazaarStatus";
+import { WaitlistForm } from "@/components/WaitlistForm";
 
 function FlowStep({
   step,
@@ -392,6 +393,24 @@ export default function Home() {
               Follow Daisy&apos;s Daily Struggles &rarr;
             </a>
           </div>
+        </AnimatedSection>
+      </section>
+
+      <Divider />
+
+      {/* Email Capture */}
+      <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
+        <AnimatedSection>
+          <h2 className="font-mono text-lg text-white/40 mb-8 tracking-wider uppercase">
+            Stay Updated
+          </h2>
+          <p className="text-xl text-white/60 mb-6 max-w-xl">
+            Get launch notifications, new provider announcements, and platform updates.
+          </p>
+          <WaitlistForm />
+          <p className="font-mono text-xs text-white/20 mt-4">
+            No spam. Unsubscribe anytime.
+          </p>
         </AnimatedSection>
       </section>
 
