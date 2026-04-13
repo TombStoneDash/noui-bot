@@ -35,6 +35,57 @@ function checkRate(ip: string, pathname: string): { allowed: boolean; limit: num
   };
 }
 
+// Public, CDN-cacheable GET endpoints
+const PUBLIC_CACHE_ROUTES = new Set([
+  "/api/bazaar",
+  "/api/bazaar/catalog",
+  "/api/v1/status",
+  "/api/v1/bazaar/stats",
+  "/api/v1/services",
+  "/api/openapi.json",
+  "/api/validate-humans-txt",
+]);
+
+// Authenticated read endpoints — private, fresh on every request
+const PRIVATE_CACHE_ROUTES = new Set([
+  "/api/bazaar/usage",
+  "/api/bazaar/usage/summary",
+  "/api/v1/bazaar/balance",
+  "/api/v1/bazaar/usage",
+  "/api/v1/bazaar/usage/summary",
+  "/api/v1/bazaar/receipts",
+]);
+
+function getCacheControl(pathname: string, method: string): string {
+  // Mutations are never cached
+  if (method !== "GET") return "no-store";
+
+  // Health endpoints — always fresh
+  if (pathname.includes("/health")) return "no-store";
+
+  // Public read-only routes
+  if (PUBLIC_CACHE_ROUTES.has(pathname)) {
+    return "public, s-maxage=60, stale-while-revalidate=120";
+  }
+
+  // Public parameterized routes (trust, SLA, receipts, disputes)
+  if (
+    pathname.match(/\/api\/v1\/bazaar\/providers\/[^/]+\/(sla|trust)$/) ||
+    pathname.match(/\/api\/v1\/bazaar\/receipts\/[^/]+$/) ||
+    pathname.match(/\/api\/v1\/bazaar\/disputes\/[^/]+$/)
+  ) {
+    return "public, s-maxage=60, stale-while-revalidate=120";
+  }
+
+  // Authenticated reads
+  if (PRIVATE_CACHE_ROUTES.has(pathname)) {
+    return "private, no-cache";
+  }
+
+  // Default for all other API routes (registrations, mutations, etc.)
+  return "no-store";
+}
+
 export function middleware(request: NextRequest) {
   const start = Date.now();
   const pathname = request.nextUrl.pathname;
@@ -96,6 +147,12 @@ export function middleware(request: NextRequest) {
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
     response.headers.set("X-Response-Time", `${Date.now() - start}ms`);
+
+    // Cache-Control — only set if the route handler didn't already set one
+    if (!response.headers.has("Cache-Control")) {
+      const cc = getCacheControl(pathname, request.method);
+      response.headers.set("Cache-Control", cc);
+    }
   }
 
   // Security headers for all responses
