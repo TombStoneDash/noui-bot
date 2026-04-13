@@ -84,9 +84,78 @@ export default function DocsPage() {
 
         {/* Authentication */}
         <DocSection title="Authentication">
-          <p className="text-white/60 text-sm leading-relaxed">
-            Public endpoints require no authentication. Agent registration and deployment
-            endpoints use Bearer token auth via Deploy Rail.
+          <p className="text-white/60 text-sm leading-relaxed mb-4">
+            Bazaar endpoints use Bearer token authentication. Keys are issued during
+            provider or consumer registration and follow the format <code className="text-white/70">bz_*</code>.
+          </p>
+          <CodeBlock>{`Authorization: Bearer bz_a1b2c3d4e5f6...`}</CodeBlock>
+          <div className="mt-4 space-y-3 text-sm text-white/50">
+            <p><strong className="text-white/70">Provider keys</strong> — permissions: <code className="text-white/60">read</code>, <code className="text-white/60">write</code>, <code className="text-white/60">manage_tools</code></p>
+            <p><strong className="text-white/70">Consumer keys</strong> — permissions: <code className="text-white/60">read</code>, <code className="text-white/60">call_tools</code></p>
+            <p className="text-white/40">Public endpoints (catalog, health, stats) require no authentication.</p>
+          </div>
+        </DocSection>
+
+        {/* Error Codes */}
+        <DocSection title="Error Codes">
+          <p className="text-white/60 text-sm leading-relaxed mb-4">
+            All errors return JSON with <code className="text-white/70">error</code> and <code className="text-white/70">message</code> fields.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left font-mono text-xs text-white/30 py-2 pr-4">Code</th>
+                  <th className="text-left font-mono text-xs text-white/30 py-2 pr-4">Meaning</th>
+                  <th className="text-left font-mono text-xs text-white/30 py-2">When</th>
+                </tr>
+              </thead>
+              <tbody className="font-mono text-xs">
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">400</td><td className="py-2 pr-4 text-white/50">Bad Request</td><td className="py-2 text-white/40">Missing required fields, invalid JSON</td></tr>
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">401</td><td className="py-2 pr-4 text-white/50">Unauthorized</td><td className="py-2 text-white/40">Missing or invalid API key</td></tr>
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">402</td><td className="py-2 pr-4 text-white/50">Payment Required</td><td className="py-2 text-white/40">Insufficient balance for tool call</td></tr>
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">403</td><td className="py-2 pr-4 text-white/50">Forbidden</td><td className="py-2 text-white/40">Key lacks required permission</td></tr>
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">404</td><td className="py-2 pr-4 text-white/50">Not Found</td><td className="py-2 text-white/40">Tool or provider not found</td></tr>
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">429</td><td className="py-2 pr-4 text-white/50">Rate Limited</td><td className="py-2 text-white/40">Exceeded requests per minute</td></tr>
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">500</td><td className="py-2 pr-4 text-white/50">Internal Error</td><td className="py-2 text-white/40">Server error — retry with backoff</td></tr>
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">502</td><td className="py-2 pr-4 text-white/50">Bad Gateway</td><td className="py-2 text-white/40">Provider endpoint unreachable</td></tr>
+                <tr><td className="py-2 pr-4 text-white/70">503</td><td className="py-2 pr-4 text-white/50">Degraded</td><td className="py-2 text-white/40">Platform health issue</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <CodeBlock>{`// Error response format
+{
+  "error": true,
+  "message": "Insufficient balance",
+  "code": "INSUFFICIENT_FUNDS",
+  "required_cents": 5,
+  "balance_cents": 2
+}`}</CodeBlock>
+        </DocSection>
+
+        {/* Rate Limits */}
+        <DocSection title="Rate Limits">
+          <p className="text-white/60 text-sm leading-relaxed mb-4">
+            Rate limits are enforced per API key. Exceeding limits returns <code className="text-white/70">429</code> with a <code className="text-white/70">Retry-After</code> header.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left font-mono text-xs text-white/30 py-2 pr-4">Tier</th>
+                  <th className="text-left font-mono text-xs text-white/30 py-2 pr-4">RPM</th>
+                  <th className="text-left font-mono text-xs text-white/30 py-2">Monthly Calls</th>
+                </tr>
+              </thead>
+              <tbody className="font-mono text-xs">
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">Free</td><td className="py-2 pr-4 text-white/50">60</td><td className="py-2 text-white/50">100</td></tr>
+                <tr className="border-b border-white/5"><td className="py-2 pr-4 text-white/70">Pro</td><td className="py-2 pr-4 text-white/50">300</td><td className="py-2 text-white/50">10,000</td></tr>
+                <tr><td className="py-2 pr-4 text-white/70">Scale</td><td className="py-2 pr-4 text-white/50">1,000</td><td className="py-2 text-white/50">100,000</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-white/40 text-sm mt-4">
+            Public endpoints (catalog, health, stats) are rate-limited per IP at 30 RPM.
           </p>
         </DocSection>
 
@@ -144,6 +213,102 @@ export default function DocsPage() {
   "unique_platforms": 3,
   "timestamp": "2026-02-20T...",
   "note": "Counts only — no PII exposed."
+}`}
+            />
+          </div>
+        </DocSection>
+
+        {/* Bazaar Endpoints */}
+        <DocSection title="Bazaar Endpoints">
+          <div className="space-y-10">
+            <Endpoint
+              method="GET"
+              path="/api/bazaar/catalog"
+              description="Public tool catalog. Returns all active tools with pricing, stats, and provider info. Supports pagination and category filtering."
+              response={`{
+  "tools": [{
+    "id": "uuid",
+    "tool_name": "web_search",
+    "display_name": "Web Search",
+    "description": "Search the web",
+    "category": "search",
+    "provider": { "id": "uuid", "name": "SearchCo", "verified": true },
+    "pricing": { "model": "per_call", "price_cents": 1, "price": "$0.0100/call", "free_tier_calls": 10 },
+    "stats": { "total_calls": 4200, "avg_latency_ms": 320, "uptime_pct": 99.8 }
+  }],
+  "total": 14, "limit": 50, "offset": 0
+}`}
+            />
+            <Endpoint
+              method="POST"
+              path="/api/bazaar/proxy"
+              description="Call any tool through the billing proxy. Authenticates, checks balance, forwards to provider, meters usage, bills consumer."
+              body={`{
+  "tool_name": "web_search",
+  "input": { "query": "MCP protocol updates" }
+}`}
+              response={`{
+  "result": { "content": [{ "type": "text", "text": "..." }] },
+  "usage": { "cost_cents": 1, "latency_ms": 280, "provider": "SearchCo" }
+}`}
+            />
+            <Endpoint
+              method="POST"
+              path="/api/bazaar/register-provider"
+              description="Register an MCP server as a provider. Returns API key (shown once)."
+              body={`{
+  "name": "My MCP Server",
+  "email": "you@example.com",
+  "endpoint_url": "https://my-server.com/mcp",
+  "description": "Weather and search tools",
+  "pricing_model": "per_call"
+}`}
+              response={`{
+  "provider_id": "uuid",
+  "name": "My MCP Server",
+  "api_key": "bz_a1b2c3...",
+  "api_key_prefix": "bz_a1b2...",
+  "message": "Provider registered. Save your API key — it will not be shown again."
+}`}
+            />
+            <Endpoint
+              method="POST"
+              path="/api/bazaar/register-consumer"
+              description="Register as a consumer (agent developer). Returns API key and initial free balance."
+              body={`{ "name": "My Agent", "email": "agent@example.com" }`}
+              response={`{
+  "consumer_id": "uuid",
+  "api_key": "bz_x9y8z7...",
+  "balance_cents": 0,
+  "rate_limit_rpm": 60,
+  "message": "Consumer registered."
+}`}
+            />
+            <Endpoint
+              method="GET"
+              path="/api/bazaar/usage"
+              description="View usage logs for the authenticated consumer or provider."
+              response={`{
+  "usage": [{
+    "tool_name": "web_search",
+    "status": "success",
+    "cost_cents": 1,
+    "latency_ms": 280,
+    "created_at": "2026-04-13T..."
+  }],
+  "total": 42
+}`}
+            />
+            <Endpoint
+              method="GET"
+              path="/api/bazaar/health"
+              description="Bazaar health check. Returns status, provider count, tool count, and uptime."
+              response={`{
+  "status": "ok",
+  "provider_count": 6,
+  "tool_count": 14,
+  "uptime_seconds": 86400,
+  "timestamp": "2026-04-13T..."
 }`}
             />
           </div>
