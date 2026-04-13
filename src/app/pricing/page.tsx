@@ -162,38 +162,38 @@ export default function PricingPage() {
             <div className="font-mono text-3xl font-bold mb-1">$0</div>
             <div className="font-mono text-sm text-white/40 mb-6">forever</div>
             <ul className="space-y-3 text-sm text-white/50">
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>100 calls/month across all providers</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>18% platform fee on paid tools</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>100 calls/month</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>10% platform fee on paid tools</span></li>
               <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Usage dashboard</span></li>
               <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Signed receipts</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Community support</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>60 RPM rate limit</span></li>
             </ul>
             <a href="/developers/register" className="block mt-6 text-center font-mono text-sm border border-white/20 text-white/70 px-6 py-3 rounded hover:border-white/40 hover:text-white transition-colors">
               Get Started Free
             </a>
           </div>
 
-          {/* Builder */}
+          {/* Pro */}
           <div className="border border-emerald-500/30 rounded-lg p-6 bg-emerald-500/[0.03] relative">
             <div className="absolute -top-3 left-6 font-mono text-[10px] bg-emerald-500 text-black px-2 py-0.5 rounded">
               POPULAR
             </div>
-            <div className="font-mono text-[10px] text-emerald-400/60 uppercase tracking-wider mb-2">Builder</div>
+            <div className="font-mono text-[10px] text-emerald-400/60 uppercase tracking-wider mb-2">Pro</div>
             <div className="font-mono text-3xl font-bold text-emerald-400 mb-1">$29<span className="text-lg text-emerald-400/60">/mo</span></div>
             <div className="font-mono text-sm text-white/40 mb-6">for growing agents</div>
             <ul className="space-y-3 text-sm text-white/50">
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>1,000 calls/month included</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>12% platform fee on paid tools</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>10,000 calls/month included</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>8% platform fee on paid tools</span></li>
               <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Usage analytics dashboard</span></li>
               <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Priority support</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>120 RPM rate limit</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>300 RPM rate limit</span></li>
             </ul>
             <button
-              onClick={() => handleCheckout("builder")}
-              disabled={checkoutLoading === "builder"}
+              onClick={() => handleCheckout("pro")}
+              disabled={checkoutLoading === "pro"}
               className="block w-full mt-6 text-center font-mono text-sm bg-emerald-500 text-black px-6 py-3 rounded hover:bg-emerald-400 transition-colors disabled:opacity-50"
             >
-              {checkoutLoading === "builder" ? "Loading..." : "Subscribe"}
+              {checkoutLoading === "pro" ? "Loading..." : "Subscribe"}
             </button>
           </div>
 
@@ -203,11 +203,11 @@ export default function PricingPage() {
             <div className="font-mono text-3xl font-bold mb-1">$99<span className="text-lg text-white/40">/mo</span></div>
             <div className="font-mono text-sm text-white/40 mb-6">for production workloads</div>
             <ul className="space-y-3 text-sm text-white/50">
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>10,000 calls/month included</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>8% platform fee on paid tools</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>100,000 calls/month included</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>5% platform fee on paid tools</span></li>
               <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Advanced analytics + exports</span></li>
               <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Dedicated support</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Custom billing arrangements</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>1,000 RPM rate limit</span></li>
             </ul>
             <button
               onClick={() => handleCheckout("scale")}
