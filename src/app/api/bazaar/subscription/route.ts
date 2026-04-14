@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authenticateRequest } from "@/lib/bazaar-auth";
+import { authenticateKey as authenticateRequest } from "@/lib/bazaar-auth";
 import { getSupabase } from "@/lib/supabase";
 
 const PLAN_DETAILS: Record<string, { name: string; calls_per_month: number; fee_rate: string; rpm: number; price: string }> = {

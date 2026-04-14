@@ -116,11 +116,15 @@ export async function POST(request: Request) {
         const amountCents = subscription.items.data[0]?.price?.unit_amount || 0;
         const plan = planFromAmount(amountCents);
         const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
-        const periodEnd = subscription.current_period_end
-          ? new Date(subscription.current_period_end * 1000).toISOString()
+        // Cast to access fields that may vary across Stripe API versions
+        const subAny = subscription as unknown as Record<string, unknown>;
+        const periodEndRaw = subAny.current_period_end as number | undefined;
+        const periodEnd = periodEndRaw
+          ? new Date(periodEndRaw * 1000).toISOString()
           : null;
-        const cancelledAt = subscription.canceled_at
-          ? new Date(subscription.canceled_at * 1000).toISOString()
+        const canceledAtRaw = subAny.canceled_at as number | undefined;
+        const cancelledAt = canceledAtRaw
+          ? new Date(canceledAtRaw * 1000).toISOString()
           : null;
 
         await sb

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
-import { authenticateRequest } from "@/lib/bazaar-auth";
+import { authenticateKey as authenticateRequest } from "@/lib/bazaar-auth";
 import { getSupabase } from "@/lib/supabase";
 
 const PLANS: Record<
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0] = {
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: "subscription",
       line_items: [
         {
