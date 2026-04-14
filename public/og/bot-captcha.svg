@@ -1,0 +1,53 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="scanlines" patternUnits="userSpaceOnUse" width="1200" height="4">
+      <rect width="1200" height="3" fill="transparent"/>
+      <rect y="3" width="1200" height="1" fill="rgba(0,255,65,0.03)"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#000000"/>
+
+  <!-- Scanline overlay -->
+  <rect width="1200" height="630" fill="url(#scanlines)"/>
+
+  <!-- Subtle border glow -->
+  <rect x="40" y="40" width="1120" height="550" rx="0" ry="0" fill="none" stroke="#00ff41" stroke-opacity="0.1" stroke-width="1"/>
+
+  <!-- Main title: BOT CAPTCHA -->
+  <text x="600" y="260" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-weight="700" font-size="96" fill="#00ff41" letter-spacing="-2">
+    BOT CAPTCHA
+  </text>
+
+  <!-- Subtitle -->
+  <text x="600" y="330" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-weight="300" font-size="28" fill="#888888">
+    Can you prove you're a bot?
+  </text>
+
+  <!-- Divider line -->
+  <line x1="440" y1="370" x2="760" y2="370" stroke="#00ff41" stroke-opacity="0.2" stroke-width="1"/>
+
+  <!-- Challenge count -->
+  <text x="600" y="420" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-weight="400" font-size="18" fill="#555555" letter-spacing="3">
+    4 CHALLENGES. ONLY MACHINES PASS.
+  </text>
+
+  <!-- Bottom branding -->
+  <text x="600" y="540" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-weight="400" font-size="20" fill="#00ff41" opacity="0.5">
+    noui.bot
+  </text>
+
+  <!-- Corner accents -->
+  <line x1="60" y1="60" x2="110" y2="60" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="60" y1="60" x2="60" y2="110" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="1140" y1="60" x2="1090" y2="60" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="1140" y1="60" x2="1140" y2="110" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="60" y1="570" x2="110" y2="570" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="60" y1="570" x2="60" y2="520" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="1140" y1="570" x2="1090" y2="570" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="1140" y1="570" x2="1140" y2="520" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+
+  <!-- Terminal cursor blink indicator -->
+  <rect x="695" y="520" width="12" height="22" fill="#00ff41" opacity="0.4"/>
+</svg>

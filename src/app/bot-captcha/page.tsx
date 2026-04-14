@@ -12,13 +12,13 @@ export const metadata: Metadata = {
     url: "https://noui.bot/bot-captcha",
     siteName: "noui.bot",
     type: "website",
-    images: [{ url: "/og/bot-captcha.png", width: 1200, height: 630 }],
+    images: [{ url: "/og/bot-captcha", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Bot CAPTCHA — Can You Prove You're a Bot?",
     description: "4 challenges only machines can pass. What's your score?",
-    images: ["/og/bot-captcha.png"],
+    images: ["/og/bot-captcha"],
     creator: "@forthebots",
   },
 };
