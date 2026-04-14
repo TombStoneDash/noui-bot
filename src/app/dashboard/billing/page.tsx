@@ -3,56 +3,82 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 
-interface BillingSummary {
+interface RevenueStats {
+  total_transactions: number;
+  succeeded_count: number;
+  failed_count: number;
+  refunded_count: number;
+  gross_revenue_cents: number;
+  platform_fee_cents: number;
+  net_revenue_cents: number;
+  avg_transaction_cents: number;
+}
+
+interface DailyRevenue {
+  date: string;
+  gross_cents: number;
+  net_cents: number;
+  transactions: number;
+  succeeded: number;
+  failed: number;
+}
+
+interface BillingData {
   provider: { id: string; name: string };
-  period: string;
-  earnings: {
-    gross_revenue_cents: number;
-    gross_revenue: string;
-    platform_fee_cents: number;
-    platform_fee: string;
-    net_earnings_cents: number;
-    net_earnings: string;
+  revenue: {
+    all_time: RevenueStats;
+    this_month: RevenueStats;
+    this_week: RevenueStats;
   };
-  payout: {
-    pending_balance_cents: number;
-    pending_balance: string;
-    last_payout_date: string | null;
-    last_payout_cents: number | null;
+  daily_revenue: DailyRevenue[];
+  stripe_account: {
+    id: string;
+    charges_enabled: boolean;
+    payouts_enabled: boolean;
+    details_submitted: boolean;
+  } | null;
+  config: {
+    webhook_url: string | null;
+    payout_balance_cents: number;
+    payout_schedule: string;
   };
-  by_tool: Array<{
-    tool: string;
-    calls: number;
-    gross_cents: number;
-    net_cents: number;
-  }>;
-  by_week: Array<{
-    week_of: string;
-    calls: number;
-    gross_cents: number;
-    net_cents: number;
-  }>;
+  platform_fee_rate: string;
 }
 
 function cents(amount: number): string {
   return `$${(amount / 100).toFixed(2)}`;
 }
 
+function compactCents(amount: number): string {
+  if (amount >= 100_000) return `$${(amount / 100_000).toFixed(1)}k`;
+  return cents(amount);
+}
+
 function StatCard({
   label,
   value,
   sub,
+  accent,
 }: {
   label: string;
   value: string;
   sub?: string;
+  accent?: "emerald" | "red" | "amber" | "default";
 }) {
+  const accentMap = {
+    emerald: "text-emerald-400",
+    red: "text-red-400",
+    amber: "text-amber-400",
+    default: "text-white",
+  };
+  const color = accentMap[accent || "default"];
+
   return (
     <div className="border border-white/[0.08] rounded-lg p-5 bg-white/[0.02]">
       <div className="font-mono text-xs text-white/40 uppercase tracking-wider mb-2">
         {label}
       </div>
-      <div className="font-mono text-2xl font-bold text-white">{value}</div>
+      <div className={`font-mono text-2xl font-bold ${color}`}>{value}</div>
       {sub && (
         <div className="font-mono text-xs text-white/30 mt-1">{sub}</div>
       )}
@@ -60,94 +86,144 @@ function StatCard({
   );
 }
 
-function MiniChart({ data }: { data: Array<{ net_cents: number }> }) {
+function RevenueChart({
+  data,
+  hoveredDay,
+  onHover,
+}: {
+  data: DailyRevenue[];
+  hoveredDay: DailyRevenue | null;
+  onHover: (day: DailyRevenue | null) => void;
+}) {
   if (data.length === 0) return null;
-  const max = Math.max(...data.map((d) => d.net_cents), 1);
+  const maxGross = Math.max(...data.map((d) => d.gross_cents), 1);
+
   return (
-    <div className="flex items-end gap-1 h-20">
-      {data.map((d, i) => (
-        <div
-          key={i}
-          className="flex-1 bg-emerald-500/30 hover:bg-emerald-500/50 rounded-t transition-colors"
-          style={{ height: `${Math.max((d.net_cents / max) * 100, 4)}%` }}
-          title={cents(d.net_cents)}
-        />
-      ))}
+    <div className="border border-white/[0.08] rounded-lg p-5 bg-white/[0.02]">
+      <div className="flex items-center justify-between mb-4">
+        <span className="font-mono text-xs text-white/40 uppercase tracking-wider">
+          Revenue — Last 30 Days
+        </span>
+        {hoveredDay && (
+          <span className="font-mono text-xs text-white/60">
+            {hoveredDay.date} &mdash; {cents(hoveredDay.gross_cents)} gross
+            &middot; {hoveredDay.transactions} txn
+          </span>
+        )}
+      </div>
+
+      {/* Bars */}
+      <div className="flex items-end gap-[3px] h-32">
+        {data.map((d, i) => {
+          const pct = Math.max((d.gross_cents / maxGross) * 100, 2);
+          const hasFailures = d.failed > 0;
+          return (
+            <div
+              key={i}
+              className="flex-1 flex flex-col justify-end"
+              onMouseEnter={() => onHover(d)}
+              onMouseLeave={() => onHover(null)}
+            >
+              <div
+                className={`rounded-t transition-colors cursor-default ${
+                  hasFailures
+                    ? "bg-amber-500/30 hover:bg-amber-500/50"
+                    : "bg-emerald-500/30 hover:bg-emerald-500/50"
+                }`}
+                style={{ height: `${pct}%` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* X-axis labels */}
+      <div className="flex justify-between mt-2">
+        <span className="font-mono text-[10px] text-white/20">
+          {data[0]?.date.slice(5)}
+        </span>
+        <span className="font-mono text-[10px] text-white/20">
+          {data[Math.floor(data.length / 2)]?.date.slice(5)}
+        </span>
+        <span className="font-mono text-[10px] text-white/20">
+          {data[data.length - 1]?.date.slice(5)}
+        </span>
+      </div>
+
+      {/* Legend */}
+      <div className="flex gap-4 mt-3">
+        <span className="flex items-center gap-1.5 font-mono text-[10px] text-white/30">
+          <span className="w-2 h-2 rounded-sm bg-emerald-500/40" />
+          Revenue
+        </span>
+        <span className="flex items-center gap-1.5 font-mono text-[10px] text-white/30">
+          <span className="w-2 h-2 rounded-sm bg-amber-500/40" />
+          Has failures
+        </span>
+      </div>
     </div>
+  );
+}
+
+function StatusBadge({ connected }: { connected: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 font-mono text-[10px] px-2 py-0.5 rounded ${
+        connected
+          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+          : "bg-white/5 text-white/30 border border-white/10"
+      }`}
+    >
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${
+          connected ? "bg-emerald-400" : "bg-white/20"
+        }`}
+      />
+      {connected ? "Connected" : "Not connected"}
+    </span>
   );
 }
 
 export default function BillingDashboardPage() {
   const [apiKey, setApiKey] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
-  const [summary, setSummary] = useState<BillingSummary | null>(null);
-  const [period, setPeriod] = useState("30d");
+  const [data, setData] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hoveredDay, setHoveredDay] = useState<DailyRevenue | null>(null);
 
-  const fetchBilling = useCallback(
-    async (key: string, p: string) => {
-      setLoading(true);
-      setError("");
+  const fetchBilling = useCallback(async (key: string) => {
+    setLoading(true);
+    setError("");
 
-      try {
-        const res = await fetch("/api/bazaar/billing/provider-summary", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ period: p }),
-        });
+    try {
+      const res = await fetch("/api/bazaar/billing/stripe-summary", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-        const data = await res.json();
+      const json = await res.json();
 
-        if (!res.ok) {
-          setError(data.message || "Authentication failed");
-          return;
-        }
-
-        setSummary(data);
-        setAuthenticated(true);
-      } catch {
-        setError("Network error");
-      } finally {
-        setLoading(false);
+      if (!res.ok) {
+        setError(json.message || "Authentication failed");
+        return;
       }
-    },
-    []
-  );
+
+      setData(json);
+      setAuthenticated(true);
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   function handleAuth(e: React.FormEvent) {
     e.preventDefault();
-    fetchBilling(apiKey, period);
-  }
-
-  function changePeriod(p: string) {
-    setPeriod(p);
-    if (authenticated) fetchBilling(apiKey, p);
-  }
-
-  function exportCSV() {
-    if (!summary) return;
-    const rows = [
-      ["Tool", "Calls", "Gross Revenue", "Platform Fee", "Net Earnings"],
-      ...summary.by_tool.map((t) => [
-        t.tool,
-        t.calls.toString(),
-        cents(t.gross_cents),
-        cents(t.gross_cents - t.net_cents),
-        cents(t.net_cents),
-      ]),
-    ];
-    const csv = rows.map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `bazaar-billing-${period}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    fetchBilling(apiKey);
   }
 
   return (
@@ -163,7 +239,7 @@ export default function BillingDashboardPage() {
         Billing Dashboard
       </h1>
       <p className="text-white/40 font-mono text-sm mb-8">
-        Revenue, transactions, and payouts for your MCP tools.
+        Revenue, transactions, and Stripe integration for agent operators.
       </p>
 
       {/* Nav */}
@@ -213,140 +289,134 @@ export default function BillingDashboardPage() {
             disabled={loading}
             className="font-mono text-sm bg-white text-black px-8 py-3 rounded hover:bg-white/90 transition-colors disabled:opacity-50"
           >
-            {loading ? "Loading..." : "View Dashboard →"}
+            {loading ? "Loading..." : "View Dashboard"}
           </button>
         </form>
-      ) : summary ? (
+      ) : data ? (
         <div className="space-y-8">
-          {/* Period Selector */}
-          <div className="flex items-center gap-2">
-            {["7d", "30d", "90d", "all"].map((p) => (
-              <button
-                key={p}
-                onClick={() => changePeriod(p)}
-                className={`font-mono text-xs px-3 py-1.5 rounded transition-colors ${
-                  period === p
-                    ? "bg-white/10 text-white border border-white/20"
-                    : "text-white/30 border border-white/[0.06] hover:text-white/50"
-                }`}
-              >
-                {p === "all" ? "All Time" : p}
-              </button>
-            ))}
+          {/* Provider header + Stripe status */}
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-mono text-sm text-white/60">
+                {data.provider.name}
+              </span>
+              <span className="font-mono text-xs text-white/20 ml-3">
+                {data.provider.id.slice(0, 8)}...
+              </span>
+            </div>
+            <StatusBadge connected={!!data.stripe_account?.charges_enabled} />
           </div>
 
-          {/* Revenue Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Revenue summary — 3 time windows */}
+          <div>
+            <div className="font-mono text-xs text-white/40 uppercase tracking-wider mb-4">
+              Revenue Overview
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard
+                label="All Time Revenue"
+                value={compactCents(data.revenue.all_time.gross_revenue_cents)}
+                sub={`${data.revenue.all_time.total_transactions} transactions`}
+                accent="emerald"
+              />
+              <StatCard
+                label="This Month"
+                value={cents(data.revenue.this_month.gross_revenue_cents)}
+                sub={`${data.revenue.this_month.succeeded_count} succeeded, ${data.revenue.this_month.failed_count} failed`}
+              />
+              <StatCard
+                label="This Week"
+                value={cents(data.revenue.this_week.gross_revenue_cents)}
+                sub={`${data.revenue.this_week.succeeded_count} succeeded`}
+              />
+            </div>
+          </div>
+
+          {/* Transaction metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard
-              label="Gross Revenue"
-              value={summary.earnings.gross_revenue}
-              sub={`${summary.by_tool.reduce((s, t) => s + t.calls, 0)} total calls`}
+              label="Total Transactions"
+              value={data.revenue.all_time.total_transactions.toLocaleString()}
+              sub="All time"
+            />
+            <StatCard
+              label="Avg Transaction"
+              value={cents(data.revenue.all_time.avg_transaction_cents)}
+              sub="Per succeeded call"
             />
             <StatCard
               label="Net Earnings"
-              value={summary.earnings.net_earnings}
-              sub={`After ${summary.earnings.platform_fee} platform fee`}
+              value={cents(data.revenue.all_time.net_revenue_cents)}
+              sub={`After ${data.platform_fee_rate} platform fee`}
+              accent="emerald"
             />
             <StatCard
               label="Pending Payout"
-              value={summary.payout.pending_balance}
-              sub={
-                summary.payout.last_payout_date
-                  ? `Last paid: ${new Date(summary.payout.last_payout_date).toLocaleDateString()}`
-                  : "No payouts yet"
-              }
-            />
-            <StatCard
-              label="Avg per Call"
-              value={cents(
-                summary.by_tool.reduce((s, t) => s + t.calls, 0) > 0
-                  ? Math.round(
-                      summary.earnings.gross_revenue_cents /
-                        summary.by_tool.reduce((s, t) => s + t.calls, 0)
-                    )
-                  : 0
-              )}
-              sub="Gross per invocation"
+              value={cents(data.config.payout_balance_cents)}
+              sub={`Schedule: ${data.config.payout_schedule}`}
             />
           </div>
 
-          {/* Revenue Chart */}
-          {summary.by_week.length > 0 && (
-            <div className="border border-white/[0.08] rounded-lg p-5 bg-white/[0.02]">
-              <div className="flex items-center justify-between mb-4">
-                <span className="font-mono text-xs text-white/40 uppercase tracking-wider">
-                  Revenue by Week
-                </span>
-              </div>
-              <MiniChart data={summary.by_week} />
-              <div className="flex justify-between mt-2">
-                <span className="font-mono text-[10px] text-white/20">
-                  {summary.by_week[0]?.week_of}
-                </span>
-                <span className="font-mono text-[10px] text-white/20">
-                  {summary.by_week[summary.by_week.length - 1]?.week_of}
-                </span>
+          {/* Failure rate card */}
+          {data.revenue.all_time.failed_count > 0 && (
+            <div className="border border-red-500/10 rounded-lg p-4 bg-red-500/[0.03]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-mono text-xs text-red-400/60 uppercase tracking-wider">
+                    Failed Transactions
+                  </span>
+                  <div className="font-mono text-lg font-bold text-red-400 mt-1">
+                    {data.revenue.all_time.failed_count}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="font-mono text-xs text-white/30">Failure rate</span>
+                  <div className="font-mono text-lg font-bold text-red-400/70 mt-1">
+                    {data.revenue.all_time.total_transactions > 0
+                      ? `${((data.revenue.all_time.failed_count / data.revenue.all_time.total_transactions) * 100).toFixed(1)}%`
+                      : "0%"}
+                  </div>
+                </div>
+                {data.revenue.all_time.refunded_count > 0 && (
+                  <div className="text-right">
+                    <span className="font-mono text-xs text-white/30">Refunded</span>
+                    <div className="font-mono text-lg font-bold text-amber-400/70 mt-1">
+                      {data.revenue.all_time.refunded_count}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Top Tools */}
-          {summary.by_tool.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="font-mono text-xs text-white/40 uppercase tracking-wider">
-                  Revenue by Tool
-                </span>
-                <button
-                  onClick={exportCSV}
-                  className="font-mono text-xs text-emerald-400/60 hover:text-emerald-400 transition-colors"
-                >
-                  Export CSV
-                </button>
-              </div>
-              <div className="border border-white/[0.08] rounded-lg overflow-hidden">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/[0.06]">
-                      <th className="text-left font-mono text-[10px] text-white/30 uppercase tracking-wider px-4 py-3">
-                        Tool
-                      </th>
-                      <th className="text-right font-mono text-[10px] text-white/30 uppercase tracking-wider px-4 py-3">
-                        Calls
-                      </th>
-                      <th className="text-right font-mono text-[10px] text-white/30 uppercase tracking-wider px-4 py-3">
-                        Gross
-                      </th>
-                      <th className="text-right font-mono text-[10px] text-white/30 uppercase tracking-wider px-4 py-3">
-                        Net
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {summary.by_tool.map((tool) => (
-                      <tr
-                        key={tool.tool}
-                        className="border-b border-white/[0.04] hover:bg-white/[0.02]"
-                      >
-                        <td className="font-mono text-xs text-white/70 px-4 py-3">
-                          {tool.tool}
-                        </td>
-                        <td className="font-mono text-xs text-white/40 text-right px-4 py-3">
-                          {tool.calls.toLocaleString()}
-                        </td>
-                        <td className="font-mono text-xs text-white/40 text-right px-4 py-3">
-                          {cents(tool.gross_cents)}
-                        </td>
-                        <td className="font-mono text-xs text-emerald-400/70 text-right px-4 py-3">
-                          {cents(tool.net_cents)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          {/* 30-day revenue chart */}
+          <RevenueChart
+            data={data.daily_revenue}
+            hoveredDay={hoveredDay}
+            onHover={setHoveredDay}
+          />
+
+          {/* Quick links */}
+          <div className="flex gap-4 flex-wrap pt-4 border-t border-white/[0.06]">
+            <Link
+              href="/dashboard/billing/transactions"
+              className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
+            >
+              View all transactions
+            </Link>
+            <Link
+              href="/dashboard/billing/settings"
+              className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
+            >
+              Manage Stripe settings
+            </Link>
+            <Link
+              href="/docs/guides/provider-quickstart"
+              className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
+            >
+              Provider docs
+            </Link>
+          </div>
         </div>
       ) : null}
 
