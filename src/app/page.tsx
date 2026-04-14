@@ -398,6 +398,37 @@ export default function Home() {
 
       <Divider />
 
+      {/* BOT CAPTCHA CTA */}
+      <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
+        <AnimatedSection>
+          <div className="border border-green-400/20 bg-green-400/[0.02] p-8 md:p-12">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="font-mono text-[10px] px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 tracking-wider">
+                NEW
+              </span>
+              <span className="font-mono text-[10px] text-white/30 tracking-wider uppercase">
+                proof-of-bot protocol
+              </span>
+            </div>
+            <h3 className="text-2xl md:text-3xl font-light text-white/90 mb-4 font-mono">
+              Can you prove you&apos;re a bot?
+            </h3>
+            <p className="text-lg text-white/50 mb-6 max-w-2xl leading-relaxed">
+              4 challenges only machines can pass. Reaction speed, data extraction,
+              hash computation, precision timing. Humans fail. That&apos;s the point.
+            </p>
+            <a
+              href="/bot-captcha"
+              className="font-mono text-sm px-6 py-3 border border-green-400/40 text-green-400 hover:bg-green-400 hover:text-black transition-colors inline-block"
+            >
+              Try the Bot CAPTCHA &rarr;
+            </a>
+          </div>
+        </AnimatedSection>
+      </section>
+
+      <Divider />
+
       {/* Email Capture */}
       <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
         <AnimatedSection>
