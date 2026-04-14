@@ -1,24 +1,26 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, STRIPE_PRO_PRICE_ID } from "@/lib/stripe";
 import { authenticateKey as authenticateRequest } from "@/lib/bazaar-auth";
 import { getSupabase } from "@/lib/supabase";
+import { PLANS as PLAN_DEFS } from "@/lib/subscription";
 
 const PLANS: Record<
   string,
-  { name: string; priceAmountCents: number; callsPerMonth: number; feeRate: string }
+  { name: string; priceAmountCents: number; callsPerMonth: number; feeRate: string; stripePriceId?: string }
 > = {
   pro: {
-    name: "Agent Bazaar — Pro",
-    priceAmountCents: 2900,
-    callsPerMonth: 10_000,
-    feeRate: "8%",
+    name: "noui.bot — Pro",
+    priceAmountCents: PLAN_DEFS.pro.priceCents,
+    callsPerMonth: PLAN_DEFS.pro.callsPerMonth,
+    feeRate: PLAN_DEFS.pro.feeRate,
+    stripePriceId: STRIPE_PRO_PRICE_ID || undefined,
   },
   scale: {
-    name: "Agent Bazaar — Scale",
-    priceAmountCents: 9900,
-    callsPerMonth: 100_000,
-    feeRate: "5%",
+    name: "noui.bot — Scale",
+    priceAmountCents: PLAN_DEFS.scale.priceCents,
+    callsPerMonth: PLAN_DEFS.scale.callsPerMonth,
+    feeRate: PLAN_DEFS.scale.feeRate,
   },
 };
 
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, priceAmountCents } = PLANS[plan];
+  const { name, priceAmountCents, stripePriceId } = PLANS[plan];
 
   // If authenticated, link checkout to existing consumer
   const auth = await authenticateRequest(request);
@@ -76,10 +78,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      mode: "subscription",
-      line_items: [
-        {
+    // Use Stripe Price ID if configured, otherwise fall back to inline price_data
+    const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = stripePriceId
+      ? { price: stripePriceId, quantity: 1 }
+      : {
           price_data: {
             currency: "usd",
             product_data: { name },
@@ -87,8 +89,11 @@ export async function POST(request: Request) {
             recurring: { interval: "month" },
           },
           quantity: 1,
-        },
-      ],
+        };
+
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode: "subscription",
+      line_items: [lineItem],
       success_url: `${new URL(request.url).origin}/developers/dashboard?checkout=success`,
       cancel_url: `${new URL(request.url).origin}/pricing?checkout=cancelled`,
       metadata: { plan, ...(auth ? { consumer_id: auth.id } : {}) },

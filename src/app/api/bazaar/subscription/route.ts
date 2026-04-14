@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { authenticateKey as authenticateRequest } from "@/lib/bazaar-auth";
 import { getSupabase } from "@/lib/supabase";
+import { PLANS, type PlanId, hasFeature } from "@/lib/subscription";
 
-const PLAN_DETAILS: Record<string, { name: string; calls_per_month: number; fee_rate: string; rpm: number; price: string }> = {
-  free: { name: "Free", calls_per_month: 100, fee_rate: "10%", rpm: 60, price: "$0" },
-  pro: { name: "Pro", calls_per_month: 10_000, fee_rate: "8%", rpm: 300, price: "$29/mo" },
-  scale: { name: "Scale", calls_per_month: 100_000, fee_rate: "5%", rpm: 1_000, price: "$99/mo" },
-};
+const PLAN_DETAILS: Record<string, { name: string; calls_per_month: number; fee_rate: string; rpm: number; price: string }> = Object.fromEntries(
+  Object.entries(PLANS).map(([id, p]) => [
+    id,
+    { name: p.name, calls_per_month: p.callsPerMonth, fee_rate: p.feeRate, rpm: p.rpm, price: p.price },
+  ])
+);
 
 export async function GET(request: Request) {
   const auth = await authenticateRequest(request);
@@ -31,8 +33,9 @@ export async function GET(request: Request) {
     .eq("id", auth.id)
     .single();
 
-  const plan = consumer?.subscription_plan || "free";
+  const plan = (consumer?.subscription_plan || "free") as PlanId;
   const details = PLAN_DETAILS[plan] || PLAN_DETAILS.free;
+  const planDef = PLANS[plan] || PLANS.free;
 
   return NextResponse.json({
     plan,
@@ -42,5 +45,12 @@ export async function GET(request: Request) {
     current_period_end: consumer?.subscription_current_period_end || null,
     cancelled_at: consumer?.subscription_cancelled_at || null,
     rate_limit_rpm: consumer?.rate_limit_rpm || 60,
+    features: {
+      unlimited_agents: hasFeature(plan, "unlimited_agents"),
+      priority_support: hasFeature(plan, "priority_support"),
+      custom_domains: hasFeature(plan, "custom_domains"),
+      advanced_analytics: hasFeature(plan, "advanced_analytics"),
+    },
+    agent_limit: planDef.agents === "unlimited" ? null : planDef.agents,
   });
 }

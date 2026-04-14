@@ -150,23 +150,25 @@ export default function PricingPage() {
         One model. Simple math. You set the price, keep 90%.
       </p>
 
-      {/* Consumer Tiers */}
+      {/* Free vs Pro Comparison */}
       <div className="mb-16">
         <h2 className="font-mono text-xs text-white/30 uppercase tracking-widest mb-8">
-          For Agent Developers
+          Choose Your Plan
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
           {/* Free */}
           <div className="border border-white/[0.08] rounded-lg p-6 bg-white/[0.02]">
             <div className="font-mono text-[10px] text-white/30 uppercase tracking-wider mb-2">Free</div>
             <div className="font-mono text-3xl font-bold mb-1">$0</div>
             <div className="font-mono text-sm text-white/40 mb-6">forever</div>
             <ul className="space-y-3 text-sm text-white/50">
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>100 calls/month</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>10% platform fee on paid tools</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Usage dashboard</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Signed receipts</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>60 RPM rate limit</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span>3 agents</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span>Community support</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span>100 calls/month</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span>Usage dashboard</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span>60 RPM rate limit</span></li>
+              <li className="flex items-start gap-2"><span className="text-white/20 mt-0.5">&#10005;</span><span className="text-white/25">Custom domains</span></li>
+              <li className="flex items-start gap-2"><span className="text-white/20 mt-0.5">&#10005;</span><span className="text-white/25">Advanced analytics</span></li>
             </ul>
             <a href="/developers/register" className="block mt-6 text-center font-mono text-sm border border-white/20 text-white/70 px-6 py-3 rounded hover:border-white/40 hover:text-white transition-colors">
               Get Started Free
@@ -176,51 +178,69 @@ export default function PricingPage() {
           {/* Pro */}
           <div className="border border-emerald-500/30 rounded-lg p-6 bg-emerald-500/[0.03] relative">
             <div className="absolute -top-3 left-6 font-mono text-[10px] bg-emerald-500 text-black px-2 py-0.5 rounded">
-              POPULAR
+              RECOMMENDED
             </div>
             <div className="font-mono text-[10px] text-emerald-400/60 uppercase tracking-wider mb-2">Pro</div>
             <div className="font-mono text-3xl font-bold text-emerald-400 mb-1">$29<span className="text-lg text-emerald-400/60">/mo</span></div>
-            <div className="font-mono text-sm text-white/40 mb-6">for growing agents</div>
+            <div className="font-mono text-sm text-white/40 mb-6">for serious builders</div>
             <ul className="space-y-3 text-sm text-white/50">
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>10,000 calls/month included</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>8% platform fee on paid tools</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Usage analytics dashboard</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Priority support</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>300 RPM rate limit</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span className="text-white/80 font-medium">Unlimited agents</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span className="text-white/80 font-medium">Priority support</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span>10,000 calls/month included</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span>8% platform fee (vs 10%)</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span>300 RPM rate limit</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span className="text-white/80 font-medium">Custom domains</span></li>
+              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#10003;</span><span className="text-white/80 font-medium">Advanced analytics</span></li>
             </ul>
             <button
               onClick={() => handleCheckout("pro")}
               disabled={checkoutLoading === "pro"}
               className="block w-full mt-6 text-center font-mono text-sm bg-emerald-500 text-black px-6 py-3 rounded hover:bg-emerald-400 transition-colors disabled:opacity-50"
             >
-              {checkoutLoading === "pro" ? "Loading..." : "Subscribe"}
-            </button>
-          </div>
-
-          {/* Scale */}
-          <div className="border border-white/[0.08] rounded-lg p-6 bg-white/[0.02]">
-            <div className="font-mono text-[10px] text-white/30 uppercase tracking-wider mb-2">Scale</div>
-            <div className="font-mono text-3xl font-bold mb-1">$99<span className="text-lg text-white/40">/mo</span></div>
-            <div className="font-mono text-sm text-white/40 mb-6">for production workloads</div>
-            <ul className="space-y-3 text-sm text-white/50">
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>100,000 calls/month included</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>5% platform fee on paid tools</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Advanced analytics + exports</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Dedicated support</span></li>
-              <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>1,000 RPM rate limit</span></li>
-            </ul>
-            <button
-              onClick={() => handleCheckout("scale")}
-              disabled={checkoutLoading === "scale"}
-              className="block w-full mt-6 text-center font-mono text-sm bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors disabled:opacity-50"
-            >
-              {checkoutLoading === "scale" ? "Loading..." : "Subscribe"}
+              {checkoutLoading === "pro" ? "Loading..." : "Upgrade to Pro"}
             </button>
           </div>
         </div>
         {checkoutError && (
           <p className="font-mono text-xs text-red-400 mt-4">{checkoutError}</p>
         )}
+      </div>
+
+      {/* Feature Comparison Table */}
+      <div className="mb-16">
+        <h2 className="font-mono text-xs text-white/30 uppercase tracking-widest mb-8">
+          Feature Comparison
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="w-full max-w-3xl">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="text-left font-mono text-xs text-white/30 uppercase py-2 pr-4">Feature</th>
+                <th className="text-center font-mono text-xs text-white/30 uppercase py-2 px-4 w-32">Free</th>
+                <th className="text-center font-mono text-xs text-emerald-400/60 uppercase py-2 pl-4 w-32">Pro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { feature: "Agents", free: "3", pro: "Unlimited" },
+                { feature: "Support", free: "Community", pro: "Priority" },
+                { feature: "API calls/month", free: "100", pro: "10,000" },
+                { feature: "Rate limit", free: "60 RPM", pro: "300 RPM" },
+                { feature: "Platform fee", free: "10%", pro: "8%" },
+                { feature: "Custom domains", free: "\u2014", pro: "\u2713" },
+                { feature: "Advanced analytics", free: "\u2014", pro: "\u2713" },
+                { feature: "Usage dashboard", free: "\u2713", pro: "\u2713" },
+                { feature: "Signed receipts", free: "\u2713", pro: "\u2713" },
+              ].map((row, i) => (
+                <tr key={i} className="border-b border-white/[0.04]">
+                  <td className="py-3 pr-4 font-mono text-xs text-white/60">{row.feature}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-white/40 text-center">{row.free}</td>
+                  <td className="py-3 pl-4 font-mono text-xs text-white/80 text-center">{row.pro}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Provider Model */}

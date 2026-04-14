@@ -32,6 +32,13 @@ interface SubscriptionInfo {
   current_period_end: string | null;
   cancelled_at: string | null;
   rate_limit_rpm: number;
+  features?: {
+    unlimited_agents: boolean;
+    priority_support: boolean;
+    custom_domains: boolean;
+    advanced_analytics: boolean;
+  };
+  agent_limit?: number | null;
 }
 
 function cents(amount: number): string {
@@ -214,12 +221,45 @@ export default function DeveloperDashboardPage() {
                 {subscription.plan === "free" && (
                   <a
                     href="/pricing"
-                    className="font-mono text-xs bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded hover:bg-emerald-500/30 transition-colors"
+                    className="font-mono text-xs bg-emerald-500 text-black px-4 py-2 rounded hover:bg-emerald-400 transition-colors font-medium"
                   >
-                    Upgrade to Pro
+                    Upgrade to Pro — $29/mo
                   </a>
                 )}
               </div>
+
+              {/* Feature flags */}
+              {subscription.features && (
+                <div className="mt-4 pt-4 border-t border-white/[0.06]">
+                  <div className="font-mono text-[10px] text-white/30 uppercase tracking-wider mb-2">
+                    Plan Features
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {([
+                      { key: "unlimited_agents" as const, label: "Unlimited Agents", limit: subscription.agent_limit },
+                      { key: "priority_support" as const, label: "Priority Support" },
+                      { key: "custom_domains" as const, label: "Custom Domains" },
+                      { key: "advanced_analytics" as const, label: "Advanced Analytics" },
+                    ]).map((feat) => {
+                      const enabled = subscription.features?.[feat.key] ?? false;
+                      return (
+                        <div
+                          key={feat.key}
+                          className={`flex items-center gap-1.5 font-mono text-[10px] py-1 ${
+                            enabled ? "text-emerald-400/80" : "text-white/20"
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${enabled ? "bg-emerald-400" : "bg-white/15"}`} />
+                          <span>{feat.label}</span>
+                          {feat.key === "unlimited_agents" && !enabled && feat.limit != null && (
+                            <span className="text-white/15">({feat.limit} max)</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

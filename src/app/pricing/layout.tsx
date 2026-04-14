@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pricing — Agent Bazaar | noui.bot",
-  description: "Simple, transparent pricing for the Agent Bazaar. 10% platform fee on paid calls. Free tools are free for everyone.",
+  title: "Pricing — Free vs Pro | noui.bot",
+  description: "Free: 3 agents, community support. Pro at $29/mo: unlimited agents, priority support, custom domains, advanced analytics.",
   openGraph: {
-    title: "Agent Bazaar Pricing",
-    description: "10% platform fee. You keep 90%. No monthly minimums.",
+    title: "noui.bot Pricing — Free vs Pro",
+    description: "Start free with 3 agents. Upgrade to Pro at $29/mo for unlimited agents, priority support, custom domains, and advanced analytics.",
     url: "https://noui.bot/pricing",
   },
 };
@@ -26,7 +26,7 @@ const jsonLd = {
           "name": "Free",
           "price": "0",
           "priceCurrency": "USD",
-          "description": "100 calls/month, 10% platform fee, usage dashboard",
+          "description": "3 agents, community support, 100 calls/month, usage dashboard",
         },
         {
           "@type": "Offer",
@@ -34,15 +34,7 @@ const jsonLd = {
           "price": "29",
           "priceCurrency": "USD",
           "billingDuration": "P1M",
-          "description": "10,000 calls/month, 8% platform fee, priority support",
-        },
-        {
-          "@type": "Offer",
-          "name": "Scale",
-          "price": "99",
-          "priceCurrency": "USD",
-          "billingDuration": "P1M",
-          "description": "100,000 calls/month, 5% platform fee, dedicated support",
+          "description": "Unlimited agents, priority support, custom domains, advanced analytics, 10,000 calls/month",
         },
       ],
     },
