@@ -19,6 +19,21 @@ interface UsageSummary {
   }>;
 }
 
+interface SubscriptionInfo {
+  plan: string;
+  plan_details: {
+    name: string;
+    calls_per_month: number;
+    fee_rate: string;
+    rpm: number;
+    price: string;
+  };
+  status: string;
+  current_period_end: string | null;
+  cancelled_at: string | null;
+  rate_limit_rpm: number;
+}
+
 function cents(amount: number): string {
   return `$${(amount / 100).toFixed(2)}`;
 }
@@ -27,6 +42,7 @@ export default function DeveloperDashboardPage() {
   const [apiKey, setApiKey] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [summary, setSummary] = useState<UsageSummary | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -37,19 +53,29 @@ export default function DeveloperDashboardPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/bazaar/usage/summary", {
-        headers: { Authorization: `Bearer ${key}` },
-      });
+      const [usageRes, subRes] = await Promise.all([
+        fetch("/api/bazaar/usage/summary", {
+          headers: { Authorization: `Bearer ${key}` },
+        }),
+        fetch("/api/bazaar/subscription", {
+          headers: { Authorization: `Bearer ${key}` },
+        }),
+      ]);
 
-      const data = await res.json();
+      const data = await usageRes.json();
 
-      if (!res.ok) {
+      if (!usageRes.ok) {
         setError(data.message || "Authentication failed");
         return;
       }
 
       setSummary(data);
       setAuthenticated(true);
+
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        setSubscription(subData);
+      }
     } catch {
       setError("Network error");
     } finally {
@@ -140,6 +166,62 @@ export default function DeveloperDashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Subscription Status */}
+          {subscription && (
+            <div className={`border rounded-lg p-6 ${
+              subscription.plan === "free"
+                ? "border-white/[0.08] bg-white/[0.02]"
+                : "border-emerald-500/20 bg-emerald-500/[0.03]"
+            }`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono text-sm font-medium text-white">
+                      {subscription.plan_details.name} Plan
+                    </span>
+                    {subscription.status === "active" && (
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">
+                        active
+                      </span>
+                    )}
+                    {subscription.status === "past_due" && (
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
+                        past due
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-mono text-xs text-white/30 space-x-3">
+                    <span>{subscription.plan_details.price}</span>
+                    <span>&middot;</span>
+                    <span>{subscription.plan_details.calls_per_month.toLocaleString()} calls/mo</span>
+                    <span>&middot;</span>
+                    <span>{subscription.rate_limit_rpm} RPM</span>
+                    <span>&middot;</span>
+                    <span>{subscription.plan_details.fee_rate} fee</span>
+                  </div>
+                  {subscription.current_period_end && subscription.status === "active" && (
+                    <div className="font-mono text-[10px] text-white/20 mt-1">
+                      Renews {new Date(subscription.current_period_end).toLocaleDateString()}
+                    </div>
+                  )}
+                  {subscription.cancelled_at && (
+                    <div className="font-mono text-[10px] text-amber-400/60 mt-1">
+                      Cancelled — access until {subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : "end of period"}
+                    </div>
+                  )}
+                </div>
+                {subscription.plan === "free" && (
+                  <a
+                    href="/pricing"
+                    className="font-mono text-xs bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded hover:bg-emerald-500/30 transition-colors"
+                  >
+                    Upgrade to Pro
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-4">
@@ -258,7 +340,10 @@ export default function DeveloperDashboardPage() {
                 </button>
               </div>
               <p className="font-mono text-xs text-white/20 mt-2">
-                Rate limit: 60 requests/minute
+                Rate limit: {subscription?.rate_limit_rpm || 60} requests/minute
+                {subscription && subscription.plan !== "free" && (
+                  <span className="text-emerald-400/40 ml-1">({subscription.plan_details.name})</span>
+                )}
               </p>
             </div>
           </div>
