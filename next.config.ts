@@ -27,6 +27,11 @@ const nextConfig: NextConfig = {
         destination: "/.well-known/humans.txt",
         permanent: true,
       },
+      {
+        source: "/health",
+        destination: "/api/health",
+        permanent: false,
+      },
     ];
   },
 };
