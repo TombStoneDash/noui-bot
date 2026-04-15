@@ -1000,6 +1000,12 @@ export function BotCaptcha() {
               </span>
             </div>
           )}
+          <a
+            href="/bot-captcha/leaderboard"
+            className="block px-5 py-3 text-center text-[10px] tracking-[2px] text-[#00ff41] border-t border-[#1a1a1a] hover:bg-[#00ff4108] transition-colors uppercase no-underline"
+          >
+            View Full Leaderboard &rarr;
+          </a>
         </div>
 
         {/* THESIS */}
