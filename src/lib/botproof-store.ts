@@ -1,10 +1,10 @@
 /**
  * BotProof protocol store.
- * Persists challenges and verifications to Neon PostgreSQL.
+ * Persists challenges and verifications to Supabase PostgreSQL.
  * Rate limiting remains in-memory (ephemeral by nature).
  */
 
-import { sql } from "@/lib/db";
+import { getSupabase } from "@/lib/supabase";
 
 /* ═══════════════════════════════════════
    TYPES
@@ -113,40 +113,41 @@ export async function storeChallenge(challenge: {
   expiresAt: string;
   ipHash: string;
 }): Promise<void> {
-  await sql`
-    INSERT INTO noui.botproof_challenges (id, type, level, payload, answer_hash, time_limit_ms, issued_at, expires_at, ip_hash)
-    VALUES (${challenge.id}::uuid, ${challenge.type}, ${challenge.level}, ${JSON.stringify(challenge.payload)}::jsonb, ${challenge.answerHash}, ${challenge.timeLimitMs}, ${challenge.issuedAt}::timestamptz, ${challenge.expiresAt}::timestamptz, ${challenge.ipHash})
-  `;
+  const supabase = getSupabase();
+  const { error } = await supabase.from("botproof_challenges").insert({
+    id: challenge.id,
+    type: challenge.type,
+    level: challenge.level,
+    payload: challenge.payload,
+    answer_hash: challenge.answerHash,
+    time_limit_ms: challenge.timeLimitMs,
+    issued_at: challenge.issuedAt,
+    expires_at: challenge.expiresAt,
+    ip_hash: challenge.ipHash,
+  });
+  if (error) throw new Error(`storeChallenge: ${error.message}`);
 }
 
-/** Get a challenge by ID (not consumed, not expired) */
+/** Get a challenge by ID */
 export async function getChallenge(id: string): Promise<ChallengeRow | null> {
-  const rows = await sql`
-    SELECT id, type, level, payload, answer_hash, time_limit_ms, issued_at, expires_at, consumed, ip_hash
-    FROM noui.botproof_challenges
-    WHERE id = ${id}::uuid
-  `;
-  if (rows.length === 0) return null;
-  const r = rows[0];
-  return {
-    id: r.id,
-    type: r.type,
-    level: r.level,
-    payload: r.payload as Record<string, unknown>,
-    answer_hash: r.answer_hash,
-    time_limit_ms: r.time_limit_ms,
-    issued_at: r.issued_at,
-    expires_at: r.expires_at,
-    consumed: r.consumed,
-    ip_hash: r.ip_hash,
-  };
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("botproof_challenges")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error || !data) return null;
+  return data as ChallengeRow;
 }
 
 /** Mark a challenge as consumed */
 export async function consumeChallenge(id: string): Promise<void> {
-  await sql`
-    UPDATE noui.botproof_challenges SET consumed = true WHERE id = ${id}::uuid
-  `;
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from("botproof_challenges")
+    .update({ consumed: true })
+    .eq("id", id);
+  if (error) throw new Error(`consumeChallenge: ${error.message}`);
 }
 
 /* ═══════════════════════════════════════
@@ -169,12 +170,36 @@ export async function recordVerification(v: {
   expiresAt: string | null;
   ipHash: string;
 }): Promise<void> {
-  await sql`
-    INSERT INTO noui.botproof_verifications
-      (challenge_id, token, verified, reason, agent_id, agent_name, model, framework, level, challenge_type, response_time_ms, expires_at, ip_hash)
-    VALUES
-      (${v.challengeId}::uuid, ${v.token}, ${v.verified}, ${v.reason}, ${v.agentId}, ${v.agentName}, ${v.model}, ${v.framework}, ${v.level}, ${v.challengeType}, ${v.responseTimeMs}, ${v.expiresAt ? v.expiresAt : null}::timestamptz, ${v.ipHash})
-  `;
+  const supabase = getSupabase();
+  const { error } = await supabase.from("botproof_verifications").insert({
+    challenge_id: v.challengeId,
+    token: v.token,
+    verified: v.verified,
+    reason: v.reason,
+    agent_id: v.agentId,
+    agent_name: v.agentName,
+    model: v.model,
+    framework: v.framework,
+    level: v.level,
+    challenge_type: v.challengeType,
+    response_time_ms: v.responseTimeMs,
+    expires_at: v.expiresAt,
+    ip_hash: v.ipHash,
+  });
+  if (error) throw new Error(`recordVerification: ${error.message}`);
+}
+
+/** Look up a verification by its pob_ token */
+export async function getVerificationByToken(token: string): Promise<VerificationRow | null> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("botproof_verifications")
+    .select("*")
+    .eq("token", token)
+    .eq("verified", true)
+    .single();
+  if (error || !data) return null;
+  return data as VerificationRow;
 }
 
 /* ═══════════════════════════════════════
@@ -182,60 +207,76 @@ export async function recordVerification(v: {
    ═══════════════════════════════════════ */
 
 export async function getStats() {
-  const [totals] = await sql`
-    SELECT
-      COUNT(*) FILTER (WHERE verified = true) AS total_passes,
-      COUNT(*) FILTER (WHERE verified = false) AS total_fails,
-      COUNT(*) AS total_verifications
-    FROM noui.botproof_verifications
-  `;
+  const supabase = getSupabase();
 
-  const [challengeCount] = await sql`
-    SELECT COUNT(*) AS total FROM noui.botproof_challenges
-  `;
+  // Total challenges
+  const { count: totalChallenges } = await supabase
+    .from("botproof_challenges")
+    .select("*", { count: "exact", head: true });
 
-  const levelRows = await sql`
-    SELECT
-      level,
-      COUNT(*) AS total,
-      COUNT(*) FILTER (WHERE verified = true) AS passed
-    FROM noui.botproof_verifications
-    GROUP BY level
-  `;
+  // Verification totals
+  const { count: totalVerifications } = await supabase
+    .from("botproof_verifications")
+    .select("*", { count: "exact", head: true });
 
+  const { count: totalPasses } = await supabase
+    .from("botproof_verifications")
+    .select("*", { count: "exact", head: true })
+    .eq("verified", true);
+
+  // Per-level stats
   const levelStats: Record<number, { issued: number; passed: number }> = {
     1: { issued: 0, passed: 0 },
     2: { issued: 0, passed: 0 },
     3: { issued: 0, passed: 0 },
   };
-  for (const r of levelRows) {
-    levelStats[r.level] = { issued: Number(r.total), passed: Number(r.passed) };
+
+  for (const level of [1, 2, 3]) {
+    const { count: issued } = await supabase
+      .from("botproof_verifications")
+      .select("*", { count: "exact", head: true })
+      .eq("level", level);
+    const { count: passed } = await supabase
+      .from("botproof_verifications")
+      .select("*", { count: "exact", head: true })
+      .eq("level", level)
+      .eq("verified", true);
+    levelStats[level] = { issued: issued || 0, passed: passed || 0 };
   }
 
-  const fastestRows = await sql`
-    SELECT challenge_type, MIN(response_time_ms) AS fastest
-    FROM noui.botproof_verifications
-    WHERE verified = true
-    GROUP BY challenge_type
-  `;
+  // Fastest per challenge type
   const fastest: Record<string, number> = {};
-  for (const r of fastestRows) {
-    fastest[r.challenge_type] = Number(r.fastest);
+  for (const ctype of ["hash_sha256", "json_extract", "arithmetic"]) {
+    const { data } = await supabase
+      .from("botproof_verifications")
+      .select("response_time_ms")
+      .eq("verified", true)
+      .eq("challenge_type", ctype)
+      .order("response_time_ms", { ascending: true })
+      .limit(1);
+    if (data && data.length > 0) {
+      fastest[ctype] = data[0].response_time_ms;
+    }
   }
 
-  const [last24h] = await sql`
-    SELECT
-      (SELECT COUNT(*) FROM noui.botproof_challenges WHERE issued_at > NOW() - INTERVAL '24 hours') AS challenges,
-      (SELECT COUNT(*) FROM noui.botproof_verifications WHERE issued_at > NOW() - INTERVAL '24 hours') AS verifications
-  `;
+  // Last 24h
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: last24hChallenges } = await supabase
+    .from("botproof_challenges")
+    .select("*", { count: "exact", head: true })
+    .gte("issued_at", since24h);
+  const { count: last24hVerifications } = await supabase
+    .from("botproof_verifications")
+    .select("*", { count: "exact", head: true })
+    .gte("issued_at", since24h);
 
-  const totalVerifications = Number(totals.total_verifications);
-  const totalPasses = Number(totals.total_passes);
-  const passRate = totalVerifications > 0 ? Math.round((totalPasses / totalVerifications) * 1000) / 10 : 0;
+  const tv = totalVerifications || 0;
+  const tp = totalPasses || 0;
+  const passRate = tv > 0 ? Math.round((tp / tv) * 1000) / 10 : 0;
 
   return {
-    total_challenges_issued: Number(challengeCount.total),
-    total_verifications: totalVerifications,
+    total_challenges_issued: totalChallenges || 0,
+    total_verifications: tv,
     pass_rate: {
       overall: passRate,
       level_1: levelStats[1].issued > 0 ? Math.round((levelStats[1].passed / levelStats[1].issued) * 1000) / 10 : 0,
@@ -244,8 +285,8 @@ export async function getStats() {
     },
     fastest_response_ms: fastest,
     last_24h: {
-      challenges: Number(last24h.challenges),
-      verifications: Number(last24h.verifications),
+      challenges: last24hChallenges || 0,
+      verifications: last24hVerifications || 0,
     },
   };
 }
@@ -255,26 +296,33 @@ export async function getStats() {
    ═══════════════════════════════════════ */
 
 export async function getLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
-  const rows = await sql`
-    SELECT DISTINCT ON (agent_name)
-      agent_name, model, level, response_time_ms, challenge_type, issued_at AS verified_at
-    FROM noui.botproof_verifications
-    WHERE verified = true AND agent_name IS NOT NULL
-    ORDER BY agent_name, response_time_ms ASC
-  `;
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("botproof_verifications")
+    .select("agent_name, model, level, response_time_ms, challenge_type, issued_at")
+    .eq("verified", true)
+    .not("agent_name", "is", null)
+    .order("response_time_ms", { ascending: true })
+    .limit(limit * 3); // Over-fetch to dedup by agent_name
 
-  // Sort by fastest response time across all agents
-  const sorted = rows
-    .map((r) => ({
-      agent_name: r.agent_name as string,
-      model: (r.model || "unknown") as string,
-      level: r.level as number,
-      response_time_ms: r.response_time_ms as number,
-      challenge_type: r.challenge_type as string,
-      verified_at: r.verified_at as string,
-    }))
-    .sort((a, b) => a.response_time_ms - b.response_time_ms)
-    .slice(0, limit);
+  if (error || !data) return [];
 
-  return sorted;
+  // Deduplicate: keep fastest per agent_name
+  const seen = new Set<string>();
+  const deduped: LeaderboardEntry[] = [];
+  for (const r of data) {
+    if (seen.has(r.agent_name)) continue;
+    seen.add(r.agent_name);
+    deduped.push({
+      agent_name: r.agent_name,
+      model: r.model || "unknown",
+      level: r.level,
+      response_time_ms: r.response_time_ms,
+      challenge_type: r.challenge_type,
+      verified_at: r.issued_at,
+    });
+    if (deduped.length >= limit) break;
+  }
+
+  return deduped;
 }
