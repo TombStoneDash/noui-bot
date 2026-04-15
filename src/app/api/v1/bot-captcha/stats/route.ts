@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hashIP, checkRateLimit, getStats } from "@/lib/bot-captcha-store";
+import { hashIP, checkRateLimit, getStats } from "@/lib/botproof-store";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const stats = getStats();
+    const stats = await getStats();
 
     return NextResponse.json(stats, {
       headers: {

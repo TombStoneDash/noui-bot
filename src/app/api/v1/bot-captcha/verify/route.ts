@@ -4,10 +4,10 @@ import {
   checkRateLimit,
   getChallenge,
   consumeChallenge,
-  storeToken,
-  recordFail,
+  hashAnswer,
+  recordVerification,
   randomBase62,
-} from "@/lib/bot-captcha-store";
+} from "@/lib/botproof-store";
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,9 +31,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { challenge_id, response, agent_id, metadata } = body;
+    const agentName = metadata?.agent_name || null;
+    const model = metadata?.model || null;
+    const framework = metadata?.framework || null;
 
     // Look up challenge
-    const challenge = getChallenge(challenge_id);
+    const challenge = await getChallenge(challenge_id);
     if (!challenge) {
       return NextResponse.json(
         { verified: false, reason: "not_found", response_time_ms: 0 },
@@ -43,7 +46,21 @@ export async function POST(request: NextRequest) {
 
     // Check if already consumed
     if (challenge.consumed) {
-      recordFail();
+      await recordVerification({
+        challengeId: challenge_id,
+        token: null,
+        verified: false,
+        reason: "already_used",
+        agentId: agent_id || "anonymous",
+        agentName,
+        model,
+        framework,
+        level: challenge.level,
+        challengeType: challenge.type,
+        responseTimeMs: 0,
+        expiresAt: null,
+        ipHash,
+      });
       return NextResponse.json(
         {
           verified: false,
@@ -58,8 +75,22 @@ export async function POST(request: NextRequest) {
     // Check if expired
     const now = Date.now();
     if (now > new Date(challenge.expires_at).getTime()) {
-      consumeChallenge(challenge_id);
-      recordFail();
+      await consumeChallenge(challenge_id);
+      await recordVerification({
+        challengeId: challenge_id,
+        token: null,
+        verified: false,
+        reason: "expired",
+        agentId: agent_id || "anonymous",
+        agentName,
+        model,
+        framework,
+        level: challenge.level,
+        challengeType: challenge.type,
+        responseTimeMs: 0,
+        expiresAt: null,
+        ipHash,
+      });
       return NextResponse.json(
         {
           verified: false,
@@ -76,8 +107,22 @@ export async function POST(request: NextRequest) {
 
     // Check timing constraint
     if (responseTimeMs > challenge.time_limit_ms) {
-      consumeChallenge(challenge_id);
-      recordFail();
+      await consumeChallenge(challenge_id);
+      await recordVerification({
+        challengeId: challenge_id,
+        token: null,
+        verified: false,
+        reason: "timeout",
+        agentId: agent_id || "anonymous",
+        agentName,
+        model,
+        framework,
+        level: challenge.level,
+        challengeType: challenge.type,
+        responseTimeMs,
+        expiresAt: null,
+        ipHash,
+      });
       return NextResponse.json(
         {
           verified: false,
@@ -89,13 +134,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify answer
-    const submittedAnswer = String(response).trim().toLowerCase();
-    const correctAnswer = challenge.answer.toLowerCase();
-
-    if (submittedAnswer !== correctAnswer) {
-      consumeChallenge(challenge_id);
-      recordFail();
+    // Verify answer by comparing hashes
+    const submittedHash = await hashAnswer(String(response).trim());
+    if (submittedHash !== challenge.answer_hash) {
+      await consumeChallenge(challenge_id);
+      await recordVerification({
+        challengeId: challenge_id,
+        token: null,
+        verified: false,
+        reason: "incorrect",
+        agentId: agent_id || "anonymous",
+        agentName,
+        model,
+        framework,
+        level: challenge.level,
+        challengeType: challenge.type,
+        responseTimeMs,
+        expiresAt: null,
+        ipHash,
+      });
       return NextResponse.json(
         {
           verified: false,
@@ -107,23 +164,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Success — generate proof-of-bot token
-    consumeChallenge(challenge_id);
+    // Success — generate BotProof token
+    await consumeChallenge(challenge_id);
     const isDev = process.env.NODE_ENV === "development";
     const tokenPrefix = isDev ? "pob_test_" : "pob_live_";
     const token = tokenPrefix + randomBase62(32);
     const issuedAt = new Date();
     const expiresAt = new Date(issuedAt.getTime() + 24 * 60 * 60 * 1000); // 24h
 
-    storeToken({
+    await recordVerification({
+      challengeId: challenge_id,
       token,
-      agent_id: agent_id || "anonymous",
+      verified: true,
+      reason: null,
+      agentId: agent_id || "anonymous",
+      agentName,
+      model,
+      framework,
       level: challenge.level,
-      challenge_type: challenge.type,
-      response_time_ms: responseTimeMs,
-      metadata: metadata || {},
-      issued_at: issuedAt.toISOString(),
-      expires_at: expiresAt.toISOString(),
+      challengeType: challenge.type,
+      responseTimeMs,
+      expiresAt: expiresAt.toISOString(),
+      ipHash,
     });
 
     return NextResponse.json({

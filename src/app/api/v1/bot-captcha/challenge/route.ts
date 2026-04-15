@@ -3,8 +3,9 @@ import {
   hashIP,
   checkRateLimit,
   storeChallenge,
+  hashAnswer,
   randomBase62,
-} from "@/lib/bot-captcha-store";
+} from "@/lib/botproof-store";
 
 /** Generate a nested JSON object for json_extract challenges */
 function generateJsonExtractChallenge(): {
@@ -147,21 +148,19 @@ export async function POST(request: NextRequest) {
     const challengeId = crypto.randomUUID();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 60000); // 60s TTL
+    const answerHash = await hashAnswer(answer);
 
-    const stored = {
+    await storeChallenge({
       id: challengeId,
       type,
       level,
       payload,
-      answer,
-      time_limit_ms: timeLimit,
-      issued_at: now.toISOString(),
-      expires_at: expiresAt.toISOString(),
-      consumed: false,
-      ip_hash: ipHash,
-    };
-
-    storeChallenge(stored);
+      answerHash,
+      timeLimitMs: timeLimit,
+      issuedAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      ipHash,
+    });
 
     return NextResponse.json({
       challenge_id: challengeId,
