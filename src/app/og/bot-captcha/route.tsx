@@ -160,7 +160,7 @@ export async function GET() {
             display: "flex",
           }}
         >
-          noui.bot
+          noui.bot / BotProof
         </div>
       </div>
     ),

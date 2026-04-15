@@ -1,5 +1,5 @@
 /**
- * BotProof (proof-of-bot) protocol store.
+ * BotProof protocol store.
  * Persists challenges and verifications to Neon PostgreSQL.
  * Rate limiting remains in-memory (ephemeral by nature).
  */

@@ -407,7 +407,7 @@ export default function Home() {
                 NEW
               </span>
               <span className="font-mono text-[10px] text-white/30 tracking-wider uppercase">
-                proof-of-bot protocol
+                BotProof protocol
               </span>
             </div>
             <h3 className="text-2xl md:text-3xl font-light text-white/90 mb-4 font-mono">

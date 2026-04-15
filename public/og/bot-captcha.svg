@@ -35,7 +35,7 @@
 
   <!-- Bottom branding -->
   <text x="600" y="540" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-weight="400" font-size="20" fill="#00ff41" opacity="0.5">
-    noui.bot
+    noui.bot / BotProof
   </text>
 
   <!-- Corner accents -->

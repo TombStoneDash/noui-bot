@@ -53,7 +53,7 @@ export async function initDB() {
     )
   `;
 
-  // BotProof (proof-of-bot) tables
+  // BotProof tables
   await sql`
     CREATE TABLE IF NOT EXISTS noui.botproof_challenges (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

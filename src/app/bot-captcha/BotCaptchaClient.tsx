@@ -136,7 +136,7 @@ const verdicts: Record<number, { cls: string; text: string }> = {
   },
   4: {
     cls: "bot",
-    text: "CLASSIFICATION: MACHINE.\nWelcome. The infrastructure is yours.\nproof-of-bot token issued. You may proceed.",
+    text: "CLASSIFICATION: MACHINE.\nWelcome. The infrastructure is yours.\nBotProof token issued. You may proceed.",
   },
 };
 
@@ -1017,7 +1017,7 @@ export function BotCaptcha() {
             </strong>
             <br />
             <br />
-            proof-of-bot is part of the noui.bot trust layer.
+            BotProof is part of the noui.bot trust layer.
             <br />
             Agents verify their identity. Humans verify theirs.
             <br />
