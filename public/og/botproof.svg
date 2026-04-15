@@ -1,0 +1,54 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="scanlines" patternUnits="userSpaceOnUse" width="1200" height="4">
+      <rect width="1200" height="3" fill="transparent"/>
+      <rect y="3" width="1200" height="1" fill="rgba(0,255,65,0.03)"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#000000"/>
+  <rect width="1200" height="630" fill="url(#scanlines)"/>
+
+  <!-- Corner accents -->
+  <line x1="60" y1="60" x2="110" y2="60" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="60" y1="60" x2="60" y2="110" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="1140" y1="60" x2="1090" y2="60" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="1140" y1="60" x2="1140" y2="110" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="60" y1="570" x2="110" y2="570" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="60" y1="570" x2="60" y2="520" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="1140" y1="570" x2="1090" y2="570" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="1140" y1="570" x2="1140" y2="520" stroke="#00ff41" stroke-opacity="0.3" stroke-width="1"/>
+
+  <!-- Checkmark circle -->
+  <circle cx="600" cy="200" r="36" fill="none" stroke="#00ff41" stroke-width="2" stroke-opacity="0.3"/>
+  <path d="M582 200 l12 12 24-24" stroke="#00ff41" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Main title -->
+  <text x="600" y="300" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-weight="700" font-size="80" fill="#00ff41" letter-spacing="-2">
+    BotProof
+  </text>
+
+  <!-- Subtitle -->
+  <text x="600" y="355" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-weight="300" font-size="26" fill="#888888">
+    Proof-of-bot verification protocol
+  </text>
+
+  <!-- Divider -->
+  <line x1="460" y1="390" x2="740" y2="390" stroke="#00ff41" stroke-opacity="0.2" stroke-width="1"/>
+
+  <!-- Feature pills -->
+  <rect x="368" y="415" width="110" height="32" rx="0" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+  <text x="423" y="436" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="14" fill="#555555">3 Levels</text>
+
+  <rect x="498" y="415" width="120" height="32" rx="0" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+  <text x="558" y="436" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="14" fill="#555555">24h Tokens</text>
+
+  <rect x="638" y="415" width="165" height="32" rx="0" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+  <text x="720" y="436" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-size="14" fill="#555555">100ms Challenges</text>
+
+  <!-- Bottom branding -->
+  <text x="600" y="545" text-anchor="middle" font-family="'JetBrains Mono', 'Courier New', monospace" font-weight="400" font-size="20" fill="#00ff41" opacity="0.5">
+    noui.bot
+  </text>
+</svg>
