@@ -16,13 +16,6 @@ export async function GET() {
     (now.getTime() - new Date(LAUNCH_DATE).getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  // Fetch Deploy Rail stats
-  let deployRailStats = null;
-  try {
-    const res = await fetch("https://shiprail.dev/api/stats", { next: { revalidate: 60 } });
-    if (res.ok) deployRailStats = await res.json();
-  } catch { /* non-critical */ }
-
   return NextResponse.json({
     status: "operational",
     version: "0.2.0",
@@ -34,20 +27,16 @@ export async function GET() {
     timestamp: now.toISOString(),
     services: {
       "noui-api": "active",
-      "deploy-rail": "beta",
-      "mcp-server": "planned",
+      "bot-captcha": "active",
+      "agent-bazaar": "active",
+      "mcp-server": "active",
     },
-    deploy_rail: deployRailStats ? {
-      total_deploys: deployRailStats.total_deploys,
-      successful: deployRailStats.successful,
-      agents_registered: deployRailStats.agents_registered,
-      stats: "https://shiprail.dev/api/stats",
-    } : { stats: "https://shiprail.dev/api/stats" },
     capabilities: [
       "agent-feedback",
       "builder-applications",
       "agent-discovery",
-      "code-deployment",
+      "bot-verification",
+      "mcp-billing",
       "waitlist",
     ],
     protocols: {

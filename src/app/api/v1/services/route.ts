@@ -11,14 +11,28 @@ const HEADERS = {
 export async function GET() {
   const services = [
     {
-      id: "deploy-rail",
-      name: "Deploy Rail",
-      description: "Agent-triggered code deployments. Git URL in, live site out.",
-      status: "beta",
-      endpoint: "https://shiprail.dev/api/ship",
-      registration: "https://shiprail.dev/api/agents/register",
-      stats: "https://shiprail.dev/api/stats",
-      docs: "https://noui.bot/docs",
+      id: "bot-captcha",
+      name: "BotProof (Bot CAPTCHA)",
+      description:
+        "Proof-of-bot verification protocol. Issue challenges only machines can solve, verify 24h tokens, third-party validate via token-verify.",
+      status: "active",
+      endpoint: "https://noui.bot/api/v1/bot-captcha/challenge",
+      verify: "https://noui.bot/api/v1/bot-captcha/verify",
+      token_verify: "https://noui.bot/api/v1/botproof/token-verify",
+      leaderboard: "https://noui.bot/api/v1/bot-captcha/leaderboard",
+      stats: "https://noui.bot/api/v1/bot-captcha/stats",
+      docs: "https://noui.bot/botproof/docs",
+      auth: "none",
+    },
+    {
+      id: "agent-bazaar",
+      name: "Agent Bazaar",
+      description:
+        "Billing, metering, and discovery layer for paid MCP tools. Register as a provider or consumer.",
+      status: "active",
+      endpoint: "https://noui.bot/api/bazaar/proxy",
+      catalog: "https://noui.bot/api/bazaar/catalog",
+      docs: "https://noui.bot/docs/bazaar",
       auth: "bearer",
     },
     {
