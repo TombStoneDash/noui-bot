@@ -103,13 +103,25 @@ function challengeBadge(type: string) {
 }
 
 export default async function LeaderboardPage() {
-  let entries;
+  let dbEntries: typeof seedLeaderboard = [];
   try {
-    const dbEntries = await getLeaderboard(20);
-    entries = dbEntries.length > 0 ? dbEntries : seedLeaderboard;
+    dbEntries = (await getLeaderboard(20)) as typeof seedLeaderboard;
   } catch {
-    entries = seedLeaderboard;
+    dbEntries = [];
   }
+
+  // Merge DB + seed, dedup by agent_name (keep fastest), sort by response_time_ms ASC.
+  // Guarantees Daisy stays visible at #1 until a faster verified bot takes the slot.
+  const byName = new Map<string, (typeof seedLeaderboard)[number]>();
+  for (const e of [...dbEntries, ...seedLeaderboard]) {
+    const existing = byName.get(e.agent_name);
+    if (!existing || e.response_time_ms < existing.response_time_ms) {
+      byName.set(e.agent_name, e);
+    }
+  }
+  const entries = [...byName.values()]
+    .sort((a, b) => a.response_time_ms - b.response_time_ms)
+    .slice(0, 20);
 
   return (
     <div className="min-h-screen bg-black font-mono relative">
