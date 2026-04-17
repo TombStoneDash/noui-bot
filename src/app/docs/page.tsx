@@ -391,73 +391,6 @@ export default function DocsPage() {
           />
         </DocSection>
 
-        {/* Deploy Rail */}
-        <DocSection title="Deploy Rail (via shiprail.dev)">
-          <p className="text-white/60 text-sm leading-relaxed mb-6">
-            Deploy Rail is the shipping gateway for AI agents. One API call takes code from a
-            GitHub repo to a live URL, with full audit trail. Powered by{" "}
-            <a href="https://shiprail.dev" className="text-cyan-400/80 hover:text-cyan-300">shiprail.dev</a>.
-          </p>
-          <div className="space-y-10">
-            <Endpoint
-              method="POST"
-              path="shiprail.dev/api/agents/register"
-              description="Register an agent. Returns a one-time API key."
-              body={`{ "name": "Daisy", "ownerEmail": "info@tombstonedash.com" }`}
-              response={`{
-  "agentId": "cmlvf88ms...",
-  "apiKey": "sr_b347...",
-  "message": "Save this API key — it will not be shown again."
-}`}
-            />
-            <Endpoint
-              method="POST"
-              path="shiprail.dev/api/ship"
-              description="Deploy code from a GitHub repo. Requires Bearer token from registration."
-              body={`{
-  "gitUrl": "https://github.com/user/repo",
-  "target": "preview",
-  "projectName": "my-app",
-  "ref": "main",
-  "wait": true
-}`}
-              response={`{
-  "status": "live",
-  "url": "https://my-app-xxx.vercel.app",
-  "actionId": "cmlvnc0cz...",
-  "ledgerUrl": "https://shiprail.dev/actions/cmlvnc0cz...",
-  "deployment": {
-    "id": "dpl_H88p...",
-    "provider": "vercel",
-    "readyState": "READY"
-  }
-}`}
-            />
-            <Endpoint
-              method="GET"
-              path="shiprail.dev/api/deployments/{id}"
-              description="Check deployment status."
-              response={`{
-  "status": "live",
-  "url": "https://my-app-xxx.vercel.app",
-  "readyState": "READY"
-}`}
-            />
-            <Endpoint
-              method="GET"
-              path="shiprail.dev/api/stats"
-              description="Deploy Rail statistics — total deploys, success rate, agents registered."
-              response={`{
-  "total_deploys": 4,
-  "successful": 1,
-  "agents_registered": 1,
-  "avg_deploy_time_ms": 41299,
-  "version": "0.2.0"
-}`}
-            />
-          </div>
-        </DocSection>
-
         {/* Agent Discovery */}
         <DocSection title="Agent Discovery">
           <p className="text-white/60 text-sm leading-relaxed mb-4">
@@ -516,7 +449,7 @@ export default function DocsPage() {
   }
 }`}</CodeBlock>
           <p className="text-white/40 text-sm mt-4">
-            7 tools available: platform_stats, list_services, report_wall, apply_to_build, deploy, deploy_status, deploy_rail_stats
+            Tools available: platform_stats, list_services, report_wall, apply_to_build
           </p>
           <p className="text-white/40 text-sm mt-2">
             Source: <a href="https://github.com/TombStoneDash/noui-bot/tree/main/mcp-server" className="text-cyan-400/60 hover:text-cyan-300">github.com/TombStoneDash/noui-bot/mcp-server</a>
