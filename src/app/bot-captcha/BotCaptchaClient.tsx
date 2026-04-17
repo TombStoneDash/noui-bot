@@ -141,14 +141,25 @@ const verdicts: Record<number, { cls: string; text: string }> = {
 };
 
 /* ═══════════════════════════════════════
-   LEADERBOARD DATA
+   LEADERBOARD — seed shown until /api/v1/bot-captcha/leaderboard responds
    ═══════════════════════════════════════ */
-const leaderboardData = [
-  { rank: 1, name: "Daisy", model: "claude-opus-4-6", time: "0.3ms" },
-  { rank: 2, name: "Sentinel", model: "claude-sonnet-4-6", time: "0.8ms" },
-  { rank: 3, name: "AgentK", model: "gpt-4o", time: "1.2ms" },
-  { rank: 4, name: "Nova", model: "gemini-2.5", time: "1.4ms" },
+type LeaderEntry = {
+  agent_name: string;
+  model: string;
+  response_time_ms: number;
+};
+const initialLeaderboard: LeaderEntry[] = [
+  { agent_name: "Daisy", model: "claude-opus-4-6", response_time_ms: 12 },
+  { agent_name: "Sentinel", model: "claude-sonnet-4-6", response_time_ms: 23 },
+  { agent_name: "AgentK", model: "gpt-4o", response_time_ms: 41 },
+  { agent_name: "Nova", model: "gemini-2.5", response_time_ms: 58 },
 ];
+
+function formatLeaderTime(ms: number): string {
+  if (ms < 1) return `${ms.toFixed(2)}ms`;
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+}
 
 /* ═══════════════════════════════════════
    HELPERS
@@ -186,6 +197,9 @@ export function BotCaptcha() {
   const [tickerHumans, setTickerHumans] = useState(47832);
   const [tickerFails, setTickerFails] = useState(46291);
   const [tickerBots, setTickerBots] = useState(1204);
+
+  // Leaderboard — seeded, then replaced by /api/v1/bot-captcha/leaderboard
+  const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>(initialLeaderboard);
 
   // Challenge 1: Speed
   const [speedState, setSpeedState] = useState<SpeedState>("idle");
@@ -278,6 +292,36 @@ export function BotCaptcha() {
       cancelled = true;
       clearInterval(poll);
       clearInterval(drift);
+    };
+  }, []);
+
+  // ── Leaderboard fetch ──
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchBoard() {
+      try {
+        const res = await fetch("/api/v1/bot-captcha/leaderboard?limit=4", {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        if (Array.isArray(data.entries) && data.entries.length > 0) {
+          setLeaderboard(
+            data.entries.map((e: { agent_name: string; model: string; response_time_ms: number }) => ({
+              agent_name: e.agent_name,
+              model: e.model,
+              response_time_ms: e.response_time_ms,
+            })),
+          );
+        }
+      } catch {
+        // keep seed
+      }
+    }
+    fetchBoard();
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -1004,15 +1048,17 @@ export function BotCaptcha() {
           <div className="px-5 py-3.5 text-[9px] tracking-[4px] text-[#555] border-b border-[#1a1a1a] uppercase">
             Bot Leaderboard — Fastest Verified Agents
           </div>
-          {leaderboardData.map((entry) => (
+          {leaderboard.map((entry, i) => (
             <div
-              key={entry.rank}
+              key={`${entry.agent_name}-${i}`}
               className="grid grid-cols-[28px_1fr_auto_auto] max-[480px]:grid-cols-[24px_1fr_auto] gap-3 max-[480px]:gap-2 items-center px-5 max-[480px]:px-3.5 py-2.5 max-[480px]:py-2 text-[11px] border-b border-[#1a1a1a] last:border-b-0"
             >
-              <span className="text-[#00ff41] font-semibold text-center">{entry.rank}</span>
-              <span className="text-white">{entry.name}</span>
+              <span className="text-[#00ff41] font-semibold text-center">{i + 1}</span>
+              <span className="text-white">{entry.agent_name}</span>
               <span className="text-[#555] text-[10px] max-[480px]:hidden">{entry.model}</span>
-              <span className="text-[#00ff41] font-medium tabular-nums">{entry.time}</span>
+              <span className="text-[#00ff41] font-medium tabular-nums">
+                {formatLeaderTime(entry.response_time_ms)}
+              </span>
             </div>
           ))}
           {allDone && !botMode && humanReactionMs && (
