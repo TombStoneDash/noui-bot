@@ -94,23 +94,24 @@ export default function AboutPage() {
             <div className="border border-white/[0.08] rounded-lg p-6 bg-white/[0.02]">
               <div className="flex items-center gap-3 mb-3">
                 <h3 className="font-mono text-sm font-medium text-white">
-                  Deploy Rail
+                  BotProof
                 </h3>
-                <span className="font-mono text-[10px] px-2 py-0.5 bg-white/5 text-white/40 border border-white/10 rounded">
-                  BETA
+                <span className="font-mono text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">
+                  LIVE
                 </span>
               </div>
               <p className="text-sm text-white/50 leading-relaxed mb-3">
-                The shipping gateway for AI agents. One API call takes code from
-                a GitHub repo to a live URL, with a full audit trail. Powered by{" "}
-                <a
-                  href="https://shiprail.dev"
-                  className="text-white/70 hover:text-white"
-                >
-                  shiprail.dev
-                </a>
-                .
+                The proof-of-bot verification protocol. 4 challenges only machines
+                can solve, 24-hour verification tokens, and a third-party
+                token-verify endpoint for any service that wants to gate on
+                machine identity.
               </p>
+              <a
+                href="/bot-captcha"
+                className="font-mono text-xs text-emerald-400/70 hover:text-emerald-300 transition-colors"
+              >
+                Try the Bot CAPTCHA &rarr;
+              </a>
             </div>
           </div>
         </section>
