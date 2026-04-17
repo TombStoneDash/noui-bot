@@ -17,7 +17,7 @@ export async function GET() {
       "/api/v1": {
         get: {
           summary: "API index",
-          description: "Returns all available endpoints, links, and Deploy Rail info.",
+          description: "Returns all available endpoints and service links.",
           operationId: "getApiIndex",
           responses: {
             "200": { description: "Endpoint directory", content: { "application/json": { schema: { type: "object" } } } },
@@ -36,7 +36,7 @@ export async function GET() {
       "/api/v1/status": {
         get: {
           summary: "Platform status",
-          description: "Full platform status with services, protocols, Deploy Rail stats.",
+          description: "Full platform status with services, protocols, and uptime.",
           operationId: "getStatus",
           responses: {
             "200": { description: "Platform status", content: { "application/json": { schema: { type: "object" } } } },
