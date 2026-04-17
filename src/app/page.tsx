@@ -46,6 +46,13 @@ export default function Home() {
       {/* HERO */}
       <section className="min-h-screen flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-5xl">
         <AnimatedHero>
+          <a
+            href="/bot-captcha"
+            className="inline-flex items-center gap-3 mb-8 px-3 py-1.5 border border-green-400/30 bg-green-400/[0.03] font-mono text-[11px] tracking-wider text-green-400 hover:border-green-400/60 hover:bg-green-400/[0.06] transition-colors"
+          >
+            <span className="inline-block w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+            NEW · BOTPROOF IS LIVE — CAN YOU PROVE YOU&apos;RE A BOT? &rarr;
+          </a>
           <h1 className="font-mono text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
             Ship billing for your MCP tools in 5 minutes
           </h1>
