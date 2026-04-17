@@ -182,7 +182,7 @@ export function BotCaptcha() {
   const [botMode, setBotMode] = useState(false);
   const botModeRef = useRef(false);
 
-  // Ticker
+  // Ticker — seeded, then replaced by real stats via /api/v1/bot-captcha/stats
   const [tickerHumans, setTickerHumans] = useState(47832);
   const [tickerFails, setTickerFails] = useState(46291);
   const [tickerBots, setTickerBots] = useState(1204);
@@ -240,9 +240,29 @@ export function BotCaptcha() {
   // Copy button
   const [copyLabel, setCopyLabel] = useState("Copy");
 
-  // ── Ticker effect ──
+  // ── Ticker effect — polls real stats, falls back to drift ──
   useEffect(() => {
-    const interval = setInterval(() => {
+    let cancelled = false;
+
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/v1/bot-captcha/stats", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        if (typeof data.humans_tested === "number") setTickerHumans(data.humans_tested);
+        if (typeof data.humans_failed === "number") setTickerFails(data.humans_failed);
+        if (typeof data.bots_verified === "number") setTickerBots(data.bots_verified);
+      } catch {
+        // keep seeded values
+      }
+    }
+
+    fetchStats();
+    const poll = setInterval(fetchStats, 30000);
+
+    // Small local drift between polls so the numbers feel alive.
+    const drift = setInterval(() => {
       const r = Math.random();
       if (r < 0.7) {
         setTickerHumans((h) => h + 1);
@@ -253,7 +273,12 @@ export function BotCaptcha() {
         setTickerBots((b) => b + 1);
       }
     }, 3000 + Math.random() * 5000);
-    return () => clearInterval(interval);
+
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      clearInterval(drift);
+    };
   }, []);
 
   // ── Hash computation ──
