@@ -1,0 +1,57 @@
+{
+  "name": "@noui/factory",
+  "version": "0.1.0",
+  "description": "Factory toolkit for noui.bot agent deployments — scaffolding, config, and runtime helpers",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "noui-factory": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts src/cli.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts src/cli.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "noui",
+    "agent",
+    "factory",
+    "scaffold",
+    "mcp",
+    "ai-agent",
+    "deployment"
+  ],
+  "author": "Tombstone Dash LLC <info@tombstonedash.com>",
+  "license": "MIT",
+  "homepage": "https://noui.bot/docs/factory",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TombStoneDash/noui-bot",
+    "directory": "packages/noui-factory"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

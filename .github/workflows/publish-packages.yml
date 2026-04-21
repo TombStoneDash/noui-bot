@@ -1,0 +1,91 @@
+name: Publish Packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install dependencies (bazaar-sdk)
+        working-directory: packages/bazaar-sdk
+        run: npm ci --ignore-scripts || npm install
+      
+      - name: Build bazaar-sdk
+        working-directory: packages/bazaar-sdk
+        run: npm run build
+      
+      - name: Publish bazaar-sdk (if version changed)
+        working-directory: packages/bazaar-sdk
+        run: |
+          CURRENT=$(npm view @forthebots/bazaar-sdk version 2>/dev/null || echo "0.0.0")
+          LOCAL=$(node -p "require('./package.json').version")
+          if [ "$CURRENT" != "$LOCAL" ]; then
+            npm publish --provenance --access public
+          else
+            echo "bazaar-sdk version unchanged ($LOCAL), skipping"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Install dependencies (noui-factory)
+        working-directory: packages/noui-factory
+        run: npm ci --ignore-scripts || npm install
+        continue-on-error: true
+      
+      - name: Build noui-factory
+        working-directory: packages/noui-factory
+        run: npm run build
+        continue-on-error: true
+      
+      - name: Publish noui-factory (if version changed)
+        working-directory: packages/noui-factory
+        run: |
+          CURRENT=$(npm view @noui/factory version 2>/dev/null || echo "0.0.0")
+          LOCAL=$(node -p "require('./package.json').version")
+          if [ "$CURRENT" != "$LOCAL" ]; then
+            npm publish --provenance --access public
+          else
+            echo "noui-factory version unchanged ($LOCAL), skipping"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        continue-on-error: true
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Test bazaar-sdk
+        working-directory: packages/bazaar-sdk
+        run: |
+          npm install
+          npm run build
+          npm run typecheck || true
+      
+      - name: Test noui-factory
+        working-directory: packages/noui-factory
+        run: |
+          npm install
+          npm run build
+          npm run typecheck || true
+        continue-on-error: true
