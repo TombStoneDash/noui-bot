@@ -1,5 +1,5 @@
 /**
- * @noui/factory - Factory toolkit for noui.bot agent deployments
+ * @tombstonedash/factory - Factory toolkit for noui.bot agent deployments
  */
 
 export interface FactoryConfig {

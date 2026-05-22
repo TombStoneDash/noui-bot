@@ -1,5 +1,5 @@
 {
-  "name": "@noui/factory",
+  "name": "@tombstonedash/factory",
   "version": "0.1.0",
   "description": "Factory toolkit for noui.bot agent deployments — scaffolding, config, and runtime helpers",
   "main": "dist/index.js",

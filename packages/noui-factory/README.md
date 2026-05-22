@@ -1,30 +1,32 @@
-# @noui/factory
+# @tombstonedash/factory
 
 Factory toolkit for noui.bot agent deployments — scaffolding, configuration, and runtime helpers.
+
+> **Note on npm scope:** Published as `@tombstonedash/factory` on npm (the `@noui` scope was unavailable). The project itself remains noui.bot — only the npm scope differs.
 
 ## Installation
 
 ```bash
-npm install @noui/factory
+npm install @tombstonedash/factory
 ```
 
 ## CLI Usage
 
 ```bash
 # Initialize a new agent factory
-npx @noui/factory init my-agent
+npx @tombstonedash/factory init my-agent
 
 # Validate configuration
-npx @noui/factory validate
+npx @tombstonedash/factory validate
 
 # Generate manifest
-npx @noui/factory manifest > manifest.json
+npx @tombstonedash/factory manifest > manifest.json
 ```
 
 ## Programmatic Usage
 
 ```typescript
-import { createFactory, generateManifest, validateConfig } from '@noui/factory';
+import { createFactory, generateManifest, validateConfig } from '@tombstonedash/factory';
 
 const config = createFactory({
   name: 'my-agent',
