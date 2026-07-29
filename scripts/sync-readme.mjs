@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { randomUUID } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
@@ -23,23 +24,20 @@ function requireString(value, field) {
   return value.trim();
 }
 
-function markdownCell(value) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;")
-    .replaceAll("`", "&#96;")
-    .replaceAll("\\", "&#92;")
-    .replaceAll("|", "&#124;")
-    .replace(/[\u0000-\u001f\u007f]/g, (character) => {
-      return `&#${character.codePointAt(0)};`;
-    });
+export function encodeMarkdownText(value) {
+  return value.replace(
+    /[\u0000-\u001f\u007f-\u009f\u2028\u2029]|[!-/:-@\[-`{-~]/gu,
+    (character) => `&#${character.codePointAt(0)};`,
+  );
 }
 
 function inlineCode(value) {
-  return `<code>${markdownCell(value)}</code>`;
+  return `<code>${encodeMarkdownText(value)}</code>`;
+}
+
+export function compareRawText(left, right) {
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
 }
 
 export function summarizeCatalog(tools) {
@@ -95,13 +93,13 @@ export function summarizeCatalog(tools) {
       ) {
         fail(`provider ${providerId} has inconsistent metadata`);
       }
-      existing.tools.push(toolName);
+      existing.tools.push({ id: toolId, name: toolName });
     } else {
       providers.set(providerId, {
         id: providerId,
         name: providerName,
         verified: tool.provider.verified,
-        tools: [toolName],
+        tools: [{ id: toolId, name: toolName }],
       });
     }
   }
@@ -109,14 +107,18 @@ export function summarizeCatalog(tools) {
   const providerRows = [...providers.values()]
     .map((provider) => ({
       ...provider,
-      tools: provider.tools.toSorted((left, right) =>
-        left.localeCompare(right, "en"),
-      ),
+      tools: provider.tools
+        .toSorted(
+          (left, right) =>
+            compareRawText(left.name, right.name) ||
+            compareRawText(left.id, right.id),
+        )
+        .map((tool) => tool.name),
     }))
     .toSorted(
       (left, right) =>
-        left.name.localeCompare(right.name, "en") ||
-        left.id.localeCompare(right.id, "en"),
+        compareRawText(left.name, right.name) ||
+        compareRawText(left.id, right.id),
     );
 
   return {
@@ -174,6 +176,7 @@ function validatePage(payload, expectedOffset) {
 export async function fetchCatalog(
   catalogUrl = DEFAULT_CATALOG_URL,
   fetchImpl = globalThis.fetch,
+  cacheBust = randomUUID(),
 ) {
   if (typeof fetchImpl !== "function") {
     fail("Fetch API is unavailable");
@@ -183,6 +186,7 @@ export async function fetchCatalog(
   if (endpoint.searchParams.has("offset")) {
     fail("catalog URL must not set an offset");
   }
+  endpoint.searchParams.set("_sync", requireString(cacheBust, "cache bust"));
 
   endpoint.searchParams.set("limit", String(PAGE_LIMIT));
 
@@ -251,7 +255,7 @@ export function renderCatalogBlock(summary, generatedDate, catalogUrl) {
 
   const rows = summary.providers.map((provider) => {
     const tools = provider.tools.map(inlineCode).join(", ");
-    return `| ${markdownCell(provider.name)} | ${provider.verified ? "Yes" : "No"} | ${provider.tools.length} | ${tools} |`;
+    return `| ${encodeMarkdownText(provider.name)} | ${provider.verified ? "Yes" : "No"} | ${provider.tools.length} | ${tools} |`;
   });
   const normalizedCatalogUrl = new URL(catalogUrl).href
     .replaceAll("<", "%3C")
@@ -326,7 +330,13 @@ function parseArgs(argv) {
 
 export async function main(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
-  const tools = await fetchCatalog(options.catalogUrl);
+  const readAt = new Date().toISOString();
+  const cacheBust = randomUUID();
+  const tools = await fetchCatalog(
+    options.catalogUrl,
+    globalThis.fetch,
+    cacheBust,
+  );
   const summary = summarizeCatalog(tools);
   const block = renderCatalogBlock(
     summary,
@@ -342,7 +352,7 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   process.stdout.write(
-    `${changed ? "updated" : "unchanged"} ${options.readmePath}: ${summary.toolCount} tools, ${summary.providerCount} providers\n`,
+    `${changed ? "updated" : "unchanged"} ${options.readmePath}: ${summary.toolCount} tools, ${summary.providerCount} providers; read_at=${readAt}; cache_bust=${cacheBust}\n`,
   );
 }
 

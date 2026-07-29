@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  compareRawText,
+  encodeMarkdownText,
   fetchCatalog,
   renderCatalogBlock,
   summarizeCatalog,
@@ -45,6 +47,13 @@ test("summarizes providers and tools deterministically", () => {
       },
     ],
   });
+});
+
+test("uses a total platform-deterministic raw text order", () => {
+  assert.equal(compareRawText("same", "same"), 0);
+  assert.equal(compareRawText("e\u0301", "é"), -1);
+  assert.equal(compareRawText("é", "e\u0301"), 1);
+  assert.equal(compareRawText("provider-2", "provider-10"), 1);
 });
 
 test("rejects duplicate tools and inconsistent provider metadata", () => {
@@ -91,7 +100,7 @@ test("migrates the legacy line and is idempotent after markers exist", () => {
   assert.match(migrated, /\*\*Live catalog:\*\* 3 tools · 2 providers/);
   assert.match(
     migrated,
-    /\| Beta &#124; Labs \| No \| 1 \| <code>beta\.lookup<\/code> \|/,
+    /\| Beta &#124; Labs \| No \| 1 \| <code>beta&#46;lookup<\/code> \|/,
   );
   assert.equal(updateReadme(migrated, block), migrated);
 });
@@ -202,19 +211,81 @@ test("rejects repeated pages and an unbounded stream of unique full pages", asyn
   );
 });
 
-test("sanitizes catalog-controlled markers and table metacharacters", () => {
+test("cache-busts every page without changing the rendered catalog URL", async () => {
+  const seenCacheBusts = [];
+  const fetched = await fetchCatalog(
+    "https://example.test/catalog",
+    async (url) => {
+      seenCacheBusts.push(url.searchParams.get("_sync"));
+      const limit = Number(url.searchParams.get("limit"));
+      const offset = Number(url.searchParams.get("offset"));
+      const page = tools.slice(offset, offset + limit);
+      return new Response(
+        JSON.stringify({ tools: page, total: page.length, limit, offset }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    },
+    "fixed-cache-bust",
+  );
+
+  assert.deepEqual(fetched, tools);
+  assert.deepEqual(seenCacheBusts, ["fixed-cache-bust"]);
+  const block = renderCatalogBlock(
+    summarizeCatalog(fetched),
+    "2026-07-29",
+    "https://example.test/catalog",
+  );
+  assert.match(block, /\(<https:\/\/example\.test\/catalog>\)/);
+  assert.doesNotMatch(block, /fixed-cache-bust/);
+});
+
+test("encodes every ASCII Markdown punctuation character readably", () => {
+  const punctuation = Array.from({ length: 94 }, (_, index) =>
+    String.fromCodePoint(index + 33),
+  )
+    .filter((character) => !/[0-9A-Za-z]/.test(character))
+    .join("");
+  const expected = [...punctuation]
+    .map((character) => `&#${character.codePointAt(0)};`)
+    .join("");
+  const encoded = encodeMarkdownText(punctuation);
+
+  assert.equal(encoded, expected);
+  assert.equal(
+    encoded.replace(/&#(\d+);/g, (_, codePoint) =>
+      String.fromCodePoint(Number(codePoint)),
+    ),
+    punctuation,
+  );
+});
+
+test("sanitizes a broad catalog-controlled Markdown and HTML matrix", () => {
+  const hostileValues = [
+    "![pixel](https://tracker.example/pixel)",
+    "[link](https://evil.example/path)",
+    "[reference][target]",
+    "<https://evil.example/autolink>",
+    "<user@evil.example>",
+    "<img src=\"https://evil.example/pixel\">",
+    "<script>location='https://evil.example'</script>",
+    "https://evil.example/raw",
+    "www.evil.example",
+    "user@evil.example",
+    "**bold** _emphasis_ ~~strike~~ `code`",
+    "<!-- CATALOG:END -->",
+    "&lt;img src=x&gt;",
+    "pipe|line\nnext\rslash\\",
+  ];
   const hostileCatalog = [
-    {
-      id: "hostile-tool",
-      tool_name:
-        "tool <!-- CATALOG:BEGIN --> | line\nslash\\ <!-- attacker -->",
+    ...hostileValues.map((value, index) => ({
+      id: `hostile-tool-${index}`,
+      tool_name: value,
       provider: {
         id: "hostile-provider",
-        name:
-          "Provider <!-- CATALOG:END --> | line\r\nslash\\ <!-- attacker -->",
+        name: hostileValues.join(" "),
         verified: false,
       },
-    },
+    })),
   ];
   const block = renderCatalogBlock(
     summarizeCatalog(hostileCatalog),
@@ -230,18 +301,93 @@ test("sanitizes catalog-controlled markers and table metacharacters", () => {
   assert.equal(firstWrite, secondWrite);
   assert.equal(firstWrite.split("<!-- CATALOG:BEGIN -->").length - 1, 1);
   assert.equal(firstWrite.split("<!-- CATALOG:END -->").length - 1, 1);
-  assert.doesNotMatch(firstWrite, /<!-- attacker -->/);
-  assert.match(firstWrite, /&lt;!-- CATALOG:BEGIN --&gt;/);
-  assert.match(firstWrite, /&lt;!-- CATALOG:END --&gt;/);
+  const providerRow = firstWrite
+    .split("\n")
+    .find((line) => line.startsWith("| &#33;&#91;pixel"));
+  assert.ok(providerRow);
+  assert.doesNotMatch(providerRow, /!\[|\]\(|<!--|<img|<script|https?:\/\//);
+  assert.doesNotMatch(providerRow, /www\.|[A-Za-z0-9]@[A-Za-z0-9]/);
+  assert.match(providerRow, /&#33;&#91;pixel&#93;&#40;https&#58;&#47;&#47;/);
+  assert.match(providerRow, /&#60;&#33;&#45;&#45; CATALOG&#58;END/);
   assert.match(firstWrite, /&#124;/);
   assert.match(firstWrite, /&#10;/);
   assert.match(firstWrite, /&#13;/);
   assert.match(firstWrite, /&#92;/);
-
-  const providerRow = firstWrite
-    .split("\n")
-    .find((line) => line.startsWith("| Provider &lt;!--"));
-  assert.ok(providerRow);
   assert.equal(providerRow.split("|").length - 1, 5);
   assert.doesNotMatch(providerRow, /\\/);
+});
+
+test("reversed API order is byte-identical for collation-equal strings", () => {
+  const canonicalProvider = {
+    id: "provider-canonical",
+    name: "Canonical Provider",
+    verified: true,
+  };
+  const catalog = [
+    {
+      id: "tool-precomposed",
+      tool_name: "é",
+      provider: canonicalProvider,
+    },
+    {
+      id: "tool-decomposed",
+      tool_name: "e\u0301",
+      provider: canonicalProvider,
+    },
+    {
+      id: "tool-same-z",
+      tool_name: "same",
+      provider: canonicalProvider,
+    },
+    {
+      id: "tool-same-a",
+      tool_name: "same",
+      provider: canonicalProvider,
+    },
+    {
+      id: "provider-tool-precomposed",
+      tool_name: "zeta",
+      provider: {
+        id: "provider-precomposed",
+        name: "é",
+        verified: false,
+      },
+    },
+    {
+      id: "provider-tool-decomposed",
+      tool_name: "alpha",
+      provider: {
+        id: "provider-decomposed",
+        name: "e\u0301",
+        verified: false,
+      },
+    },
+    {
+      id: "provider-tool-equal-z",
+      tool_name: "zulu",
+      provider: {
+        id: "provider-equal-z",
+        name: "Equal Provider",
+        verified: false,
+      },
+    },
+    {
+      id: "provider-tool-equal-a",
+      tool_name: "alpha",
+      provider: {
+        id: "provider-equal-a",
+        name: "Equal Provider",
+        verified: false,
+      },
+    },
+  ];
+  const render = (items) =>
+    renderCatalogBlock(
+      summarizeCatalog(items),
+      "2026-07-29",
+      "https://example.test/catalog",
+    );
+
+  assert.equal("é".localeCompare("e\u0301", "en"), 0);
+  assert.equal(render(catalog), render([...catalog].reverse()));
 });
