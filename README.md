@@ -28,7 +28,22 @@ curl https://noui.bot/api/v1/bazaar/usage/summary \
   -H "Authorization: Bearer bz_your_key"
 ```
 
-**Live now:** 14 tools · 6 providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts
+<!-- CATALOG:BEGIN -->
+**Live catalog:** 28 tools · 8 providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts
+
+_Generated from [the public catalog](<https://noui.bot/api/bazaar/catalog>) on 2026-07-29 UTC._
+
+| Provider | Verified | Tool count | Tools |
+|---|:---:|---:|---|
+| AutoScrape US Business Registry Evidence | No | 6 | <code>search&#95;building&#95;permits</code>, <code>search&#95;business&#95;entities</code>, <code>search&#95;irs&#95;990&#95;nonprofits</code>, <code>search&#95;sec&#95;edgar&#95;filings</code>, <code>validate&#95;phone&#95;numbers</code>, <code>whois&#95;lookup</code> |
+| BotWall3t | Yes | 3 | <code>access&#46;verify</code>, <code>wallet&#46;balance</code>, <code>wallet&#46;transfer</code> |
+| Deploy Rail | No | 3 | <code>deploy&#46;create</code>, <code>deploy&#46;stats</code>, <code>deploy&#46;status</code> |
+| Nous Research MCP Server | No | 3 | <code>Business Decomposer</code>, <code>Fresh Markets Watch</code>, <code>GasRoute Oracle</code> |
+| OpenCode MCP | No | 5 | <code>code&#46;analyze</code>, <code>data&#46;convert</code>, <code>text&#46;process</code>, <code>util&#46;timestamp</code>, <code>util&#46;uuid</code> |
+| Sentinel MCP | Yes | 4 | <code>monitor&#46;health</code>, <code>news&#46;scan</code>, <code>web&#46;extract</code>, <code>web&#46;search</code> |
+| Test Provider Walkthrough | No | 1 | <code>test&#95;weather</code> |
+| quant&#45;mcp&#45;tools | No | 3 | <code>get&#95;correlation&#95;matrix</code>, <code>get&#95;volatility&#95;analysis</code>, <code>validate&#95;trade&#95;constraints</code> |
+<!-- CATALOG:END -->
 
 ## TypeScript SDK
 
