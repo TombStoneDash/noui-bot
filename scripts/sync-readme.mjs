@@ -7,6 +7,9 @@ const DEFAULT_CATALOG_URL = "https://noui.bot/api/bazaar/catalog";
 const DEFAULT_README_PATH = "README.md";
 const START_MARKER = "<!-- CATALOG:BEGIN -->";
 const END_MARKER = "<!-- CATALOG:END -->";
+const PAGE_LIMIT = 100;
+const MAX_CATALOG_TOOLS = 100_000;
+const MAX_PAGE_REQUESTS = Math.ceil(MAX_CATALOG_TOOLS / PAGE_LIMIT) + 1;
 
 function fail(message) {
   throw new Error(`README catalog sync failed: ${message}`);
@@ -22,14 +25,21 @@ function requireString(value, field) {
 
 function markdownCell(value) {
   return value
-    .replaceAll("\\", "\\\\")
-    .replaceAll("|", "\\|")
-    .replaceAll("\r", " ")
-    .replaceAll("\n", " ");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
+    .replaceAll("`", "&#96;")
+    .replaceAll("\\", "&#92;")
+    .replaceAll("|", "&#124;")
+    .replace(/[\u0000-\u001f\u007f]/g, (character) => {
+      return `&#${character.codePointAt(0)};`;
+    });
 }
 
 function inlineCode(value) {
-  return `\`${markdownCell(value).replaceAll("`", "\\`")}\``;
+  return `<code>${markdownCell(value)}</code>`;
 }
 
 export function summarizeCatalog(tools) {
@@ -125,8 +135,27 @@ function validatePage(payload, expectedOffset) {
     fail("catalog response tools must be an array");
   }
 
-  if (!Number.isSafeInteger(payload.total) || payload.total < 0) {
+  if (
+    payload.total !== undefined &&
+    (!Number.isSafeInteger(payload.total) || payload.total < 0)
+  ) {
     fail("catalog response total must be a non-negative integer");
+  }
+
+  if (
+    payload.limit !== undefined &&
+    payload.limit !== null &&
+    payload.limit !== PAGE_LIMIT
+  ) {
+    fail(
+      `catalog response limit ${payload.limit} did not match requested ${PAGE_LIMIT}`,
+    );
+  }
+
+  if (payload.tools.length > PAGE_LIMIT) {
+    fail(
+      `catalog returned ${payload.tools.length} tools for page limit ${PAGE_LIMIT}`,
+    );
   }
 
   if (
@@ -155,14 +184,13 @@ export async function fetchCatalog(
     fail("catalog URL must not set an offset");
   }
 
-  const requestedLimit = 100;
-  endpoint.searchParams.set("limit", String(requestedLimit));
+  endpoint.searchParams.set("limit", String(PAGE_LIMIT));
 
   const tools = [];
-  let expectedTotal = null;
+  const toolIds = new Set();
   let offset = 0;
 
-  for (;;) {
+  for (let requestCount = 0; requestCount < MAX_PAGE_REQUESTS; requestCount += 1) {
     endpoint.searchParams.set("offset", String(offset));
     const response = await fetchImpl(endpoint, {
       headers: { accept: "application/json" },
@@ -182,33 +210,38 @@ export async function fetchCatalog(
       fail(`catalog returned invalid JSON: ${error}`);
     }
 
-    if (expectedTotal === null) {
-      expectedTotal = payload.total;
-    } else if (payload.total !== expectedTotal) {
-      fail(
-        `catalog total changed during pagination (${expectedTotal} to ${payload.total})`,
-      );
+    if (payload.tools.length === 0) {
+      return tools;
     }
 
-    if (payload.tools.length === 0 && tools.length < expectedTotal) {
-      fail("catalog pagination stopped before reaching total");
+    if (tools.length + payload.tools.length > MAX_CATALOG_TOOLS) {
+      fail(`catalog exceeds maximum ${MAX_CATALOG_TOOLS} tools`);
+    }
+
+    for (const [index, tool] of payload.tools.entries()) {
+      if (!tool || typeof tool !== "object" || Array.isArray(tool)) {
+        fail(`catalog page at offset ${offset} tools[${index}] must be an object`);
+      }
+
+      const toolId = requireString(
+        tool.id,
+        `catalog page at offset ${offset} tools[${index}].id`,
+      );
+      if (toolIds.has(toolId)) {
+        fail(`duplicate tool id ${toolId} across catalog pages`);
+      }
+      toolIds.add(toolId);
     }
 
     tools.push(...payload.tools);
     offset += payload.tools.length;
 
-    if (tools.length >= expectedTotal) {
-      break;
+    if (payload.tools.length < PAGE_LIMIT) {
+      return tools;
     }
   }
 
-  if (tools.length !== expectedTotal) {
-    fail(
-      `catalog returned ${tools.length} tools but declared total ${expectedTotal}`,
-    );
-  }
-
-  return tools;
+  fail(`catalog pagination exceeded ${MAX_PAGE_REQUESTS} requests`);
 }
 
 export function renderCatalogBlock(summary, generatedDate, catalogUrl) {
@@ -220,12 +253,17 @@ export function renderCatalogBlock(summary, generatedDate, catalogUrl) {
     const tools = provider.tools.map(inlineCode).join(", ");
     return `| ${markdownCell(provider.name)} | ${provider.verified ? "Yes" : "No"} | ${provider.tools.length} | ${tools} |`;
   });
+  const normalizedCatalogUrl = new URL(catalogUrl).href
+    .replaceAll("<", "%3C")
+    .replaceAll(">", "%3E")
+    .replaceAll("(", "%28")
+    .replaceAll(")", "%29");
 
   return [
     START_MARKER,
     `**Live catalog:** ${summary.toolCount} tools · ${summary.providerCount} providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts`,
     "",
-    `_Generated from [the public catalog](${catalogUrl}) on ${generatedDate} UTC._`,
+    `_Generated from [the public catalog](<${normalizedCatalogUrl}>) on ${generatedDate} UTC._`,
     "",
     "| Provider | Verified | Tool count | Tools |",
     "|---|:---:|---:|---|",

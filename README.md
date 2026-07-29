@@ -31,18 +31,18 @@ curl https://noui.bot/api/v1/bazaar/usage/summary \
 <!-- CATALOG:BEGIN -->
 **Live catalog:** 27 tools · 8 providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts
 
-_Generated from [the public catalog](https://noui.bot/api/bazaar/catalog) on 2026-07-29 UTC._
+_Generated from [the public catalog](<https://noui.bot/api/bazaar/catalog>) on 2026-07-29 UTC._
 
 | Provider | Verified | Tool count | Tools |
 |---|:---:|---:|---|
-| AutoScrape US Business Registry Evidence | No | 5 | `search_building_permits`, `search_business_entities`, `search_irs_990_nonprofits`, `search_sec_edgar_filings`, `whois_lookup` |
-| BotWall3t | Yes | 3 | `access.verify`, `wallet.balance`, `wallet.transfer` |
-| Deploy Rail | No | 3 | `deploy.create`, `deploy.stats`, `deploy.status` |
-| Nous Research MCP Server | No | 3 | `Business Decomposer`, `Fresh Markets Watch`, `GasRoute Oracle` |
-| OpenCode MCP | No | 5 | `code.analyze`, `data.convert`, `text.process`, `util.timestamp`, `util.uuid` |
-| quant-mcp-tools | No | 3 | `get_correlation_matrix`, `get_volatility_analysis`, `validate_trade_constraints` |
-| Sentinel MCP | Yes | 4 | `monitor.health`, `news.scan`, `web.extract`, `web.search` |
-| Test Provider Walkthrough | No | 1 | `test_weather` |
+| AutoScrape US Business Registry Evidence | No | 5 | <code>search_building_permits</code>, <code>search_business_entities</code>, <code>search_irs_990_nonprofits</code>, <code>search_sec_edgar_filings</code>, <code>whois_lookup</code> |
+| BotWall3t | Yes | 3 | <code>access.verify</code>, <code>wallet.balance</code>, <code>wallet.transfer</code> |
+| Deploy Rail | No | 3 | <code>deploy.create</code>, <code>deploy.stats</code>, <code>deploy.status</code> |
+| Nous Research MCP Server | No | 3 | <code>Business Decomposer</code>, <code>Fresh Markets Watch</code>, <code>GasRoute Oracle</code> |
+| OpenCode MCP | No | 5 | <code>code.analyze</code>, <code>data.convert</code>, <code>text.process</code>, <code>util.timestamp</code>, <code>util.uuid</code> |
+| quant-mcp-tools | No | 3 | <code>get_correlation_matrix</code>, <code>get_volatility_analysis</code>, <code>validate_trade_constraints</code> |
+| Sentinel MCP | Yes | 4 | <code>monitor.health</code>, <code>news.scan</code>, <code>web.extract</code>, <code>web.search</code> |
+| Test Provider Walkthrough | No | 1 | <code>test_weather</code> |
 <!-- CATALOG:END -->
 
 ## TypeScript SDK
