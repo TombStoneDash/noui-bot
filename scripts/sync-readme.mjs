@@ -27,7 +27,10 @@ function requireString(value, field) {
 export function encodeMarkdownText(value) {
   return value.replace(
     /[\u0000-\u001f\u007f-\u009f\u2028\u2029]|[!-/:-@\[-`{-~]/gu,
-    (character) => `&#${character.codePointAt(0)};`,
+    (character) =>
+      character === "@"
+        ? "<span>&#64;</span>"
+        : `&#${character.codePointAt(0)};`,
   );
 }
 

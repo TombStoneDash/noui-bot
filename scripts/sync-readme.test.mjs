@@ -246,15 +246,22 @@ test("encodes every ASCII Markdown punctuation character readably", () => {
     .filter((character) => !/[0-9A-Za-z]/.test(character))
     .join("");
   const expected = [...punctuation]
-    .map((character) => `&#${character.codePointAt(0)};`)
+    .map((character) =>
+      character === "@"
+        ? "<span>&#64;</span>"
+        : `&#${character.codePointAt(0)};`,
+    )
     .join("");
   const encoded = encodeMarkdownText(punctuation);
 
   assert.equal(encoded, expected);
   assert.equal(
-    encoded.replace(/&#(\d+);/g, (_, codePoint) =>
-      String.fromCodePoint(Number(codePoint)),
-    ),
+    encoded
+      .replaceAll("<span>", "")
+      .replaceAll("</span>", "")
+      .replace(/&#(\d+);/g, (_, codePoint) =>
+        String.fromCodePoint(Number(codePoint)),
+      ),
     punctuation,
   );
 });
@@ -309,6 +316,7 @@ test("sanitizes a broad catalog-controlled Markdown and HTML matrix", () => {
   assert.doesNotMatch(providerRow, /www\.|[A-Za-z0-9]@[A-Za-z0-9]/);
   assert.match(providerRow, /&#33;&#91;pixel&#93;&#40;https&#58;&#47;&#47;/);
   assert.match(providerRow, /&#60;&#33;&#45;&#45; CATALOG&#58;END/);
+  assert.match(providerRow, /<span>&#64;<\/span>/);
   assert.match(firstWrite, /&#124;/);
   assert.match(firstWrite, /&#10;/);
   assert.match(firstWrite, /&#13;/);
