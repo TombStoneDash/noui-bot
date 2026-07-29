@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:billing-spec": "node --test tests/mcp-billing-v1-conformance.test.mjs"
+    "test:billing-spec": "node --import tsx --test tests/mcp-billing-v1-conformance.test.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
@@ -25,10 +25,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "ajv": "^6.12.6",
+    "ajv": "^8.20.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }

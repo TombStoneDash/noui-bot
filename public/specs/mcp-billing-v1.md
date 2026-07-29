@@ -4,8 +4,8 @@
 **Machine-readable core profile:** 0.1.0
 **Date:** 2026-02-27
 **Authors:** TombStone Dash LLC
-**License:** MIT
-**Reference Implementation:** [noui.bot](https://noui.bot) (Agent Bazaar)
+**License:** [MIT for this specification only](./mcp-billing-v1/LICENSE)
+**Reference Code / Candidate Implementation:** [noui.bot](https://noui.bot) (Agent Bazaar)
 
 ---
 
@@ -19,9 +19,10 @@ Draft. Feedback welcome at [GitHub Issues](https://github.com/TombStoneDash/mcp-
 
 The NB-01 machine-readable core profile covers only the billing response
 envelope, meter-event request, and public receipt shapes already present in the
-reference code. It does not certify a deployment, change billing behavior, or
-claim conformance for the pricing, verification, dispute, trust-score, or
-discovery sections below.
+candidate source code. It does not certify a deployment or change billing
+behavior. It does not prove every metered call receives a receipt or claim
+conformance for the pricing, verification, dispute, trust-score, or discovery
+sections below.
 
 ### Machine-readable core artifacts
 
@@ -45,8 +46,11 @@ repairing runtime behavior:
 | Surface | Current source truth | NB-01 handling |
 |---|---|---|
 | Cost units | The meter route computes its field named `cost_microcents` as `price_cents × 100`; the normative definition is `price_cents × 10,000`. | Receipt fixture retains the current route result (`1` cent → `100`) and does not claim unit conformance. |
-| Proxy metadata | The proxy route emits `meta.tool`; the SDK `ProxyResult` type names that field `meta.tool_name`. | Billing-envelope schema follows the route. |
+| Proxy tool metadata | The successful proxy route emits `meta.tool`; the SDK `ProxyResult` type names that field `meta.tool_name`. | Billing-envelope schema follows the route. |
+| Proxy display cost | The successful proxy route returns a formatted `meta.cost` string; the SDK `ProxyResult.meta` omits `meta.cost`. | Billing-envelope schema follows the route and requires `meta.cost`; this does not imply SDK compatibility. |
+| Proxy invocation identifier | The SDK declares an SDK-only optional `meta.invocation_id`; the successful proxy route does not return it. | Billing-envelope schema follows the route and omits `meta.invocation_id`. |
 | Meter request | The route accepts `tool_id`/`tool_name`, `agent_id`, `status`, `duration_ms`, `input_tokens`, `output_tokens`, and `metadata`; the SDK `MeterPayload` instead exposes `tokens_used`, `success`, and `consumer_id`. | Meter-event schema follows the route. |
+| Meter response | `MeterAPI.record()` declares `{ recorded, invocation_id }`; the meter route returns `{ metered, tool_id, agent_id, cost_microcents, cost_cents, status, timestamp, receipt }`. | NB-01 records the mismatch; its meter-event schema covers the request only and makes no response-compatibility claim. |
 | Receipt content fields | The meter route stores token-count strings in internal nullable columns named `input_hash` and `output_hash`; the public receipt verifier returns neither field. | Public-receipt schema follows the verifier response and makes no content-hash claim. |
 | Receipt lifecycle | The meter route signs receipts, but logs and continues when receipt persistence fails. The proxy route records usage without generating a signed receipt. | Schemas define shapes only; NB-01 does not certify persistence or claim every proxy call has a receipt. |
 
@@ -372,13 +376,18 @@ Partial conformance is acceptable. Implementations SHOULD document which section
 
 The committed deterministic conformance test validates each fictional fixture
 against its JSON Schema, performs a lossless JSON round trip, rejects missing
-required fields and invalid statuses, checks the receipt's canonical
-HMAC-SHA256 signature using the public fixture key, and verifies that the
-schema field names remain anchored to the current source routes.
+required fields and invalid statuses, calls the production receipt signer with
+the public fixture key, and checks selected source shapes against the schemas.
+Mutation regressions verify that changing the successful proxy key from
+`meta.tool` to `meta.tool_name`, or swapping the production signer's canonical
+field order, breaks compatibility.
 
-Passing the NB-01 test proves only machine-readable core-profile conformance for
-the exact source revision under test. It does not prove a live deployment or
-the broader six-part conformance list above.
+Passing the NB-01 test proves only that the checked-in fictional fixtures
+validate against the checked-in schemas and that the selected source shapes are
+compatible with those artifacts at the exact source revision under test. It
+does not prove live deployment, full reference-implementation conformance,
+atomic receipt persistence, broader six-part conformance, or that every metered
+call receives a receipt.
 
 ---
 
@@ -392,13 +401,17 @@ The MCP ecosystem needs billing. Multiple providers are building it independentl
 
 This spec creates a common language. If xpay, TollBit, MCP Hive, and Bazaar all implement the same receipt schema, agents get consistent experiences regardless of which billing provider they use.
 
-**We'd rather be the reference implementation of a universal standard than a walled garden.**
+**We'd rather build toward an interoperable universal standard than a walled garden.**
 
 ---
 
-## Appendix B: Reference Implementation
+## Appendix B: Candidate Implementation
 
-The Agent Bazaar at [noui.bot](https://noui.bot) is the reference implementation of this spec.
+The Agent Bazaar source at [noui.bot](https://noui.bot) is candidate
+implementation code used to align the NB-01 artifacts. It is not established as
+a fully conformant live reference implementation: the current proxy path does
+not generate signed receipts, and the meter path can report success after
+receipt persistence fails.
 
 - API: `https://noui.bot/api/v1`
 - SDK: `npm install @forthebots/bazaar-sdk`
@@ -407,4 +420,6 @@ The Agent Bazaar at [noui.bot](https://noui.bot) is the reference implementation
 
 ---
 
-*This spec is MIT licensed. Copy it. Fork it. Implement it. That's the point.*
+*The specification files are licensed under their adjacent
+[MIT License](./mcp-billing-v1/LICENSE). That grant does not claim to license
+the rest of this repository.*
