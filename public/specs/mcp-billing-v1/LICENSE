@@ -1,8 +1,17 @@
 MCP Billing Spec v1 License Scope
 
-The following MIT License applies only to the MCP Billing Spec v1 prose,
-machine-readable schemas, and fictional fixtures in this directory. It does not
-apply to other source code or content in this repository.
+The following MIT License applies only to these MCP Billing Spec v1 artifacts.
+Paths are relative to this LICENSE file:
+
+- ../mcp-billing-v1.md
+- ./billing-envelope.schema.json
+- ./meter-event.schema.json
+- ./receipt.schema.json
+- ./fixtures/billing-envelope.fixture.json
+- ./fixtures/meter-event.fixture.json
+- ./fixtures/receipt.fixture.json
+
+It does not apply to other source code or content in this repository.
 
 MIT License
 
