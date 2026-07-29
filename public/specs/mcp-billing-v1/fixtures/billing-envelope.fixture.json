@@ -1,0 +1,18 @@
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "fictional fixture response"
+      }
+    ]
+  },
+  "meta": {
+    "tool": "fixture.echo",
+    "provider": "Fixture Provider",
+    "cost_cents": 1,
+    "cost": "$0.0100",
+    "latency_ms": 12,
+    "remaining_balance_cents": 499
+  }
+}

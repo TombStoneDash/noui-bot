@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://noui.bot/specs/mcp-billing-v1/receipt.schema.json",
+  "title": "MCP Billing v1 Public Receipt",
+  "description": "Receipt object returned by the current public verification route.",
+  "type": "object",
+  "required": [
+    "receipt_id",
+    "tool_id",
+    "tool_name",
+    "agent_id",
+    "provider_id",
+    "timestamp",
+    "duration_ms",
+    "cost_microcents",
+    "status",
+    "signature",
+    "created_at"
+  ],
+  "properties": {
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^rcpt_[0-9a-f]{16,}$"
+    },
+    "tool_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tool_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agent_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "duration_ms": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "cost_microcents": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "error",
+        "timeout",
+        "rate_limited"
+      ]
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

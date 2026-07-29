@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://noui.bot/specs/mcp-billing-v1/billing-envelope.schema.json",
+  "title": "MCP Billing v1 Billing Response Envelope",
+  "description": "Current successful Agent Bazaar proxy response shape.",
+  "type": "object",
+  "required": [
+    "result",
+    "meta"
+  ],
+  "properties": {
+    "result": true,
+    "meta": {
+      "type": "object",
+      "required": [
+        "tool",
+        "provider",
+        "cost_cents",
+        "cost",
+        "latency_ms",
+        "remaining_balance_cents"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cost_cents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cost": {
+          "type": "string",
+          "minLength": 1
+        },
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "remaining_balance_cents": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
