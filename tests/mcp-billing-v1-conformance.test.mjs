@@ -21,6 +21,7 @@ const proxyRoutePath = path.join(
   "route.ts",
 );
 const receiptSignerPath = path.join(root, "src", "lib", "receipts.ts");
+const meterValidatorPath = path.join(root, "src", "lib", "meter-event.ts");
 const meterRoutePath = path.join(
   root,
   "src",
@@ -67,6 +68,9 @@ async function importProductionSignerWithFixtureKey() {
 }
 
 const signReceipt = await importProductionSignerWithFixtureKey();
+const { validateMeterEventRequest } = await import(
+  pathToFileURL(meterValidatorPath).href
+);
 
 const artifacts = [
   {
@@ -479,14 +483,14 @@ function assertMeterRouteRequestContract(sourcePath, source) {
     "POST",
   );
   const expectedInitializers = new Map([
-    ["toolId", "body.tool_id as string"],
-    ["toolName", "body.tool_name as string"],
-    ["agentId", "body.agent_id as string || owner.id"],
-    ["status", '(body.status as string) || "success"'],
-    ["durationMs", "(body.duration_ms as number) || 0"],
-    ["inputTokens", "(body.input_tokens as number) || 0"],
-    ["outputTokens", "(body.output_tokens as number) || 0"],
-    ["metadata", "(body.metadata as object) || {}"],
+    ["toolId", "body.tool_id"],
+    ["toolName", "body.tool_name"],
+    ["agentId", "body.agent_id || owner.id"],
+    ["status", 'body.status || "success"'],
+    ["durationMs", "body.duration_ms ?? 0"],
+    ["inputTokens", "body.input_tokens ?? 0"],
+    ["outputTokens", "body.output_tokens ?? 0"],
+    ["metadata", "body.metadata ?? {}"],
   ]);
 
   for (const [variableName, expectedInitializer] of expectedInitializers) {
@@ -502,22 +506,29 @@ function assertMeterRouteRequestContract(sourcePath, source) {
     );
   }
 
-  const toolValidation = [];
+  const requestValidation = [];
   function visit(node) {
     if (
       ts.isIfStatement(node) &&
       normalizeTypeScriptText(node.expression.getText(sourceFile)) ===
-        "!toolId && !toolName"
+        "!validateMeterEventRequest(body)"
     ) {
-      toolValidation.push(node);
+      requestValidation.push(node);
     }
     ts.forEachChild(node, visit);
   }
   visit(declaration.body);
   assert.equal(
-    toolValidation.length,
+    requestValidation.length,
     1,
-    `expected one tool_id/tool_name validation, found ${toolValidation.length}`,
+    `expected one runtime meter-event validation, found ${requestValidation.length}`,
+  );
+
+  const getSupabaseCall = source.indexOf("const sb = getSupabase();");
+  assert.notEqual(getSupabaseCall, -1, "meter route must initialize Supabase");
+  assert.ok(
+    requestValidation[0].getStart(sourceFile) < getSupabaseCall,
+    "meter request validation must happen before persistence begins",
   );
 
   let consumerAgentMappings = 0;
@@ -873,19 +884,35 @@ test("billing envelope rejects an incomplete metadata object", () => {
   assert.ok(validate.errors.some((error) => error.keyword === "required"));
 });
 
-test("meter event requires a tool identifier and rejects unknown statuses", () => {
+test("meter event runtime validation rejects requests outside the published schema", () => {
   const schema = readJson(artifacts[1].schemaPath);
   const fixture = readJson(artifacts[1].fixturePath);
   const validate = compileSchema(schema);
-  const missingTool = clone(fixture);
-  delete missingTool.tool_name;
+  const invalidRequests = [
+    [
+      "missing tool identifier",
+      (value) => {
+        delete value.tool_name;
+        return value;
+      },
+    ],
+    ["invalid status enum", (value) => ({ ...value, status: "charged" })],
+    ["negative duration", (value) => ({ ...value, duration_ms: -1 })],
+    ["negative input token count", (value) => ({ ...value, input_tokens: -1 })],
+    ["negative output token count", (value) => ({ ...value, output_tokens: -1 })],
+    ["invalid metadata", (value) => ({ ...value, metadata: [] })],
+  ];
 
-  assert.equal(validate(missingTool), false);
-
-  const invalidStatus = clone(fixture);
-  invalidStatus.status = "charged";
-  assert.equal(validate(invalidStatus), false);
-  assert.ok(validate.errors.some((error) => error.keyword === "enum"));
+  assert.equal(validateMeterEventRequest(fixture), true);
+  for (const [description, mutate] of invalidRequests) {
+    const invalid = mutate(clone(fixture));
+    assert.equal(validate(invalid), false, `${description} must fail the schema`);
+    assert.equal(
+      validateMeterEventRequest(invalid),
+      false,
+      `${description} must fail runtime validation`,
+    );
+  }
 });
 
 test("receipt rejects incomplete or unsupported receipt records", () => {
