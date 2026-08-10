@@ -1,0 +1,13 @@
+{
+  "receipt_id": "rcpt_0123456789abcdef",
+  "tool_id": "tool_fixture_echo",
+  "tool_name": "fixture.echo",
+  "agent_id": "agent_fixture_001",
+  "provider_id": "provider_fixture_001",
+  "timestamp": "2026-02-27T12:00:00.000Z",
+  "duration_ms": 12,
+  "cost_microcents": 100,
+  "status": "success",
+  "signature": "8226d4e6fdd2d0d61badfbf83d9d7c7d45c9fdd0b0f52759af28b22ce9fdc564",
+  "created_at": "2026-02-27T12:00:00.000Z"
+}
