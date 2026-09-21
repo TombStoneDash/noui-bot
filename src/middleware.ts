@@ -1,39 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Inline rate limiter (Edge runtime compatible)
-const store = new Map<string, { count: number; resetAt: number }>();
-
-const ROUTE_LIMITS: Record<string, number> = {
-  "/api/v1/waitlist": 10,
-  "/api/v1/feedback": 30,
-  "/api/v1/apply": 10,
-  "/api/v1/stats": 60,
-  "/api/v1/services": 60,
-  "/api/v1/health": 120,
-  "/api/v1/status": 60,
-  "/api/v1": 100,
-};
-
-function checkRate(ip: string, pathname: string): { allowed: boolean; limit: number; remaining: number; resetAt: number } {
-  const limit = ROUTE_LIMITS[pathname] ?? 100;
-  const key = `${ip}:${pathname}`;
-  const now = Date.now();
-  
-  let entry = store.get(key);
-  if (!entry || entry.resetAt < now) {
-    entry = { count: 0, resetAt: now + 60_000 };
-    store.set(key, entry);
-  }
-  entry.count++;
-  
-  return {
-    allowed: entry.count <= limit,
-    limit,
-    remaining: Math.max(0, limit - entry.count),
-    resetAt: entry.resetAt,
-  };
-}
+import { checkRate } from "./lib/rate-limit";
 
 // Public, CDN-cacheable GET endpoints
 const PUBLIC_CACHE_ROUTES = new Set([
