@@ -46,7 +46,11 @@ export function createFactory(config: FactoryConfig): FactoryConfig {
  */
 export function generateManifest(config: FactoryConfig): AgentManifest {
   return {
-    id: config.name.toLowerCase().replace(/\s+/g, '-'),
+    id: config.name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, ''),
     name: config.name,
     version: config.version || '0.1.0',
     description: config.description || '',
@@ -61,14 +65,22 @@ export function generateManifest(config: FactoryConfig): AgentManifest {
 export function validateConfig(config: FactoryConfig): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
-  if (!config.name) {
+  if (typeof config.name !== 'string' || config.name.trim() === '') {
     errors.push('Factory name is required');
   }
   
-  if (config.tools) {
-    for (const tool of config.tools) {
-      if (!tool.name) errors.push('Tool name is required');
-      if (!tool.description) errors.push(`Tool ${tool.name || 'unknown'} missing description`);
+  if (config.tools !== undefined && config.tools !== null) {
+    if (!Array.isArray(config.tools)) {
+      errors.push('tools must be an array');
+    } else {
+      config.tools.forEach((tool, i) => {
+        if (tool === null || typeof tool !== 'object') {
+          errors.push(`Tool at index ${i} must be an object`);
+          return;
+        }
+        if (!tool.name) errors.push('Tool name is required');
+        if (!tool.description) errors.push(`Tool ${tool.name || 'unknown'} missing description`);
+      });
     }
   }
   
