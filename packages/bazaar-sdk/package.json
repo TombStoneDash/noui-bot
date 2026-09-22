@@ -20,7 +20,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "typecheck": "tsc --noEmit",
-    "test": "node --test dist/test.js"
+    "test": "sh scripts/test.sh"
   },
   "keywords": [
     "mcp",
@@ -42,7 +42,8 @@
   },
   "devDependencies": {
     "tsup": "^8.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "@types/node": "^22.0.0"
   },
   "engines": {
     "node": ">=18"
