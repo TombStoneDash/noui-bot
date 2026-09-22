@@ -2,7 +2,7 @@
 
 **The commerce layer for AI agents.** Billing, metering, and tool discovery for MCP servers.
 
-→ [noui.bot](https://noui.bot) · [docs](https://noui.bot/docs/bazaar) · [catalog](https://noui.bot/api/bazaar/catalog) · [SDK](https://github.com/TombStoneDash/noui-bot/tree/main/packages/bazaar-sdk) · [changelog](https://noui.bot/changelog)
+→ [noui.bot](https://noui.bot) · [spec](https://noui.bot/spec) · [docs](https://noui.bot/docs/bazaar) · [catalog](https://noui.bot/api/bazaar/catalog) · [SDK](https://github.com/TombStoneDash/noui-bot/tree/main/packages/bazaar-sdk) · [changelog](https://noui.bot/changelog)
 
 ---
 
