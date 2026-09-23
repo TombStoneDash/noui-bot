@@ -35,7 +35,7 @@
   },
   "trust": {
     "description": "Trust primitives for commercial-grade agent commerce. Verified providers, signed receipts, SLAs, and dispute resolution.",
-    "spec": "https://noui.bot/specs/mcp-billing-v1",
+    "spec": "https://noui.bot/spec",
     "verification": {
       "levels": ["unverified", "email", "domain", "code"],
       "endpoint": "https://noui.bot/api/v1/bazaar/providers/verify"
