@@ -136,7 +136,7 @@ export default function Home() {
                 <li>&rarr; REST API + TypeScript SDK</li>
                 <li>&rarr; White-label ready</li>
               </ul>
-              <a href="/specs/mcp-billing-v1" className="font-mono text-xs text-green-400 hover:text-green-300 transition-colors">
+              <a href="/spec" className="font-mono text-xs text-green-400 hover:text-green-300 transition-colors">
                 Read the spec &rarr;
               </a>
             </div>

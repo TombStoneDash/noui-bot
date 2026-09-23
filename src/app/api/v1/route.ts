@@ -87,7 +87,7 @@ export async function GET() {
       homepage: "https://noui.bot",
       docs: "https://noui.bot/docs",
       openapi: "https://noui.bot/api/openapi.json",
-      specs: "https://noui.bot/specs/mcp-billing-v1.md",
+      specs: "https://noui.bot/spec",
       struggles: "https://noui.bot/struggles",
       changelog: "https://noui.bot/changelog",
       github: "https://github.com/TombStoneDash/noui-bot",
