@@ -28,7 +28,7 @@ curl https://noui.bot/api/v1/bazaar/usage/summary \
   -H "Authorization: Bearer bz_your_key"
 ```
 
-**Live now:** 14 tools · 6 providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts
+**Live now:** 62 tools · 8 providers ([public catalog](https://noui.bot/api/bazaar/catalog), 2026-09-24) · 10% platform fee · Sub-cent metering · Stripe Connect payouts
 
 ## TypeScript SDK
 
