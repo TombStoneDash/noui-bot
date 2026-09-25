@@ -28,7 +28,22 @@ curl https://noui.bot/api/v1/bazaar/usage/summary \
   -H "Authorization: Bearer bz_your_key"
 ```
 
-**Live now:** 14 tools · 6 providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts
+<!-- CATALOG:BEGIN -->
+**Live catalog:** 62 tools · 8 providers · 10% platform fee · Sub-cent metering · Stripe Connect payouts
+
+_Generated from [the public catalog](<https://noui.bot/api/bazaar/catalog>) on 2026-09-25 UTC._
+
+| Provider | Verified | Tool count | Tools |
+|---|:---:|---:|---|
+| AutoScrape US Business Registry Evidence | No | 40 | <code>&#95;&#95;schema&#95;probe&#95;do&#95;not&#95;create&#95;&#95;</code>, <code>check&#95;broken&#95;links</code>, <code>check&#95;http&#95;status</code>, <code>decode&#95;nhtsa&#95;vins</code>, <code>enrich&#95;website&#95;company</code>, <code>extract&#95;schema&#95;markup</code>, <code>extract&#95;sitemap&#95;urls</code>, <code>get&#95;stock&#95;chart</code>, <code>lookup&#95;cslb&#95;contractor&#95;license</code>, <code>lookup&#95;us&#95;tariff&#95;hts&#95;codes</code>, <code>scan&#95;website&#95;tech&#95;stack</code>, <code>screen&#95;ofac&#95;sdn&#95;sanctions</code>, <code>search&#95;bankruptcy&#95;filings</code>, <code>search&#95;building&#95;permits</code>, <code>search&#95;business&#95;entities</code>, <code>search&#95;cms&#95;nursing&#95;homes</code>, <code>search&#95;congress&#95;stock&#95;trades</code>, <code>search&#95;courtlistener&#95;legal&#95;opinions</code>, <code>search&#95;dallas&#95;county&#95;property&#95;tax</code>, <code>search&#95;dol&#95;form&#95;5500&#95;plans</code>, <code>search&#95;dol&#95;h1b&#95;lca</code>, <code>search&#95;fda&#95;510k&#95;clearances</code>, <code>search&#95;federal&#95;court&#95;dockets</code>, <code>search&#95;federal&#95;register&#95;documents</code>, <code>search&#95;fmcsa&#95;carrier&#95;safety</code>, <code>search&#95;hmda&#95;mortgage&#95;data</code>, <code>search&#95;irs&#95;990&#95;nonprofits</code>, <code>search&#95;nhtsa&#95;vehicle&#95;complaints</code>, <code>search&#95;nj&#95;ucc&#95;liens</code>, <code>search&#95;npi&#95;registry</code>, <code>search&#95;osha&#95;workplace&#95;inspections</code>, <code>search&#95;sam&#95;gov&#95;contract&#95;opportunities</code>, <code>search&#95;sec&#95;edgar&#95;filings</code>, <code>search&#95;sec&#95;form&#95;13f&#95;holdings</code>, <code>search&#95;sec&#95;form&#95;8k&#95;events</code>, <code>search&#95;sec&#95;form&#95;d&#95;filings</code>, <code>search&#95;sunbiz&#95;florida&#95;new&#95;business&#95;filings</code>, <code>validate&#95;email&#95;addresses</code>, <code>validate&#95;phone&#95;numbers</code>, <code>whois&#95;lookup</code> |
+| BotWall3t | Yes | 3 | <code>access&#46;verify</code>, <code>wallet&#46;balance</code>, <code>wallet&#46;transfer</code> |
+| Deploy Rail | No | 3 | <code>deploy&#46;create</code>, <code>deploy&#46;stats</code>, <code>deploy&#46;status</code> |
+| Nous Research MCP Server | No | 3 | <code>Business Decomposer</code>, <code>Fresh Markets Watch</code>, <code>GasRoute Oracle</code> |
+| OpenCode MCP | No | 5 | <code>code&#46;analyze</code>, <code>data&#46;convert</code>, <code>text&#46;process</code>, <code>util&#46;timestamp</code>, <code>util&#46;uuid</code> |
+| Sentinel MCP | Yes | 4 | <code>monitor&#46;health</code>, <code>news&#46;scan</code>, <code>web&#46;extract</code>, <code>web&#46;search</code> |
+| Test Provider Walkthrough | No | 1 | <code>test&#95;weather</code> |
+| quant&#45;mcp&#45;tools | No | 3 | <code>get&#95;correlation&#95;matrix</code>, <code>get&#95;volatility&#95;analysis</code>, <code>validate&#95;trade&#95;constraints</code> |
+<!-- CATALOG:END -->
 
 ## TypeScript SDK
 
