@@ -1,0 +1,12 @@
+{
+  "tool_name": "fixture.echo",
+  "agent_id": "agent_fixture_001",
+  "status": "success",
+  "duration_ms": 12,
+  "input_tokens": 3,
+  "output_tokens": 5,
+  "metadata": {
+    "fixture": "fictional-sanitized",
+    "source": "nb-01"
+  }
+}

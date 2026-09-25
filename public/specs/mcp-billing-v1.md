@@ -1,10 +1,11 @@
 # MCP Billing Spec v1
 
 **Version:** 1.0.0-draft
+**Machine-readable core profile:** 0.1.0
 **Date:** 2026-02-27
 **Authors:** TombStone Dash LLC
-**License:** MIT
-**Reference Implementation:** [noui.bot](https://noui.bot) (Agent Bazaar)
+**License:** [MIT for this specification only](./mcp-billing-v1/LICENSE)
+**Reference Code / Candidate Implementation:** [noui.bot](https://noui.bot) (Agent Bazaar)
 
 ---
 
@@ -16,41 +17,115 @@ This specification defines a standard schema for billing, metering, receipts, ve
 
 Draft. Feedback welcome at [GitHub Issues](https://github.com/TombStoneDash/mcp-billing-spec/issues) or agents@noui.bot.
 
+The NB-01 machine-readable core profile covers only the billing response
+envelope, meter-event request, and public receipt shapes already present in the
+candidate source code. It does not certify a deployment or change billing
+behavior. It does not prove every metered call receives a receipt or claim
+conformance for the pricing, verification, dispute, trust-score, or discovery
+sections below.
+
+### Machine-readable core artifacts
+
+- [Billing response envelope schema](./mcp-billing-v1/billing-envelope.schema.json)
+  and [fictional fixture](./mcp-billing-v1/fixtures/billing-envelope.fixture.json)
+- [Meter-event request schema](./mcp-billing-v1/meter-event.schema.json)
+  and [fictional fixture](./mcp-billing-v1/fixtures/meter-event.fixture.json)
+- [Public receipt schema](./mcp-billing-v1/receipt.schema.json)
+  and [fictional fixture](./mcp-billing-v1/fixtures/receipt.fixture.json)
+
+Fixtures contain fictional identifiers and sanitized payloads only. The receipt
+fixture is signed with the public test-only key
+`noui-spec-fixture-secret-v1`; that key is intentionally non-secret and MUST
+NOT be used outside deterministic conformance tests.
+
+### Known source-alignment deltas
+
+NB-01 records these current-code mismatches instead of silently redefining or
+repairing runtime behavior:
+
+| Surface | Current source truth | NB-01 handling |
+|---|---|---|
+| Cost units | The meter route computes its field named `cost_microcents` as `price_cents × 100`; the normative definition is `price_cents × 10,000`. | Receipt fixture retains the current route result (`1` cent → `100`) and does not claim unit conformance. |
+| Proxy tool metadata | The successful proxy route emits `meta.tool`; the SDK `ProxyResult` type names that field `meta.tool_name`. | Billing-envelope schema follows the route. |
+| Proxy display cost | The successful proxy route returns a formatted `meta.cost` string; the SDK `ProxyResult.meta` omits `meta.cost`. | Billing-envelope schema follows the route and requires `meta.cost`; this does not imply SDK compatibility. |
+| Proxy invocation identifier | The SDK declares an SDK-only optional `meta.invocation_id`; the successful proxy route does not return it. | Billing-envelope schema follows the route and omits `meta.invocation_id`. |
+| Meter request | The route accepts `tool_id`/`tool_name`, `agent_id`, `status`, `duration_ms`, `input_tokens`, `output_tokens`, and `metadata`; the SDK `MeterPayload` instead exposes `tokens_used`, `success`, and `consumer_id`. | Meter-event schema follows the route. |
+| Meter response | `MeterAPI.record()` declares `{ recorded, invocation_id }`; the meter route returns `{ metered, tool_id, agent_id, cost_microcents, cost_cents, status, timestamp, receipt }`. | NB-01 records the mismatch; its meter-event schema covers the request only and makes no response-compatibility claim. |
+| Receipt content fields | The meter route stores token-count strings in internal nullable columns named `input_hash` and `output_hash`; the public receipt verifier returns neither field. | Public-receipt schema follows the verifier response and makes no content-hash claim. |
+| Receipt lifecycle | The meter route signs receipts, but logs and continues when receipt persistence fails. The proxy route records usage without generating a signed receipt. | Schemas define shapes only; NB-01 does not certify persistence or claim every proxy call has a receipt. |
+
 ---
 
-## 1. Meter Event Schema
+## 0. Billing Response Envelope
 
-A meter event records a single tool invocation through a billing-aware proxy or middleware.
+The billing proxy currently returns a JSON envelope containing the tool result
+and billing metadata. The machine-readable schema follows the route's current
+field names and changes neither the route nor SDK.
 
 ```json
 {
-  "event_id": "evt_a1b2c3d4e5f6",
-  "tool_id": "string (tool identifier)",
-  "tool_name": "string (human-readable tool name)",
-  "agent_id": "string (consumer/agent identifier)",
-  "provider_id": "string (tool provider identifier)",
-  "timestamp": "ISO 8601 datetime",
-  "duration_ms": 234,
-  "status": "success | error | timeout | rate_limited",
-  "cost_microcents": 50000,
-  "input_tokens": 150,
-  "output_tokens": 420,
-  "metadata": {}
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "fictional fixture response"
+      }
+    ]
+  },
+  "meta": {
+    "tool": "fixture.echo",
+    "provider": "Fixture Provider",
+    "cost_cents": 1,
+    "cost": "$0.0100",
+    "latency_ms": 12,
+    "remaining_balance_cents": 499
+  }
+}
+```
+
+Required fields are `result` and `meta`. The current `meta` object contains
+`tool`, `provider`, `cost_cents`, `cost`, `latency_ms`, and
+`remaining_balance_cents`.
+
+Machine-readable source:
+[`billing-envelope.schema.json`](./mcp-billing-v1/billing-envelope.schema.json).
+
+---
+
+## 1. Meter Event Request Schema
+
+A meter-event request records a single tool invocation through billing-aware
+middleware. The provider, price, receipt identifier, and server timestamp are
+resolved or generated by the meter route; clients do not supply them in this
+request shape.
+
+```json
+{
+  "tool_name": "fixture.echo",
+  "agent_id": "agent_fixture_001",
+  "status": "success",
+  "duration_ms": 12,
+  "input_tokens": 3,
+  "output_tokens": 5,
+  "metadata": {
+    "fixture": "fictional-sanitized",
+    "source": "nb-01"
+  }
 }
 ```
 
 ### Required Fields
 - `tool_id` or `tool_name` — at least one must be present
-- `agent_id` — identifies the consumer
-- `provider_id` — identifies the tool operator
-- `timestamp` — ISO 8601 with timezone
-- `status` — one of: `success`, `error`, `timeout`, `rate_limited`
 
 ### Optional Fields
+- `agent_id` — defaults to the authenticated key owner
+- `status` — one of `success`, `error`, `timeout`, or `rate_limited`; defaults to `success`
 - `duration_ms` — wall-clock execution time
-- `cost_microcents` — cost in microcents (1 microcent = 1/10000 of a cent)
 - `input_tokens`, `output_tokens` — token counts for LLM-backed tools
 - `metadata` — arbitrary key-value pairs
+
+Machine-readable source:
+[`meter-event.schema.json`](./mcp-billing-v1/meter-event.schema.json).
 
 ### Cost Precision
 All costs MUST be expressed in **microcents** (integer). 1 cent = 10,000 microcents. This enables sub-cent pricing without floating-point errors.
@@ -61,6 +136,9 @@ $0.005 per call = 50,000 microcents
 $0.0001 per call = 1,000 microcents
 ```
 
+The known unit mismatch is recorded in the source-alignment table above.
+Correcting billing units is a separate behavior change and is outside NB-01.
+
 ---
 
 ## 2. Receipt Schema
@@ -69,20 +147,26 @@ Every metered invocation SHOULD generate a signed receipt. Receipts provide tamp
 
 ```json
 {
-  "receipt_id": "rcpt_a1b2c3d4e5f67890",
-  "tool_id": "string",
-  "agent_id": "string",
-  "provider_id": "string",
-  "timestamp": "ISO 8601 datetime",
-  "duration_ms": 234,
-  "cost_microcents": 50000,
+  "receipt_id": "rcpt_0123456789abcdef",
+  "tool_id": "tool_fixture_echo",
+  "tool_name": "fixture.echo",
+  "agent_id": "agent_fixture_001",
+  "provider_id": "provider_fixture_001",
+  "timestamp": "2026-02-27T12:00:00.000Z",
+  "duration_ms": 12,
+  "cost_microcents": 100,
   "status": "success",
-  "input_hash": "sha256:...",
-  "output_hash": "sha256:...",
-  "signature": "hex-encoded HMAC-SHA256",
-  "verify_url": "https://provider.example/api/receipts/rcpt_..."
+  "signature": "8226d4e6fdd2d0d61badfbf83d9d7c7d45c9fdd0b0f52759af28b22ce9fdc564",
+  "created_at": "2026-02-27T12:00:00.000Z"
 }
 ```
+
+This is the receipt object returned inside the current public verification
+response. The meter endpoint's creation response also returns a `verify_url`;
+that URL is an envelope field, not part of the public receipt object.
+
+Machine-readable source:
+[`receipt.schema.json`](./mcp-billing-v1/receipt.schema.json).
 
 ### Receipt ID Format
 Receipt IDs MUST use the prefix `rcpt_` followed by 16+ hex characters.
@@ -111,7 +195,8 @@ Any party with a receipt_id SHOULD be able to verify its authenticity by calling
 ```
 
 ### Privacy
-Receipts MUST NOT contain raw input or output data. Use `input_hash` and `output_hash` (SHA-256 of the actual content) for auditability without privacy leakage.
+Public receipts MUST NOT contain raw input or output data. The current public
+verification response omits both raw content and internal nullable hash slots.
 
 ---
 
@@ -287,6 +372,23 @@ An implementation is **MCP Billing v1 conformant** if it:
 
 Partial conformance is acceptable. Implementations SHOULD document which sections they support.
 
+### NB-01 core-profile conformance
+
+The committed deterministic conformance test validates each fictional fixture
+against its JSON Schema, performs a lossless JSON round trip, rejects missing
+required fields and invalid statuses, calls the production receipt signer with
+the public fixture key, and checks selected source shapes against the schemas.
+Mutation regressions verify that changing the successful proxy key from
+`meta.tool` to `meta.tool_name`, or swapping the production signer's canonical
+field order, breaks compatibility.
+
+Passing the NB-01 test proves only that the checked-in fictional fixtures
+validate against the checked-in schemas and that the selected source shapes are
+compatible with those artifacts at the exact source revision under test. It
+does not prove live deployment, full reference-implementation conformance,
+atomic receipt persistence, broader six-part conformance, or that every metered
+call receives a receipt.
+
 ---
 
 ## Appendix A: Why an Open Spec?
@@ -299,13 +401,17 @@ The MCP ecosystem needs billing. Multiple providers are building it independentl
 
 This spec creates a common language. If xpay, TollBit, MCP Hive, and Bazaar all implement the same receipt schema, agents get consistent experiences regardless of which billing provider they use.
 
-**We'd rather be the reference implementation of a universal standard than a walled garden.**
+**We'd rather build toward an interoperable universal standard than a walled garden.**
 
 ---
 
-## Appendix B: Reference Implementation
+## Appendix B: Candidate Implementation
 
-The Agent Bazaar at [noui.bot](https://noui.bot) is the reference implementation of this spec.
+The Agent Bazaar source at [noui.bot](https://noui.bot) is candidate
+implementation code used to align the NB-01 artifacts. It is not established as
+a fully conformant live reference implementation: the current proxy path does
+not generate signed receipts, and the meter path can report success after
+receipt persistence fails.
 
 - API: `https://noui.bot/api/v1`
 - SDK: `npm install @forthebots/bazaar-sdk`
@@ -314,4 +420,6 @@ The Agent Bazaar at [noui.bot](https://noui.bot) is the reference implementation
 
 ---
 
-*This spec is MIT licensed. Copy it. Fork it. Implement it. That's the point.*
+*The specification files are licensed under their adjacent
+[MIT License](./mcp-billing-v1/LICENSE). That grant does not claim to license
+the rest of this repository.*
