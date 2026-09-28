@@ -3,7 +3,7 @@ import { signReceipt } from "./receipts";
 
 export type VerifyOutcome = {
   valid: boolean;
-  reason: "ok" | "missing_fields" | "bad_receipt_id" | "bad_signature_format" | "signature_mismatch";
+  reason: "ok" | "missing_fields" | "bad_receipt_id" | "bad_signature_format" | "signature_mismatch" | "ambiguous_fields";
   missing?: string[];
   checked: { canonical: string; algorithm: "HMAC-SHA256" };
   verified_at: string;
@@ -39,6 +39,10 @@ export function verifyReceiptEnvelope(input: unknown): VerifyOutcome {
 
   if (missing.length > 0) {
     return { ...outcome("missing_fields"), missing };
+  }
+
+  if (CANONICAL_FIELDS.some(field => typeof fields[field] === "string" && (fields[field] as string).includes("|"))) {
+    return outcome("ambiguous_fields");
   }
 
   // Every field has been validated above; do not normalize signed values.

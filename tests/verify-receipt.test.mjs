@@ -119,3 +119,13 @@ test("non-object inputs and arrays are invalid without throwing", () => {
 test("the public API route does not import authenticateKey", async () => {
   assert.doesNotMatch(await read("../src/app/api/v1/verify/route.ts"), /\bauthenticateKey\b/);
 });
+
+test("delimiter shifts between signed fields are rejected before signature comparison", async () => {
+  const { signReceipt } = await import("../src/lib/receipts.ts");
+  const original = { ...good, agent_id: "a|b", provider_id: "c" };
+  original.signature = signReceipt(original);
+  const shifted = { ...original, agent_id: "a", provider_id: "b|c" };
+  assert.equal(verifyReceiptEnvelope(original).reason, "ambiguous_fields");
+  assert.equal(verifyReceiptEnvelope(shifted).valid, false);
+  assert.equal(verifyReceiptEnvelope(shifted).reason, "ambiguous_fields");
+});
