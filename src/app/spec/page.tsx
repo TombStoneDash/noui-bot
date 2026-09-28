@@ -42,6 +42,10 @@ export default function SpecPage() {
             This spec is MIT licensed. Copy it. Fork it. Implement it. That&apos;s the point.
           </p>
           <p className="mt-2">
+            <Link href="/verify" className="text-blue-400 hover:underline">
+              Verify a receipt &rarr; /verify
+            </Link>{" "}
+            |{" "}
             <a href="/spec.md" className="text-blue-400 hover:underline">
               raw markdown
             </a>{" "}

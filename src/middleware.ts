@@ -40,6 +40,7 @@ const PUBLIC_CACHE_ROUTES = new Set([
   "/api/bazaar",
   "/api/bazaar/catalog",
   "/api/v1/status",
+  "/api/v1/verify",
   "/api/v1/bazaar/stats",
   "/api/v1/services",
   "/api/openapi.json",

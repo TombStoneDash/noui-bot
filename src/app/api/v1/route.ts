@@ -61,6 +61,8 @@ export async function GET() {
           // Receipts (public verification)
           "GET  /api/v1/bazaar/receipts":           "List signed receipts (auth required, scoped to owner)",
           "GET  /api/v1/bazaar/receipts/:id":       "Fetch + verify a single receipt (public, no auth)",
+          "POST /api/v1/verify":                   "Verify a signed receipt envelope (public, no auth)",
+          "GET  /api/v1/verify":                   "Verify a stored receipt by ?receipt_id= (public, no auth)",
           // Provider verification
           "POST /api/v1/bazaar/providers/verify":   "Submit verification request (email, domain, or code)",
           "GET  /api/v1/bazaar/providers/verify":   "Verification requirements and levels",

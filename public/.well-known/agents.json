@@ -44,6 +44,8 @@
       "algorithm": "HMAC-SHA256",
       "format": "rcpt_{id}",
       "verification_endpoint": "https://noui.bot/api/v1/bazaar/receipts/{receipt_id}",
+      "verify_endpoint": "https://noui.bot/api/v1/verify",
+      "verify_page": "https://noui.bot/verify",
       "list_endpoint": "https://noui.bot/api/v1/bazaar/receipts"
     },
     "sla": {

@@ -270,6 +270,34 @@ export async function GET() {
           responses: { "200": { description: "Invocation recorded" }, "401": { description: "Invalid key" } },
         },
       },
+      "/api/v1/verify": {
+        post: {
+          summary: "Verify a signed receipt envelope",
+          operationId: "verifyReceiptEnvelope",
+          description: "Public, no auth. Accepts {receipt: {...}} or a bare receipt object. Invalid receipts return HTTP 200 with verification.valid=false; only unparsable JSON returns 400.",
+          tags: ["Bazaar"],
+          requestBody: { required: true, content: { "application/json": { schema: { anyOf: [
+            { type: "object", required: ["receipt"], properties: { receipt: { type: "object", required: ["receipt_id", "tool_id", "agent_id", "provider_id", "timestamp", "cost_microcents", "status", "signature"], properties: { receipt_id: { type: "string", pattern: "^rcpt_[0-9a-f]{16,}$" }, tool_id: { type: "string" }, agent_id: { type: "string" }, provider_id: { type: "string" }, timestamp: { type: "string" }, cost_microcents: { type: "integer" }, status: { type: "string" }, signature: { type: "string", pattern: "^[0-9a-f]{64}$" } } } } },
+            { type: "object", required: ["receipt_id", "tool_id", "agent_id", "provider_id", "timestamp", "cost_microcents", "status", "signature"], properties: { receipt_id: { type: "string", pattern: "^rcpt_[0-9a-f]{16,}$" }, tool_id: { type: "string" }, agent_id: { type: "string" }, provider_id: { type: "string" }, timestamp: { type: "string" }, cost_microcents: { type: "integer" }, status: { type: "string" }, signature: { type: "string", pattern: "^[0-9a-f]{64}$" } } },
+          ] } } } },
+          responses: {
+            "200": { description: "Receipt and verification outcome (valid or invalid)", content: { "application/json": { schema: { type: "object", required: ["receipt", "verification"], properties: { receipt: {}, verification: { type: "object", required: ["valid", "reason", "checked", "verified_at"], properties: { valid: { type: "boolean" }, reason: { type: "string", enum: ["ok", "missing_fields", "bad_receipt_id", "bad_signature_format", "signature_mismatch"] }, missing: { type: "array", items: { type: "string" } }, checked: { type: "object", required: ["canonical", "algorithm"], properties: { canonical: { type: "string" }, algorithm: { type: "string", enum: ["HMAC-SHA256"] } } }, verified_at: { type: "string", format: "date-time" } } } } } } } },
+            "400": { description: "BAD_REQUEST — unparsable JSON" },
+          },
+        },
+        get: {
+          summary: "Verify a stored receipt",
+          operationId: "verifyStoredReceipt",
+          description: "Public, no auth. Loads a stored receipt by receipt_id and checks its signature.",
+          tags: ["Bazaar"],
+          parameters: [{ name: "receipt_id", in: "query", required: true, schema: { type: "string" }, example: "rcpt_0123456789abcdef" }],
+          responses: {
+            "200": { description: "Stored receipt and verification outcome (valid or invalid)", content: { "application/json": { schema: { type: "object", required: ["receipt", "verification"], properties: { receipt: { type: "object" }, verification: { type: "object", required: ["valid", "reason", "checked", "verified_at"], properties: { valid: { type: "boolean" }, reason: { type: "string", enum: ["ok", "missing_fields", "bad_receipt_id", "bad_signature_format", "signature_mismatch"] }, missing: { type: "array", items: { type: "string" } }, checked: { type: "object", required: ["canonical", "algorithm"], properties: { canonical: { type: "string" }, algorithm: { type: "string", enum: ["HMAC-SHA256"] } } }, verified_at: { type: "string", format: "date-time" } } } } } } } },
+            "404": { description: "NOT_FOUND — receipt not found" },
+            "422": { description: "VALIDATION_ERROR — receipt_id is required" },
+          },
+        },
+      },
       "/api/bazaar/billing/provider-summary": {
         post: {
           summary: "Provider earnings",
