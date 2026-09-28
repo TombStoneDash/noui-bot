@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { authenticateKey } from "@/lib/bazaar-auth";
+import { validateMeterEventRequest } from "@/lib/meter-event";
 import { generateReceiptId, signReceipt } from "@/lib/receipts";
 
 /**
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: Record<string, unknown>;
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
@@ -27,21 +28,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const toolId = body.tool_id as string;
-  const toolName = body.tool_name as string;
-  const agentId = body.agent_id as string || owner.id;
-  const status = (body.status as string) || "success";
-  const durationMs = (body.duration_ms as number) || 0;
-  const inputTokens = (body.input_tokens as number) || 0;
-  const outputTokens = (body.output_tokens as number) || 0;
-  const metadata = (body.metadata as object) || {};
-
-  if (!toolId && !toolName) {
+  if (!validateMeterEventRequest(body)) {
     return NextResponse.json(
-      { error: true, code: "VALIDATION_ERROR", message: "tool_id or tool_name required" },
+      {
+        error: true,
+        code: "VALIDATION_ERROR",
+        message: "Request body must match the published meter-event schema",
+      },
       { status: 422 }
     );
   }
+
+  const toolId = body.tool_id;
+  const toolName = body.tool_name;
+  const agentId = body.agent_id || owner.id;
+  const status = body.status || "success";
+  const durationMs = body.duration_ms ?? 0;
+  const inputTokens = body.input_tokens ?? 0;
+  const outputTokens = body.output_tokens ?? 0;
+  const metadata = body.metadata ?? {};
 
   const sb = getSupabase();
 

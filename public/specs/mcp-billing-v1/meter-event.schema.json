@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://noui.bot/specs/mcp-billing-v1/meter-event.schema.json",
+  "title": "MCP Billing v1 Meter Event Request",
+  "description": "Current request shape accepted by the Agent Bazaar meter route.",
+  "type": "object",
+  "properties": {
+    "tool_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tool_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "agent_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "error",
+        "timeout",
+        "rate_limited"
+      ],
+      "default": "success"
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "input_tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "output_tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "metadata": {
+      "type": "object",
+      "default": {}
+    }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "tool_id"
+      ]
+    },
+    {
+      "required": [
+        "tool_name"
+      ]
+    }
+  ],
+  "additionalProperties": false
+}
