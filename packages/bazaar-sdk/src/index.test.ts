@@ -12,7 +12,11 @@ function fakeFetch(calls: FetchCall[], respond: (call: FetchCall) => { ok: boole
     return {
       ok: res.ok,
       status: res.status,
+      // Mirror the real Fetch Response contract: the client may read either
+      // (it currently reads text() first, then JSON.parses it, so it can
+      // still build a sensible error from a non-JSON body).
       json: async () => res.json,
+      text: async () => JSON.stringify(res.json),
     } as Response;
   }) as typeof globalThis.fetch;
 }

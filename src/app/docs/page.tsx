@@ -66,10 +66,10 @@ export default function DocsPage() {
               <div className="font-mono text-[10px] text-white/30">SDK integration code</div>
             </div>
           </a>
-          <a href="/specs/mcp-billing-v1" className="flex items-center gap-2 p-3 border border-white/[0.08] rounded hover:border-amber-500/30 transition-colors">
+          <a href="/spec" className="flex items-center gap-2 p-3 border border-white/[0.08] rounded hover:border-amber-500/30 transition-colors">
             <span className="text-sm">📄</span>
             <div>
-              <div className="font-mono text-xs font-bold text-white/80">Billing Spec (MIT)</div>
+              <div className="font-mono text-xs font-bold text-white/80">MCP Billing Spec v0.1</div>
               <div className="font-mono text-[10px] text-white/30">Open standard</div>
             </div>
           </a>

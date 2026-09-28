@@ -173,6 +173,37 @@ export class BazaarError extends Error {
   }
 }
 
+/** Read a response body as JSON, or null when it is not JSON (e.g. an HTML 502 page) */
+async function parseBody(res: Response): Promise<any> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+/** Build a BazaarError from an API error body ({error: true, code, message} or {error: "..."}) */
+function errorFromBody(data: any, status: number, fallback: string): BazaarError {
+  const message =
+    typeof data?.error === "string" && data.error
+      ? data.error
+      : typeof data?.message === "string"
+        ? data.message
+        : fallback;
+  return new BazaarError(message, status, data?.code, data?.details);
+}
+
+/** Parse a response, throwing BazaarError with the real HTTP status on failure */
+async function parseResponse<T>(res: Response, fallback?: string): Promise<T> {
+  const data = await parseBody(res);
+  if (!res.ok) throw errorFromBody(data, res.status, fallback || `HTTP ${res.status}`);
+  if (data === null) {
+    throw new BazaarError("Response body is not valid JSON", res.status, "INVALID_RESPONSE");
+  }
+  return data as T;
+}
+
 // ─── Client ─────────────────────────────────────────────────────────
 
 export class Bazaar {
@@ -238,18 +269,7 @@ export class Bazaar {
         signal: controller.signal,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new BazaarError(
-          data.error || data.message || `HTTP ${res.status}`,
-          res.status,
-          data.code,
-          data.details,
-        );
-      }
-
-      return data as T;
+      return await parseResponse<T>(res);
     } catch (err) {
       if (err instanceof BazaarError) throw err;
       if ((err as Error).name === "AbortError") {
@@ -391,9 +411,7 @@ export async function registerProvider(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
-  if (!res.ok) throw new BazaarError(data.error || "Registration failed", res.status);
-  return data;
+  return parseResponse(res, "Registration failed");
 }
 
 /** Register as a consumer (no auth required) */
@@ -406,9 +424,7 @@ export async function registerConsumer(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
-  if (!res.ok) throw new BazaarError(data.error || "Registration failed", res.status);
-  return data;
+  return parseResponse(res, "Registration failed");
 }
 
 export default Bazaar;

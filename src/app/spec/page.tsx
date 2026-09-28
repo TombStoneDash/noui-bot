@@ -1,26 +1,20 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { markdownToHtml } from "@/lib/markdown";
 import fs from "fs";
 import path from "path";
+import { markdownToHtml } from "@/lib/markdown";
+
+export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "MCP Billing Spec v1 — noui.bot",
+  title: "MCP Billing Spec v0.1 — noui.bot",
   description:
-    "Open standard for billing, metering, receipts, verification, and dispute resolution in MCP tool ecosystems.",
+    "The implemented subset of MCP billing, metering, and signed receipts in noui.bot Agent Bazaar.",
 };
 
 export default function SpecPage() {
-  // Read the markdown file at build time
-  const specPath = path.join(process.cwd(), "public", "specs", "mcp-billing-v1.md");
-  let content = "";
-  try {
-    content = fs.readFileSync(specPath, "utf-8");
-  } catch {
-    content = "# Spec not found\n\nThe MCP Billing Spec v1 document is being prepared.";
-  }
-
-  // Simple markdown-to-HTML conversion for the spec
+  const specPath = path.join(process.cwd(), "SPEC.md");
+  const content = fs.readFileSync(specPath, "utf-8");
   const html = markdownToHtml(content);
 
   return (
@@ -31,15 +25,11 @@ export default function SpecPage() {
           {" → "}
           <Link href="/docs" className="hover:text-white">docs</Link>
           {" → "}
-          <span className="text-gray-300">MCP Billing Spec v1</span>
+          <span className="text-gray-300">MCP Billing Spec v0.1</span>
         </nav>
-        <p className="mb-8 text-sm text-gray-400">
-          Looking for the implemented subset? See{" "}
-          <Link href="/spec" className="text-blue-400 hover:underline">MCP Billing Spec v0.1</Link>.
-        </p>
         <article
-          className="prose prose-invert prose-lg max-w-none 
-            prose-headings:text-white prose-a:text-blue-400 
+          className="prose prose-invert prose-lg max-w-none
+            prose-headings:text-white prose-a:text-blue-400
             prose-code:text-green-400 prose-code:bg-gray-900 prose-code:px-1 prose-code:rounded
             prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-800
             prose-table:border-collapse prose-th:border prose-th:border-gray-700 prose-th:px-4 prose-th:py-2
@@ -52,10 +42,13 @@ export default function SpecPage() {
             This spec is MIT licensed. Copy it. Fork it. Implement it. That&apos;s the point.
           </p>
           <p className="mt-2">
-            Reference implementation:{" "}
-            <a href="https://noui.bot/api/v1" className="text-blue-400 hover:underline">
-              noui.bot Agent Bazaar
+            <a href="/spec.md" className="text-blue-400 hover:underline">
+              raw markdown
             </a>{" "}
+            |{" "}
+            <Link href="/specs/mcp-billing-v1" className="text-blue-400 hover:underline">
+              v1 draft
+            </Link>{" "}
             |{" "}
             <a
               href="https://github.com/TombStoneDash/noui-bot"
