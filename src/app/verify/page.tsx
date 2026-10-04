@@ -24,7 +24,7 @@ export default function VerifyPage() {
       const response = await fetch("/api/v1/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ receipt }),
+        body: JSON.stringify(receipt),
       });
       const data = await response.json();
       if (!response.ok) {

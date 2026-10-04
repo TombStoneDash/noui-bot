@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { testVerifyPage } from "./verify-page-checks.mjs";
 
 const good = JSON.parse(await readFile(new URL("fixtures/receipt.good.json", import.meta.url), "utf8"));
 const privateFields = ["agent_id", "provider_id", "cost_microcents", "tool_id", "tool_name"];
@@ -57,6 +58,8 @@ export async function testVerifyApi(t, baseUrl) {
     });
   }
 
+  await testVerifyPage(t, baseUrl);
+
   await t.test("public POST rejects malformed JSON", async () => {
     const response = await fetch(`${baseUrl}/api/v1/verify`, {
       method: "POST",
@@ -68,6 +71,14 @@ export async function testVerifyApi(t, baseUrl) {
   });
 
   await t.test("discovery and verification pages agree on the public POST-only API", async () => {
+    const indexResponse = await fetch(`${baseUrl}/api/v1`);
+    assert.equal(indexResponse.status, 200);
+    const index = await indexResponse.json();
+    const endpoints = index.bazaar.trust_layer.endpoints;
+    assert.match(endpoints["POST /api/v1/verify"], /signed receipt envelope/);
+    assert.equal(endpoints["GET  /api/v1/verify"], undefined);
+    assert.doesNotMatch(JSON.stringify(index), /\?receipt_id=/);
+
     const openapiResponse = await fetch(`${baseUrl}/api/openapi.json`);
     assert.equal(openapiResponse.status, 200);
     const openapi = await openapiResponse.json();
