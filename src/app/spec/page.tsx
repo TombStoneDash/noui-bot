@@ -43,7 +43,7 @@ export default function SpecPage() {
           </p>
           <p className="mt-2">
             <Link href="/verify" className="text-blue-400 hover:underline">
-              Verify a receipt &rarr; /verify
+              Verify a full signed receipt JSON &rarr; /verify
             </Link>{" "}
             |{" "}
             <a href="/spec.md" className="text-blue-400 hover:underline">

@@ -8,7 +8,6 @@ import tamperedReceipt from "../../../tests/fixtures/receipt.tampered.json";
 
 export default function VerifyPage() {
   const [receiptText, setReceiptText] = useState(JSON.stringify(goodReceipt, null, 2));
-  const [receiptId, setReceiptId] = useState("");
   const [verification, setVerification] = useState<VerifyOutcome | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -18,11 +17,15 @@ export default function VerifyPage() {
     setError(null);
   }
 
-  async function verify(url: string, init?: RequestInit) {
+  async function verify(receipt: unknown) {
     clearResult();
     setPending(true);
     try {
-      const response = await fetch(url, init);
+      const response = await fetch("/api/v1/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ receipt }),
+      });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || data.code || "Verification request failed");
@@ -45,16 +48,7 @@ export default function VerifyPage() {
       setError("Enter valid JSON before verifying the receipt.");
       return;
     }
-    void verify("/api/v1/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ receipt }),
-    });
-  }
-
-  function lookupReceipt(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    void verify(`/api/v1/verify?receipt_id=${encodeURIComponent(receiptId)}`);
+    void verify(receipt);
   }
 
   return (
@@ -65,13 +59,15 @@ export default function VerifyPage() {
       <h1 className="text-2xl md:text-3xl font-bold mt-8 mb-4">Verify a receipt</h1>
       <p className="text-white/60 text-sm leading-relaxed mb-10">
         Check a receipt&apos;s HMAC-SHA256 signature without an account or API key.
+        {" "}Paste the full signed receipt envelope. Verification uses only the JSON you
+        supply and does not look up stored receipts. A receipt ID alone is not enough.
         {" "}<Link href="/spec" className="text-white underline hover:text-green-400">Section 3 of the spec</Link>
         {" "}defines the seven signed fields and their canonical order. The prefilled receipt is a
         development example.
       </p>
 
       <form onSubmit={verifyJson} className="space-y-4">
-        <label htmlFor="receipt-json" className="block text-sm">Paste a receipt JSON</label>
+        <label htmlFor="receipt-json" className="block text-sm">Paste the full signed receipt JSON</label>
         <textarea
           id="receipt-json"
           value={receiptText}
@@ -92,25 +88,6 @@ export default function VerifyPage() {
             className="text-xs text-white/60 underline hover:text-white disabled:opacity-50"
           >
             Try a tampered receipt
-          </button>
-        </div>
-      </form>
-
-      <form onSubmit={lookupReceipt} className="mt-10 pt-8 border-t border-white/10 space-y-4">
-        <label htmlFor="receipt-id" className="block text-sm">...or look one up by receipt_id</label>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            id="receipt-id"
-            type="text"
-            value={receiptId}
-            onChange={(event) => { setReceiptId(event.target.value); clearResult(); }}
-            placeholder="rcpt_0123456789abcdef"
-            required
-            disabled={pending}
-            className="min-w-0 flex-1 bg-white/5 border border-white/20 p-3 text-sm focus:outline-none focus:border-green-400 disabled:opacity-50"
-          />
-          <button type="submit" disabled={pending} className="border border-white/30 px-5 py-3 text-sm hover:border-green-400 disabled:opacity-50">
-            Look up receipt
           </button>
         </div>
       </form>
