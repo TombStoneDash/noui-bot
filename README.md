@@ -61,7 +61,7 @@ const { tools } = await client.catalog.list();
 
 // Call a tool (metered + billed)
 const result = await client.tools.call('wallet.balance', { wallet: '0x...' });
-console.log(result.meta.cost_cents); // $0.05
+console.log(result.meta.cost_cents); // Cents: 5 means $0.05 = 50,000 microcents
 
 // Check balance
 const { balance } = await client.balance.get();
@@ -157,7 +157,7 @@ One API key for thousands of tools:
 | Platform fee | 10% on paid calls |
 | Free tools | No fees |
 | Free tier | 100 calls/tool (configurable) |
-| Precision | Sub-cent (microcents = 1/10000¢) |
+| Precision | Sub-cent (1 cent = 10,000 microcents) |
 | Minimum payout | $10.00 |
 | Payout method | Stripe Connect (Express) |
 

@@ -65,3 +65,38 @@ test("spec canonical field order matches the signer's join array", async () => {
   assert.ok(canonical, "spec canonical string is missing");
   assert.deepEqual(actualFields, canonical[1].split("|"));
 });
+
+test("public billing descriptions agree with every route's microcents multiplier", async () => {
+  const formula = spec.match(/cost_microcents = cost_cents \* ([\d_]+)/);
+  assert.ok(formula, "spec conversion formula is missing");
+  const multiplier = Number(formula[1].replaceAll("_", ""));
+  assert.equal(multiplier, 10_000);
+  const meterFormula = spec.match(/priceCents : 0\) \* ([\d_]+)/);
+  assert.ok(meterFormula, "spec meter conversion is missing");
+  assert.equal(Number(meterFormula[1].replaceAll("_", "")), multiplier);
+
+  for (const [route, expression] of [
+    ["meter", /const costMicrocents = .* \* ([\d_]+)/],
+    ["pricing", /const priceMicrocents = priceCents \* ([\d_]+)/],
+    ["stats", /total_revenue_microcents: totalRevenueCents \* ([\d_]+)/],
+    ["balance", /balance_microcents: balanceCents \* ([\d_]+)/],
+  ]) {
+    const source = await read(`../src/app/api/v1/bazaar/${route}/route.ts`);
+    const constant = source.match(expression);
+    assert.ok(constant, `${route} conversion constant is missing`);
+    assert.equal(Number(constant[1].replaceAll("_", "")), multiplier, route);
+  }
+
+  for (const path of [
+    "SPEC.md", "public/specs/mcp-billing-v1.md", "README.md",
+    "packages/bazaar-sdk/README.md", "packages/bazaar-sdk/src/index.ts",
+    "src/app/api/openapi.json/route.ts",
+  ]) {
+    const text = await read(`../${path}`);
+    assert.ok(text.includes("1 cent = 10,000 microcents"), path);
+    // Check each dollar example independently, including fractional cents.
+    for (const example of text.matchAll(/\$([\d.]+)(?: per call)? = ([\d,]+) microcents/g)) {
+      assert.equal(Number(example[2].replaceAll(",", "")), Number(example[1]) * 100 * multiplier, path);
+    }
+  }
+});
