@@ -57,6 +57,7 @@ function getCacheControl(pathname: string, method: string): string {
 export function middleware(request: NextRequest) {
   const start = Date.now();
   const pathname = request.nextUrl.pathname;
+  const allowedMethods = pathname === "/api/v1/verify" ? "POST, OPTIONS" : "GET, POST, OPTIONS";
 
   // Handle CORS preflight
   if (request.method === "OPTIONS") {
@@ -64,7 +65,7 @@ export function middleware(request: NextRequest) {
       status: 204,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Methods": allowedMethods,
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         "Access-Control-Max-Age": "86400",
       },
@@ -112,7 +113,7 @@ export function middleware(request: NextRequest) {
     response.headers.set("X-Noui-Docs", "https://noui.bot/docs");
     response.headers.set("X-Noui-Discovery", "https://noui.bot/.well-known/agents.json");
     response.headers.set("Access-Control-Allow-Origin", "*");
-    response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    response.headers.set("Access-Control-Allow-Methods", allowedMethods);
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
     response.headers.set("X-Response-Time", `${Date.now() - start}ms`);
 

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import net from "node:net";
 import test from "node:test";
+import { testVerifyApi } from "./verify-api-checks.mjs";
 
 const ROOT = new URL("../", import.meta.url);
 const NEXT_BIN = new URL("../node_modules/next/dist/bin/next", import.meta.url);
@@ -106,7 +107,7 @@ async function stopServer(server) {
 }
 
 test(
-  "builds without database credentials and health fails closed at runtime",
+  "builds without database credentials, health fails closed, and public verification stays stateless",
   { timeout: 120_000 },
   async (t) => {
     const build = await run(process.execPath, [NEXT_BIN.pathname, "build"]);
@@ -125,7 +126,7 @@ test(
       [NEXT_BIN.pathname, "start", "-H", "127.0.0.1", "-p", String(port)],
       {
         cwd: ROOT,
-        env: withoutDatabaseEnv({ NEXT_TELEMETRY_DISABLED: "1" }),
+        env: withoutDatabaseEnv({ NEXT_TELEMETRY_DISABLED: "1", RECEIPT_SIGNING_SECRET: "" }),
         stdio: ["ignore", "pipe", "pipe"],
       }
     );
@@ -154,5 +155,7 @@ test(
       assert.equal(body.checks.neon.status, "fail");
       assert.equal(body.checks.neon.message, "DATABASE_URL is required");
     }
+
+    await testVerifyApi(t, `http://127.0.0.1:${port}`);
   }
 );

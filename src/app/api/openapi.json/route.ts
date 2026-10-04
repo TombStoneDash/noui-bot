@@ -270,6 +270,23 @@ export async function GET() {
           responses: { "200": { description: "Invocation recorded" }, "401": { description: "Invalid key" } },
         },
       },
+      "/api/v1/verify": {
+        post: {
+          summary: "Verify a signed receipt envelope",
+          operationId: "verifyReceiptEnvelope",
+          description: "Public, no auth. Stateless verification of a caller-supplied full signed receipt envelope, as {receipt: {...}} or a bare receipt object. No database reads. GET receipt-ID lookup is not supported (HTTP 405). Invalid receipts return HTTP 200 with verification.valid=false; only unparsable JSON returns 400.",
+          security: [],
+          tags: ["Bazaar"],
+          requestBody: { required: true, content: { "application/json": { schema: { anyOf: [
+            { type: "object", required: ["receipt"], properties: { receipt: { type: "object", required: ["receipt_id", "tool_id", "agent_id", "provider_id", "timestamp", "cost_microcents", "status", "signature"], properties: { receipt_id: { type: "string", pattern: "^rcpt_[0-9a-f]{16,}$" }, tool_id: { type: "string" }, agent_id: { type: "string" }, provider_id: { type: "string" }, timestamp: { type: "string" }, cost_microcents: { type: "integer" }, status: { type: "string" }, signature: { type: "string", pattern: "^[0-9a-f]{64}$" } } } } },
+            { type: "object", required: ["receipt_id", "tool_id", "agent_id", "provider_id", "timestamp", "cost_microcents", "status", "signature"], properties: { receipt_id: { type: "string", pattern: "^rcpt_[0-9a-f]{16,}$" }, tool_id: { type: "string" }, agent_id: { type: "string" }, provider_id: { type: "string" }, timestamp: { type: "string" }, cost_microcents: { type: "integer" }, status: { type: "string" }, signature: { type: "string", pattern: "^[0-9a-f]{64}$" } } },
+          ] } } } },
+          responses: {
+            "200": { description: "Receipt and verification outcome (valid or invalid)", content: { "application/json": { schema: { type: "object", required: ["receipt", "verification"], properties: { receipt: {}, verification: { type: "object", required: ["valid", "reason", "checked", "verified_at"], properties: { valid: { type: "boolean" }, reason: { type: "string", enum: ["ok", "missing_fields", "bad_receipt_id", "bad_signature_format", "signature_mismatch", "ambiguous_fields"] }, missing: { type: "array", items: { type: "string" } }, checked: { type: "object", required: ["canonical", "algorithm"], properties: { canonical: { type: "string" }, algorithm: { type: "string", enum: ["HMAC-SHA256"] } } }, verified_at: { type: "string", format: "date-time" } } } } } } } },
+            "400": { description: "BAD_REQUEST — unparsable JSON" },
+          },
+        },
+      },
       "/api/bazaar/billing/provider-summary": {
         post: {
           summary: "Provider earnings",

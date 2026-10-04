@@ -93,7 +93,17 @@ Canonical string: `receipt_id|tool_id|agent_id|provider_id|timestamp|cost_microc
 
 `signReceipt` joins those field values in exactly that order with `|`, using `cost_microcents.toString()`. It computes HMAC-SHA256 over that string with the signing secret and encodes the result as hex. `verifyReceipt` recomputes the signature and compares it with `===`. Optional fields and `verify_url` are not signed.
 
-The public verification endpoint today is `GET /api/v1/bazaar/receipts/{receipt_id}`. As implemented in `src/app/api/v1/bazaar/receipts/[receiptId]/route.ts`, it returns `{receipt, verification:{valid, algorithm:"HMAC-SHA256", verified_at}}`. The returned `receipt` contains `receipt_id`, `tool_id`, `tool_name`, `agent_id`, `provider_id`, `timestamp`, `duration_ms`, `cost_microcents`, `status`, `signature`, and `created_at`. It does not return `input_hash`, `output_hash`, or `verify_url`. `verified_at` is an ISO timestamp.
+### Public envelope verification
+
+`POST /api/v1/verify` is public and requires no account or API key. The caller supplies the full signed receipt envelope, either as a bare receipt object or wrapped in `{receipt: {...}}`. Verification is stateless: it reads no database and returns only the submitted receipt plus its verification outcome. The [verification page](/verify) accepts signed receipt JSON; it does not offer receipt-ID lookup. `GET /api/v1/verify?receipt_id=...` is not supported and returns HTTP 405 with an empty body.
+
+The response is `{receipt, verification:{valid, reason, checked:{canonical, algorithm:"HMAC-SHA256"}, verified_at}}`. `checked.canonical` is built only from caller-supplied fields; it is empty when a signed field is missing or incorrectly typed. Invalid envelopes return HTTP 200 with `valid:false`; unparsable JSON returns HTTP 400 with `{error:true, code:"BAD_REQUEST"}`.
+
+The required fields are the seven canonical fields above plus `signature`. Signed string fields must be nonempty and must not contain `|`; delimiter collisions return `ambiguous_fields` before signature comparison. `cost_microcents` must be an integer. Receipt IDs must match `^rcpt_[0-9a-f]{16,}$` and signatures must be 64 lowercase hexadecimal characters. The verifier uses a timing-safe signature comparison. Reasons are `ok`, `missing_fields` (with a `missing` field list), `bad_receipt_id`, `bad_signature_format`, `signature_mismatch`, and `ambiguous_fields`.
+
+### Legacy stored-receipt endpoint
+
+The separate legacy endpoint is `GET /api/v1/bazaar/receipts/{receipt_id}`. As implemented in `src/app/api/v1/bazaar/receipts/[receiptId]/route.ts`, it returns `{receipt, verification:{valid, algorithm:"HMAC-SHA256", verified_at}}`. The returned `receipt` contains `receipt_id`, `tool_id`, `tool_name`, `agent_id`, `provider_id`, `timestamp`, `duration_ms`, `cost_microcents`, `status`, `signature`, and `created_at`. It does not return `input_hash`, `output_hash`, or `verify_url`. `verified_at` is an ISO timestamp.
 
 ### Example receipt
 
