@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     agent_id: owner.id,
     name: owner.name,
     balance_cents: balanceCents,
-    balance_microcents: balanceCents * 100,
+    balance_microcents: balanceCents * 10_000,
     balance: `$${(balanceCents / 100).toFixed(2)}`,
     rate_limit_rpm: owner.rate_limit_rpm,
     load_balance_url: "POST /api/bazaar/balance/load",
