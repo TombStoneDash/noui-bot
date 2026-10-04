@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { filterCatalogRows, countRealProviders } from "@/lib/catalog-hygiene";
 import { getSupabase } from "@/lib/supabase";
 
 export async function GET(request: Request) {
@@ -27,6 +28,10 @@ export async function GET(request: Request) {
       bazaar_providers:provider_id (
         id,
         name,
+        email,
+        endpoint_url,
+        api_key_hash,
+        api_key_prefix,
         description,
         pricing_model,
         default_price_cents,
@@ -34,8 +39,7 @@ export async function GET(request: Request) {
       )
     `)
     .eq("active", true)
-    .order("call_count", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order("call_count", { ascending: false });
 
   if (category) {
     query = query.eq("category", category);
@@ -50,8 +54,11 @@ export async function GET(request: Request) {
     );
   }
 
+  const filtered = filterCatalogRows(tools || []);
+
   return NextResponse.json({
-    tools: (tools || []).map((t: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tools: filtered.slice(offset, offset + limit).map((t: any) => {
       const provider = t.bazaar_providers;
       const priceCents = t.price_cents_override ?? provider?.default_price_cents ?? 0;
       const pricingModel = t.pricing_model_override ?? provider?.pricing_model ?? "per_call";
@@ -80,7 +87,8 @@ export async function GET(request: Request) {
         },
       };
     }),
-    total: (tools || []).length,
+    total: filtered.length,
+    providers: countRealProviders(filtered),
     limit,
     offset,
     categories: ["weather", "search", "code", "data", "comms", "other"],

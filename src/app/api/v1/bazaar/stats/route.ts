@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { filterCatalogRows, countRealProviders } from "@/lib/catalog-hygiene";
 import { getSupabase } from "@/lib/supabase";
 
 /**
@@ -25,17 +26,17 @@ export async function GET() {
       .from("bazaar_consumers")
       .select("id", { count: "exact", head: true });
 
-    // Unique tools
+    // Public tools and their distinct providers use the catalog hygiene policy.
     const { data: tools } = await sb
       .from("bazaar_tools")
-      .select("id")
+      .select(`
+        id,
+        bazaar_providers:provider_id (
+          id, name, email, endpoint_url, api_key_hash, api_key_prefix
+        )
+      `)
       .eq("active", true);
-
-    // Unique providers
-    const { data: providers } = await sb
-      .from("bazaar_providers")
-      .select("id")
-      .eq("active", true);
+    const filtered = filterCatalogRows(tools || []);
 
     // Total revenue
     const { data: revData } = await sb
@@ -74,9 +75,9 @@ export async function GET() {
       total_tool_invocations: totalInvocations || 0,
       successful_calls: successfulCalls || 0,
       unique_agents: consumers?.length || 0,
-      unique_tools: tools?.length || 0,
-      tools_listed: tools?.length || 0,
-      providers: providers?.length || 0,
+      unique_tools: filtered.length,
+      tools_listed: filtered.length,
+      providers: countRealProviders(filtered),
       total_revenue_microcents: totalRevenueCents * 100, // Convert cents to microcents
       total_revenue_cents: totalRevenueCents,
       total_revenue: `$${(totalRevenueCents / 100).toFixed(2)}`,
