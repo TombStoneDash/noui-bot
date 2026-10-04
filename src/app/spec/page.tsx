@@ -9,7 +9,7 @@ export const dynamic = "force-static";
 export const metadata: Metadata = {
   title: "MCP Billing Spec v0.1 — noui.bot",
   description:
-    "The implemented subset of MCP billing, metering, and signed receipts in noui.bot Agent Bazaar.",
+    "The implemented MCP billing contract, conformance schemas, and fixtures for noui.bot Agent Bazaar.",
 };
 
 export default function SpecPage() {

@@ -29,6 +29,18 @@ test("raw markdown response preserves SPEC.md and its response headers", async (
   assert.equal(response.headers.get("Cache-Control"), "public, s-maxage=300, stale-while-revalidate=600");
 });
 
+test("/spec publishes the conformance artifacts using absolute, resolvable links", async () => {
+  const html = markdownToHtml(spec);
+  for (const name of ["billing-envelope", "meter-event", "receipt"]) {
+    for (const artifact of [`${name}.schema.json`, `fixtures/${name}.fixture.json`]) {
+      const url = `/specs/mcp-billing-v1/${artifact}`;
+      assert.ok(html.includes(`href="${url}"`), `missing conformance link: ${url}`);
+      const contents = await read(`../public${url}`);
+      assert.doesNotThrow(() => JSON.parse(contents));
+    }
+  }
+});
+
 test("v1 draft uses the shared markdown renderer", async () => {
   const source = await read("../src/app/specs/mcp-billing-v1/page.tsx");
   assert.doesNotMatch(source, /function\s+markdownToHtml\s*\(/);

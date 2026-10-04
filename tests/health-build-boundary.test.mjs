@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import net from "node:net";
 import test from "node:test";
@@ -155,6 +156,27 @@ test(
       assert.equal(body.checks.neon.status, "fail");
       assert.equal(body.checks.neon.message, "DATABASE_URL is required");
     }
+
+    await t.test("serves the billing contract and its conformance artifacts", async () => {
+      const base = `http://127.0.0.1:${port}`;
+      const page = await fetch(`${base}/spec`);
+      assert.equal(page.status, 200);
+      const html = await page.text();
+      assert.ok(html.includes("Machine-readable conformance contract"));
+      const raw = await fetch(`${base}/spec.md`);
+      assert.equal(raw.status, 200);
+      assert.match(raw.headers.get("content-type"), /text\/markdown/);
+      assert.equal(await raw.text(), await readFile(new URL("SPEC.md", ROOT), "utf8"));
+      for (const name of ["billing-envelope", "meter-event", "receipt"]) {
+        for (const artifact of [`${name}.schema.json`, `fixtures/${name}.fixture.json`]) {
+          const url = `/specs/mcp-billing-v1/${artifact}`;
+          assert.ok(html.includes(`href="${url}"`));
+          const response = await fetch(`${base}${url}`);
+          assert.equal(response.status, 200, url);
+          assert.deepEqual(await response.json(), JSON.parse(await readFile(new URL(`public${url}`, ROOT), "utf8")));
+        }
+      }
+    });
 
     await testVerifyApi(t, `http://127.0.0.1:${port}`);
   }

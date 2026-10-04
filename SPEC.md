@@ -134,3 +134,47 @@ The meter route stores stringified token counts in `input_hash` and `output_hash
 ## SS5 Relationship to the v1 draft
 
 `public/specs/mcp-billing-v1.md` is the broader aspirational draft. MCP Billing Spec v0.1 documents the strictly implemented subset in the current routes, receipt signer, and receipt table, including their present behavior and discrepancies; it does not imply implementation of the wider v1 draft.
+
+
+## SS6 Machine-readable conformance contract
+
+The NB-01 core profile provides JSON Schema draft-07 artifacts for the billing
+response envelope, meter-event request, and legacy stored-receipt object:
+
+- [Billing envelope schema](/specs/mcp-billing-v1/billing-envelope.schema.json)
+  and [fictional fixture](/specs/mcp-billing-v1/fixtures/billing-envelope.fixture.json)
+- [Meter-event request schema](/specs/mcp-billing-v1/meter-event.schema.json)
+  and [fictional fixture](/specs/mcp-billing-v1/fixtures/meter-event.fixture.json)
+- [Legacy stored-receipt schema](/specs/mcp-billing-v1/receipt.schema.json)
+  and [fictional fixture](/specs/mcp-billing-v1/fixtures/receipt.fixture.json)
+- [Spec-only MIT license](/specs/mcp-billing-v1/LICENSE)
+
+These schemas describe the core profile; they are not runtime validators. In
+particular, the meter route still uses the truthiness defaults and casts in SS2
+and can accept inputs outside the profile. The receipt schema describes the
+legacy stored-receipt object in SS3, not the public `/api/v1/verify` request or
+response. Public envelope verification remains stateless and accepts the signed
+fields described in SS3 without requiring storage fields such as `created_at`.
+
+The fictional conformance receipt uses the public test-only key
+`noui-spec-fixture-secret-v1`. It is separate from the development example in
+SS3 and is not a production receipt. Its cost preserves the current conversion
+of 1 cent to 100 in the field named `cost_microcents`.
+
+Run `npm run test:billing-spec` for deterministic fixture validation, JSON
+round trips, invalid-input rejection by the schemas, production signer checks,
+and source-contract mutation regressions. The same tests run in `npm test`,
+which CI already executes. `npm run typecheck` checks TypeScript without emit.
+
+The source-contract tests also record SDK differences: proxy responses use
+`meta.tool` and `meta.cost`, while the SDK names `meta.tool_name`, omits `cost`,
+and declares an optional `invocation_id` absent from the route. The SDK meter
+request and response types also differ from the route. See the
+[v1 draft's source-alignment notes](/specs/mcp-billing-v1) for details.
+
+Passing conformance tests establishes compatibility of the checked source and
+fictional fixtures with this profile. It does not certify a live deployment,
+full v1 conformance, runtime input validation, or receipt persistence. The proxy
+records usage without generating a signed receipt, and the meter route can
+report success after receipt persistence fails. Pricing, unit conversion,
+settlement, and runtime billing behavior are unchanged.
