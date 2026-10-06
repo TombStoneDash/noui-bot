@@ -55,7 +55,7 @@ jobs:
       - name: Publish noui-factory (if version changed)
         working-directory: packages/noui-factory
         run: |
-          CURRENT=$(npm view @noui/factory version 2>/dev/null || echo "0.0.0")
+          CURRENT=$(npm view @tombstonedash/factory version 2>/dev/null || echo "0.0.0")
           LOCAL=$(node -p "require('./package.json').version")
           if [ "$CURRENT" != "$LOCAL" ]; then
             npm publish --provenance --access public
@@ -74,6 +74,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Verify package publish contracts
+        run: node --test tests/publish-packages-contract.test.mjs
       
       - name: Test bazaar-sdk
         working-directory: packages/bazaar-sdk

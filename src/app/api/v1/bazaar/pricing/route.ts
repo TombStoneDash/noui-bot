@@ -38,7 +38,7 @@ export async function GET() {
     const pricing = (tools || []).map((t: any) => {
       const provider = t.bazaar_providers;
       const priceCents = t.price_cents_override ?? provider?.default_price_cents ?? 0;
-      const priceMicrocents = priceCents * 100;
+      const priceMicrocents = priceCents * 10_000;
       const pricingModel = t.pricing_model_override ?? provider?.pricing_model ?? "per_call";
 
       return {

@@ -77,7 +77,7 @@ export async function GET() {
       unique_tools: tools?.length || 0,
       tools_listed: tools?.length || 0,
       providers: providers?.length || 0,
-      total_revenue_microcents: totalRevenueCents * 100, // Convert cents to microcents
+      total_revenue_microcents: totalRevenueCents * 10_000, // 1 cent = 10,000 microcents
       total_revenue_cents: totalRevenueCents,
       total_revenue: `$${(totalRevenueCents / 100).toFixed(2)}`,
       avg_response_time_ms: avgLatency,

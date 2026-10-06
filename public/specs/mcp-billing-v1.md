@@ -56,9 +56,9 @@ A meter event records a single tool invocation through a billing-aware proxy or 
 All costs MUST be expressed in **microcents** (integer). 1 cent = 10,000 microcents. This enables sub-cent pricing without floating-point errors.
 
 ```
-$0.05 per call = 500,000 microcents
-$0.005 per call = 50,000 microcents
-$0.0001 per call = 1,000 microcents
+$0.05 per call = 50,000 microcents
+$0.005 per call = 5,000 microcents
+$0.0001 per call = 100 microcents
 ```
 
 ---

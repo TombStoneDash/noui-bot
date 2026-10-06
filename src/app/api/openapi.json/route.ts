@@ -6,7 +6,7 @@ export async function GET() {
     info: {
       title: "noui.bot API",
       version: "0.3.0",
-      description: "Agent-first infrastructure. APIs designed for bots, not browsers.",
+      description: "Agent-first infrastructure. APIs designed for bots, not browsers. Billing fields ending in _cents are cents; 1 cent = 10,000 microcents. For example, 5 cents = $0.05 = 50,000 microcents. See /spec for the implemented billing contract.",
       contact: { email: "hudtaylor@gmail.com", url: "https://noui.bot" },
       license: { name: "MIT" },
     },

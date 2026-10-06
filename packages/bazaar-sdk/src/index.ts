@@ -3,6 +3,7 @@
  *
  * Billing, metering, and tool proxy for MCP servers.
  * One API key. Thousands of tools. Sub-cent precision.
+ * Amounts ending in _cents are cents; 1 cent = 10,000 microcents.
  *
  * @example
  * ```ts
@@ -59,6 +60,7 @@ export interface CatalogResponse {
 export interface ProxyResult {
   result: unknown;
   meta: {
+    /** Cost in cents: 5 cents = $0.05 = 50,000 microcents. */
     cost_cents: number;
     latency_ms: number;
     provider: string;

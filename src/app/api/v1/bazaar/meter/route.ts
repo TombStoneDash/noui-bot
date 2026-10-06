@@ -90,7 +90,7 @@ export async function POST(request: Request) {
 
   // Generate signed receipt
   const now = new Date().toISOString();
-  const costMicrocents = (status === "success" ? priceCents : 0) * 100;
+  const costMicrocents = (status === "success" ? priceCents : 0) * 10_000;
   const receiptId = generateReceiptId();
   const signature = signReceipt({
     receipt_id: receiptId,

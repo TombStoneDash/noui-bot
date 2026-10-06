@@ -27,7 +27,7 @@ const result = await client.tools.call('wallet.balance', {
   chain: 'base',
 });
 console.log(result.result);           // Tool output
-console.log(result.meta.cost_cents);  // What it cost
+console.log(result.meta.cost_cents);  // Cents: 5 means $0.05 = 50,000 microcents
 console.log(result.meta.latency_ms);  // How long it took
 
 // Check usage
@@ -174,7 +174,7 @@ try {
 - **Platform fee:** 10% on paid calls
 - **Free tools:** No fees
 - **Free tier:** 100 calls per tool (default)
-- **Precision:** Sub-cent (microcents = 1/10000 of a cent)
+- **Precision:** Sub-cent (1 cent = 10,000 microcents)
 - **Minimum payout:** $10.00
 - **Payout method:** Stripe Connect (Express)
 
