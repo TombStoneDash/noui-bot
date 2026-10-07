@@ -1,10 +1,39 @@
-import { neon } from "@neondatabase/serverless";
+import {
+  neon,
+  type NeonQueryFunction,
+} from "@neondatabase/serverless";
 
 // Connection using Neon serverless driver (HTTP)
 // Uses noui schema within the shared actorlab-db Neon project
-const sql = neon(process.env.DATABASE_URL!);
+type SqlClient = NeonQueryFunction<false, false>;
 
-export { sql };
+let sqlClient: SqlClient | undefined;
+
+function getSqlClient(): SqlClient {
+  if (sqlClient) {
+    return sqlClient;
+  }
+
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is required");
+  }
+
+  sqlClient = neon(connectionString);
+  return sqlClient;
+}
+
+/**
+ * Lazily initialize the Neon client when a query runs.
+ *
+ * Next.js evaluates route modules while collecting build metadata. Keeping
+ * client construction out of module scope lets builds run without production
+ * credentials while preserving a request-time failure when the database is
+ * unavailable.
+ */
+export function sql(strings: TemplateStringsArray, ...params: unknown[]) {
+  return getSqlClient()(strings, ...params);
+}
 
 /**
  * Initialize the noui schema and tables.
