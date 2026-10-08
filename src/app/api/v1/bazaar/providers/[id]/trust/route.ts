@@ -29,11 +29,18 @@ export async function GET(
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   // Get usage logs
-  const { data: logs } = await sb
+  const { data: logs, error: usageErr } = await sb
     .from("bazaar_usage_logs")
     .select("status, latency_ms")
     .eq("provider_id", providerId)
     .gte("created_at", thirtyDaysAgo);
+
+  if (usageErr) {
+    return NextResponse.json(
+      { error: true, code: "USAGE_UNAVAILABLE", message: "Trust score unavailable" },
+      { status: 503 }
+    );
+  }
 
   const totalCalls = logs?.length || 0;
   const successCalls = logs?.filter((l) => l.status === "success").length || 0;
