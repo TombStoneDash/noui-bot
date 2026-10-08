@@ -90,6 +90,14 @@ export default function StatusPage() {
       ? "All Systems Operational"
       : "Degraded";
 
+  const serviceStatus = error
+    ? "down"
+    : !health
+      ? "checking"
+      : health.status === "ok"
+        ? "operational"
+        : "degraded";
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
@@ -186,11 +194,11 @@ export default function StatusPage() {
           </h2>
           <div className="space-y-2">
             {[
-              { name: "Bazaar API", path: "/api/bazaar", status: health ? "operational" : error ? "down" : "checking" },
-              { name: "Billing Proxy", path: "/api/bazaar/proxy", status: health ? "operational" : error ? "down" : "checking" },
-              { name: "Tool Catalog", path: "/api/bazaar/catalog", status: health ? "operational" : error ? "down" : "checking" },
-              { name: "Usage & Metering", path: "/api/bazaar/usage", status: health ? "operational" : error ? "down" : "checking" },
-              { name: "Provider Registration", path: "/api/bazaar/register-provider", status: health ? "operational" : error ? "down" : "checking" },
+              { name: "Bazaar API", path: "/api/bazaar", status: serviceStatus },
+              { name: "Billing Proxy", path: "/api/bazaar/proxy", status: serviceStatus },
+              { name: "Tool Catalog", path: "/api/bazaar/catalog", status: serviceStatus },
+              { name: "Usage & Metering", path: "/api/bazaar/usage", status: serviceStatus },
+              { name: "Provider Registration", path: "/api/bazaar/register-provider", status: serviceStatus },
             ].map((svc) => (
               <div
                 key={svc.name}
@@ -210,6 +218,8 @@ export default function StatusPage() {
                       ? "text-emerald-400"
                       : svc.status === "down"
                         ? "text-red-400"
+                        : svc.status === "degraded"
+                          ? "text-amber-400"
                         : "text-white/30"
                   }`}
                 >
