@@ -1,0 +1,8 @@
+{
+  "slug": "trust-usage-query-failure",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Return unavailable trust data when the usage query fails",
+  "prompt": "Do not publish a favorable trust score when usage evidence could not be loaded. Evidence: src/app/api/v1/bazaar/providers/[id]/trust/route.ts:32-38 discards the usage-query error and converts null logs to zero calls. Lines 87 and 100 award full uptime and latency points by default, and lines 122-126 can produce a verified badge. A local GET execution with an unverified provider, a failed usage query, and empty receipts returned HTTP 200, trust_score 75, and badge \"verified\".\n\nChange only src/app/api/v1/bazaar/providers/[id]/trust/route.ts in production. Inspect the usage query's error result before scoring and return HTTP 503 with a stable error code and a generic unavailable message. Do not include a score, badge, or raw database message in that failure response. Preserve successful zero-call scoring and all existing scoring thresholds; this job handles a failed usage read, not a redesign of verification or dispute policy.\n\nAdd tests/provider-trust-usage-error.test.mjs with mocked Supabase results and a NextResponse adapter executing the real route. Assert that a resolved query error returns 503 without scoring fields and stops before subsequent queries. Also cover successful empty logs and normal mixed-success logs to preserve existing behavior. Run node --test tests/provider-trust-usage-error.test.mjs tests/bazaar-health-query-errors.test.mjs. work on the assigned branch you are on. No credentials, deploys, sends, payments, migrations, workflow, package.json, or auth changes."
+}
