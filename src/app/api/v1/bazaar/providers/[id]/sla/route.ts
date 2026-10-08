@@ -56,8 +56,9 @@ export async function GET(
     ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
     : 0;
 
+  // Nearest rank: the 95th percentile is observation ceil(n * 0.95) (one-based).
   const p95Latency = latencies.length > 0
-    ? latencies[Math.floor(latencies.length * 0.95)] || latencies[latencies.length - 1]
+    ? latencies[Math.ceil(latencies.length * 0.95) - 1]
     : 0;
 
   // Count receipts issued
