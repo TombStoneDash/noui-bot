@@ -1,0 +1,8 @@
+{
+  "slug": "preserve-fenced-code",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Preserve literal Markdown inside fenced code examples",
+  "prompt": "Fix only src/lib/markdown.ts and add tests/markdown-fenced-code.test.mjs. Evidence: src/lib/markdown.ts:5-10 converts fenced code to HTML before src/lib/markdown.ts:14-33 applies inline-code, heading, emphasis, and link replacements over that same HTML. Both public specification pages use this renderer (src/app/spec/page.tsx:18 and src/app/specs/mcp-billing-v1/page.tsx:24). A local execution with a text fence containing plain text, then # literal and **literal**, produced h1 and strong elements inside pre/code. Readers therefore see altered examples instead of the literal source.\n\nProtect fenced blocks from subsequent Markdown transformations, for example by temporarily replacing them with collision-safe placeholders and restoring their escaped HTML after the other passes. Preserve language classes, whitespace, and existing ampersand/angle-bracket escaping. Keep this a fenced-code fix; do not replace the renderer or change unrelated formatting.\n\nAdd behavioral node:test coverage for headings, emphasis, links, backticks, and table-looking lines inside fences, multiple blocks, HTML escaping, and ordinary Markdown outside fences. Import markdownToHtml directly, following tests/spec-route.test.mjs. Run node --test tests/markdown-fenced-code.test.mjs tests/spec-route.test.mjs. Use local fixtures only. Do not change credentials, auth, payments, migrations, deployment, workflows, or package.json; do not send anything externally. Do not commit or push; work on the assigned branch you are on."
+}

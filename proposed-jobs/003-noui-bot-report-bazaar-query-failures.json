@@ -1,0 +1,8 @@
+{
+  "slug": "report-bazaar-query-failures",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Report degraded Bazaar health when database queries return errors",
+  "prompt": "Fix only src/app/api/bazaar/health/route.ts and add tests/bazaar-health-query-errors.test.mjs. Evidence: src/app/api/bazaar/health/route.ts:10-13 destructures count while discarding each Supabase error, then lines 18-23 unconditionally return status ok and zero counts. The degraded response at lines 29-36 only handles thrown exceptions. A local GET execution with both queries resolving to {count:null,error:{message:\"fixture\"}} returned HTTP 200 and status ok. Users and monitoring clients can therefore be told the service is healthy during a database query failure.\n\nInspect both query results and return the existing degraded HTTP 503 response whenever either contains an error. Preserve null counts for failures, existing uptime/timestamp fields, and successful zero counts for an actually empty database. Keep this narrowly about resolved query errors; do not redesign health checks, touch configuration/auth, or change other routes or the status page.\n\nAdd node:test coverage for provider-query failure, tool-query failure, both failures, thrown query errors, and successful counts including zero. Exercise GET with in-memory TypeScript transpilation and VM stubs for Supabase and NextResponse; all results must be fixtures, with no database connection or credentials. Run node --test tests/bazaar-health-query-errors.test.mjs. Do not change payments, sends, deployments, migrations, .github/workflows, or package.json. Do not commit or push; work on the assigned branch you are on."
+}

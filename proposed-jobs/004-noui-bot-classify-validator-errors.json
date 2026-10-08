@@ -1,0 +1,8 @@
+{
+  "slug": "classify-validator-errors",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Distinguish missing humans.txt from invalid content and fetch failures",
+  "prompt": "Fix only src/app/validate/page.tsx and add tests/humans-validator-errors.test.mjs. Evidence: src/app/validate/page.tsx:50-63 maps every non-OK response to not_found and says no humans.txt exists. However src/app/api/validate-humans-txt/route.ts:35-40 returns HTTP 422 when content exists but is not JSON, and lines 42-44 return HTTP 502 on fetch failure. A local execution of validateUrl with a mocked 422 response produced not_found. Users receive incorrect remediation for a present but invalid file or a temporary outage.\n\nClassify 404 as not_found, 422 as invalid, and other unsuccessful responses as error. Read a safe error message from the response when available, with a fallback for malformed error bodies. Make the displayed checks explain invalid JSON or request failure accurately; reserve the missing-file advice for a confirmed 404. Preserve successful validation and scoring. Do not modify the API route or expand URL normalization in this job.\n\nAdd node:test coverage exercising validateUrl with mocked fetch results for 404, 422, 502, 429, malformed error bodies, network rejection, and a valid document. Use in-memory TypeScript transpilation with stub imports and test-only function exposure, avoiding new runtime exports from the Next page. Run node --test tests/humans-validator-errors.test.mjs. No credentials, auth, payments, sends, deploys, migrations, workflows, or package.json changes. Do not commit or push; work on the assigned branch you are on."
+}
