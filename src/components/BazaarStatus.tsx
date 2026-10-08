@@ -6,10 +6,14 @@ export function BazaarStatus() {
   const [status, setStatus] = useState<{ tools: number; providers: number } | null>(null);
   useEffect(() => {
     fetch("/api/bazaar/catalog")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load catalog");
+        return r.json();
+      })
       .then((d) => {
-        const tools = d.tools?.length ?? 0;
-        const providerSet = new Set(d.tools?.map((t: any) => t.provider?.id).filter(Boolean));
+        if (!Array.isArray(d?.tools)) throw new Error("Invalid catalog payload");
+        const tools = d.tools.length;
+        const providerSet = new Set(d.tools.map((t: any) => t.provider?.id).filter(Boolean));
         setStatus({ tools, providers: providerSet.size });
       })
       .catch(() => setStatus(null));
