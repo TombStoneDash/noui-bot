@@ -4,8 +4,39 @@ import { getSupabase } from "@/lib/supabase";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const category = url.searchParams.get("category");
-  const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
-  const offset = parseInt(url.searchParams.get("offset") || "0");
+  const limitParam = url.searchParams.get("limit");
+  const offsetParam = url.searchParams.get("offset");
+  const requestedLimit = limitParam === null ? 50 : Number(limitParam);
+  const offset = offsetParam === null ? 0 : Number(offsetParam);
+
+  if (
+    (limitParam !== null && !/^[0-9]+$/.test(limitParam)) ||
+    !Number.isSafeInteger(requestedLimit) || requestedLimit <= 0
+  ) {
+    return NextResponse.json(
+      { error: true, message: "limit must be a positive safe integer written using digits only" },
+      { status: 400 }
+    );
+  }
+
+  if (
+    (offsetParam !== null && !/^[0-9]+$/.test(offsetParam)) ||
+    !Number.isSafeInteger(offset) || offset < 0
+  ) {
+    return NextResponse.json(
+      { error: true, message: "offset must be a nonnegative safe integer written using digits only" },
+      { status: 400 }
+    );
+  }
+
+  const limit = Math.min(requestedLimit, 100);
+  if (offset > Number.MAX_SAFE_INTEGER - (limit - 1)) {
+    return NextResponse.json(
+      { error: true, message: "pagination range end exceeds the maximum safe integer" },
+      { status: 400 }
+    );
+  }
+  const rangeEnd = offset + (limit - 1);
 
   const sb = getSupabase();
 
@@ -35,7 +66,7 @@ export async function GET(request: Request) {
     `)
     .eq("active", true)
     .order("call_count", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .range(offset, rangeEnd);
 
   if (category) {
     query = query.eq("category", category);
