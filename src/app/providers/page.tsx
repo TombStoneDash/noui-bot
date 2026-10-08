@@ -7,7 +7,7 @@ interface Tool {
   id: string;
   tool_name: string;
   display_name: string;
-  description: string;
+  description: string | null;
   category: string;
   provider: { id: string; name: string; verified: boolean };
   pricing: {
@@ -227,7 +227,7 @@ export default function ProvidersPage() {
       p.tools.some(
         (t) =>
           t.display_name.toLowerCase().includes(search.toLowerCase()) ||
-          t.description.toLowerCase().includes(search.toLowerCase())
+          (t.description ?? "").toLowerCase().includes(search.toLowerCase())
       )
   );
 
