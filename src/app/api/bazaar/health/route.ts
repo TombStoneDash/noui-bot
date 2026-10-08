@@ -7,10 +7,17 @@ export async function GET() {
   const sb = getSupabase();
 
   try {
-    const [{ count: providerCount }, { count: toolCount }] = await Promise.all([
+    const [
+      { count: providerCount, error: providerError },
+      { count: toolCount, error: toolError },
+    ] = await Promise.all([
       sb.from("bazaar_providers").select("id", { count: "exact", head: true }).eq("active", true),
       sb.from("bazaar_tools").select("id", { count: "exact", head: true }).eq("active", true),
     ]);
+
+    if (providerError || toolError) {
+      throw providerError || toolError;
+    }
 
     const uptimeMs = Date.now() - startedAt;
     const uptimeSeconds = Math.floor(uptimeMs / 1000);
