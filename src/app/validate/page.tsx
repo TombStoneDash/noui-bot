@@ -48,15 +48,35 @@ async function validateUrl(url: string): Promise<HumansTxtResult> {
     const responseTime = Date.now() - start;
 
     if (!res.ok) {
+      const status = res.status === 404 ? "not_found" : res.status === 422 ? "invalid" : "error";
+      const fallback = status === "not_found"
+        ? "No humans.txt found at this URL"
+        : status === "invalid"
+        ? "humans.txt exists but is not valid JSON — fix the file's JSON syntax"
+        : "Validation request failed — please try again later";
+      let error = fallback;
+      try {
+        const body: unknown = await res.json();
+        if (typeof body === "object" && body !== null && "error" in body &&
+            typeof body.error === "string" && body.error.trim()) {
+          error = body.error.trim();
+        }
+      } catch {
+        // Keep the status-specific fallback if the error body is not JSON.
+      }
+
       return {
         url: humansTxtUrl,
-        status: "not_found",
+        status,
+        error,
         responseTime,
         checks: [
           {
-            label: "/.well-known/humans.txt exists",
+            label: status === "not_found"
+              ? "/.well-known/humans.txt exists"
+              : status === "invalid" ? "Valid JSON response" : "Validation request",
             status: "fail",
-            detail: `HTTP ${res.status} — no humans.txt found at this URL`,
+            detail: `HTTP ${res.status} — ${fallback}${error === fallback ? "" : ` (${error})`}`,
           },
         ],
         score: 0,
@@ -208,9 +228,9 @@ async function validateUrl(url: string): Promise<HumansTxtResult> {
       responseTime: Date.now() - start,
       checks: [
         {
-          label: "/.well-known/humans.txt exists",
+          label: "Validation request",
           status: "fail",
-          detail: "Could not reach the URL — check that the domain is correct",
+          detail: "Validation request failed — check your connection and try again",
         },
       ],
       score: 0,
