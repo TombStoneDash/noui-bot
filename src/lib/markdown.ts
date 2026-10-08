@@ -1,5 +1,8 @@
 export function markdownToHtml(md: string): string {
   let html = md;
+  const fencedBlocks: string[] = [];
+  let fencePrefix = "<!--FENCEDCODE";
+  while (md.includes(fencePrefix)) fencePrefix += "X";
 
   // Code blocks (``` ... ```)
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_match, lang, code) => {
@@ -7,7 +10,10 @@ export function markdownToHtml(md: string): string {
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
-    return `<pre><code class="language-${lang || "text"}">${escaped}</code></pre>`;
+    const index = fencedBlocks.length;
+    fencedBlocks.push(`<pre><code class="language-${lang || "text"}">${escaped}</code></pre>`);
+    // An HTML-shaped placeholder also bypasses paragraph wrapping.
+    return `${fencePrefix}${index}-->`;
   });
 
   // Inline code
@@ -74,5 +80,7 @@ export function markdownToHtml(md: string): string {
     })
     .join("\n\n");
 
-  return html;
+  // Restore only after all Markdown passes, keeping code and whitespace literal.
+  return html.replace(new RegExp(`${fencePrefix}(\\d+)-->`, "g"),
+    (_match, index) => fencedBlocks[Number(index)]);
 }
