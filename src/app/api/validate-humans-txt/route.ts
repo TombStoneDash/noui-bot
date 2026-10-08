@@ -6,10 +6,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "url parameter required" }, { status: 400 });
   }
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
 
+  try {
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
@@ -17,8 +17,6 @@ export async function GET(request: NextRequest) {
         Accept: "application/json, text/plain",
       },
     });
-
-    clearTimeout(timeout);
 
     if (!res.ok) {
       return NextResponse.json(
@@ -42,5 +40,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Fetch failed";
     return NextResponse.json({ error: message }, { status: 502 });
+  } finally {
+    clearTimeout(timeout);
   }
 }
