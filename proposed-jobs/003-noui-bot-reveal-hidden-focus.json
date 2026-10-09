@@ -1,0 +1,8 @@
+{
+  "slug": "reveal-hidden-focus",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Keep hidden homepage links out of keyboard navigation",
+  "prompt": "Change only src/components/RevealWrapper.tsx among production files. Evidence: src/components/RevealWrapper.tsx:76; lines 70-90 deliberately keep the homepage children mounted before reveal, hiding them with max-h-0 overflow-hidden and aria-hidden. Neither property prevents links and buttons inside that subtree from receiving keyboard focus. The initial rendered tree has aria-hidden:true and a focusable child link, with no inert attribute. Keyboard visitors can therefore tab into invisible homepage content before pressing the reveal button.\n\nMake the unrevealed content container inert while preserving its mounted children, and remove that restriction when revealed. Retain the existing reveal animation and scroll behavior. Keep this narrowly scoped to focusability of the hidden subtree; do not redesign the landing page or change the return-to-void behavior.\n\nAdd only tests/reveal-hidden-focus.test.ts. Follow the existing lightweight component-test pattern: transpile TSX in memory, mock React hooks and motion elements, and inspect the actual rendered element tree. Supply a focusable child, assert the initial container is inert and aria-hidden, invoke the reveal button, rerender, and assert both restrictions are lifted while the child remains present. Stub the scroll timer. Run node --experimental-strip-types --test tests/reveal-hidden-focus.test.ts. No new dependencies or browser installation are required; work on the assigned branch you are on."
+}

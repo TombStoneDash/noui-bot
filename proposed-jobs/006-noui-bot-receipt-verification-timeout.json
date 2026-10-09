@@ -1,0 +1,8 @@
+{
+  "slug": "receipt-verification-timeout",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Recover the receipt form when verification stalls",
+  "prompt": "Change only src/app/verify/page.tsx among production files. Evidence: src/app/verify/page.tsx:20; lines 20-38 set pending before awaiting fetch and response.json, with no deadline or cancellation. Lines 75, 81, and 86 disable the receipt input and both buttons for the entire pending interval. Running the actual form handler with an unresolved fetch leaves pending true, provides no AbortSignal, and schedules no timeout. A stalled response therefore traps the visitor in Verifying receipt with no way to retry through the form.\n\nAdd a ten-second deadline covering both the request and response-body read. Abort the active request on timeout, show a clear retryable timeout message, and restore form controls. Clear the deadline after completion and prevent a late completion from replacing the timeout result or a newer attempt. Preserve normal valid, invalid, malformed-JSON, and server-error behavior. Keep this entirely within the public page's request lifecycle.\n\nAdd only tests/receipt-verification-timeout.test.ts. Use node:test, transpile the component in memory, and mock hooks, fetch, AbortController, and timers. Exercise a stalled request, stalled JSON body, normal success before the deadline, a late completion, and a successful retry; assert visible feedback and enabled controls. Run node --experimental-strip-types --test tests/receipt-verification-timeout.test.ts. Use deterministic local mocks and keep dependencies unchanged; work on the assigned branch you are on."
+}

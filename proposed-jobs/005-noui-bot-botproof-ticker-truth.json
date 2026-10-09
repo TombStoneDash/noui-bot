@@ -1,0 +1,8 @@
+{
+  "slug": "botproof-ticker-truth",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Stop inventing activity in the BotProof statistics ticker",
+  "prompt": "Change only src/app/bot-captcha/BotCaptchaClient.tsx among production files. Evidence: src/app/bot-captcha/BotCaptchaClient.tsx:196; lines 196-199 initialize the public ticker with 47,832 humans, 46,291 failures, and 1,204 bots. Lines 278-289 then randomly increment these counters between API polls. Lines 263-271 retain those invented values when loading fails. Executing the polling effect with real totals 10, 8, and 2 and advancing the drift callback changes the displayed totals without another API response.\n\nRemove the artificial initial totals and random drift for these three ticker counters. Display a neutral loading or unavailable marker until valid totals arrive, preserve legitimate zero values, and update counts only from successful statistics responses. On a later failure, mark the counters unavailable rather than presenting stale totals as current. Keep the thirty-second polling interval and cleanup. Limit this change to the ticker; leave leaderboard rendering and interactive challenge scoring alone. Open leaderboard PR #40 targets a separate page and does not fix this effect.\n\nAdd only tests/botproof-ticker-truth.test.ts. Transpile the component in memory and mock hooks, fetch, and timers. Cover initial pending state, valid zero and nonzero totals, failed first load, later failure, and time advancing without a new response. Run node --experimental-strip-types --test tests/botproof-ticker-truth.test.ts. Use no live services or new dependencies; work on the assigned branch you are on."
+}

@@ -1,0 +1,8 @@
+{
+  "slug": "pricing-zero-free-calls",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Preserve zero free calls in the public pricing response",
+  "prompt": "Change only src/app/api/v1/bazaar/pricing/route.ts among production files. Evidence: src/app/api/v1/bazaar/pricing/route.ts:56; line 56 uses t.free_tier_calls || 100 while building the public pricing response. Zero is an intentional allowance value, but this expression advertises one hundred free calls instead. A mocked execution of the actual GET handler with free_tier_calls:0 returned 100. This can mislead an agent developer comparing available tools before making a call.\n\nReplace the truthiness fallback with a nullish fallback so an explicit zero survives, positive allowances remain unchanged, and null or omitted values retain the existing default of 100. This is a response-formatting correction only. Do not change charging behavior or other pricing fields. The inspected PR #35 adds catalog filtering in this file but leaves this expression unchanged; retain its filtering if already present. Recent microcents conversion work does not fix the allowance default.\n\nAdd only tests/pricing-zero-free-calls.test.ts. Use node:test with a TypeScript-transpiled handler and mocked database responses, exercising zero, a positive allowance, null, and an omitted allowance. Assert the displayed allowance and stable price fields from the real GET response. Run node --experimental-strip-types --test tests/pricing-zero-free-calls.test.ts. Keep dependencies unchanged; work on the assigned branch you are on."
+}

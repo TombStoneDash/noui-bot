@@ -1,0 +1,8 @@
+{
+  "slug": "stats-agent-count",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Report the real agent count in public Bazaar statistics",
+  "prompt": "Change only src/app/api/v1/bazaar/stats/route.ts among production files. Evidence: src/app/api/v1/bazaar/stats/route.ts:24; lines 24-26 request a head-only consumer query with count: \"exact\", but line 76 derives unique_agents from consumers?.length. A head-only response has no data rows. Executing this handler with {data:null,count:7,error:null} returns unique_agents:0, misleading developers who read the public platform statistics.\n\nRead the consumer count from the query response and use it for unique_agents, preserving a genuine zero. Handle an error from this particular query as an unavailable server response instead of a fabricated zero, without returning database details. Keep every unrelated aggregate and successful response field unchanged. PR #35 changes catalog hygiene in this same file, but its inspected diff retains this defect; preserve that work if present on the assigned branch. The recent microcents merge also does not address consumer counting.\n\nAdd only tests/stats-agent-count.test.ts. Use node:test, transpile the actual handler with the installed TypeScript compiler, and mock the fluent database client and NextResponse. Cover count seven with null data, count zero, and a consumer-query error; assert successful unrelated metrics remain intact. Run node --experimental-strip-types --test tests/stats-agent-count.test.ts. Keep dependencies unchanged and all checks local; work on the assigned branch you are on."
+}
