@@ -164,24 +164,24 @@ export default function QuickstartPage() {
           Using the TypeScript SDK
         </h2>
         <CodeBlock title="Install">{`npm install @forthebots/bazaar-sdk`}</CodeBlock>
-        <CodeBlock title="Usage">{`import { BazaarClient } from '@forthebots/bazaar-sdk';
+        <CodeBlock title="Usage">{`import { Bazaar } from '@forthebots/bazaar-sdk';
 
-const bazaar = new BazaarClient({
+const bazaar = new Bazaar({
   apiKey: 'bz_live_your_key_here'
 });
 
 // List available tools
-const catalog = await bazaar.catalog();
+const catalog = await bazaar.catalog.list();
 
 // Call a tool
-const result = await bazaar.call('weather_forecast', {
+const result = await bazaar.tools.call('weather_forecast', {
   location: 'San Francisco, CA'
 });
 
 // Check usage
-const usage = await bazaar.usage();
+const usage = await bazaar.usage.summary();
 console.log(\`Total calls: \${usage.total_calls}\`);
-console.log(\`Total cost: $\${(usage.total_cost_cents / 100).toFixed(2)}\`);`}</CodeBlock>
+console.log(\`Total cost: $\${(usage.total_spend_cents / 100).toFixed(2)}\`);`}</CodeBlock>
       </div>
 
       {/* Integration guides */}
