@@ -167,10 +167,16 @@ export async function GET() {
         get: {
           summary: "Tool catalog",
           operationId: "getBazaarCatalog",
-          description: "List all tools available in the Bazaar with pricing and provider info.",
+          description: "List a page of available Bazaar tools with pricing and provider info.",
           tags: ["Bazaar"],
+          parameters: [
+            { name: "limit", in: "query", required: false, description: "Positive safe integer written using digits only. Defaults to 50. Values above 100 are clamped to an effective limit of 100.", schema: { type: "integer", minimum: 1, default: 50 } },
+            { name: "offset", in: "query", required: false, description: "Nonnegative safe integer written using digits only. Defaults to 0. Rejected if offset plus the effective limit minus 1 exceeds the maximum safe integer.", schema: { type: "integer", minimum: 0, default: 0 } },
+            { name: "category", in: "query", required: false, description: "Filter tools by category.", schema: { type: "string" } },
+          ],
           responses: {
-            "200": { description: "Tool catalog with pricing", content: { "application/json": { schema: { type: "object", properties: { tools: { type: "array", items: { type: "object" } }, total: { type: "integer" } } } } } },
+            "200": { description: "Tool catalog page with pricing", content: { "application/json": { schema: { type: "object", properties: { tools: { type: "array", items: { type: "object" } }, total: { type: "integer", description: "Number of tools in this returned page, not the full catalog count." }, limit: { type: "integer", description: "Effective limit after clamping to 100." }, offset: { type: "integer", description: "Requested offset for this page." } } } } } },
+            "400": { description: "Invalid limit or offset: values must be digit-only safe integers (limit positive, offset nonnegative), and the pagination range must not overflow the maximum safe integer.", content: { "application/json": { schema: { type: "object", properties: { error: { type: "boolean" }, message: { type: "string" } } } } } },
           },
         },
       },
