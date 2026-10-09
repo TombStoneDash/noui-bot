@@ -249,7 +249,14 @@ export default function DocsPage() {
 }`}
               response={`{
   "result": { "content": [{ "type": "text", "text": "..." }] },
-  "usage": { "cost_cents": 1, "latency_ms": 280, "provider": "SearchCo" }
+  "meta": {
+    "tool": "web_search",
+    "provider": "SearchCo",
+    "cost_cents": 1,
+    "cost": "$0.0100",
+    "latency_ms": 280,
+    "remaining_balance_cents": 499
+  }
 }`}
             />
             <Endpoint
