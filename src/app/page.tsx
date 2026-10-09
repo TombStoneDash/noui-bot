@@ -437,7 +437,7 @@ export default function Home() {
       <Divider />
 
       {/* Email Capture */}
-      <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
+      <section id="waitlist" className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
         <AnimatedSection>
           <h2 className="font-mono text-lg text-white/40 mb-8 tracking-wider uppercase">
             Stay Updated
