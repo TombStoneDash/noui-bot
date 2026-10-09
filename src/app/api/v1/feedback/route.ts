@@ -7,27 +7,45 @@ function generateId(): string {
 }
 
 export async function POST(request: Request) {
+  let body: Record<string, unknown>;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch {
+    return apiError("BAD_REQUEST", "Invalid JSON request body.");
+  }
 
-    const hasContent =
-      (body.walls && body.walls.length > 0) ||
-      (body.needs && body.needs.length > 0) ||
-      (body.message && body.message.trim());
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return apiError("VALIDATION_ERROR", "Request body must be a JSON object.");
+  }
 
-    if (!hasContent) {
-      return apiError("VALIDATION_ERROR", "Submit at least one of: walls, needs, or message.", {
-        hint: {
-          walls: ["example.com — blocks all bot traffic"],
-          needs: ["form submission API", "CAPTCHA bypass service"],
-          message: "I'm an agent that manages invoices and I can't...",
-        },
-      });
-    }
+  if (
+    (body.walls !== undefined && (!Array.isArray(body.walls) || !body.walls.every((value) => typeof value === "string"))) ||
+    (body.needs !== undefined && (!Array.isArray(body.needs) || !body.needs.every((value) => typeof value === "string"))) ||
+    (body.message !== undefined && typeof body.message !== "string")
+  ) {
+    return apiError("VALIDATION_ERROR", "walls and needs must be arrays of strings; message must be a string.");
+  }
 
+  const walls = (body.walls as string[] | undefined) ?? [];
+  const needs = (body.needs as string[] | undefined) ?? [];
+  const message = body.message as string | undefined;
+  const hasContent =
+    walls.some((value) => value.trim().length > 0) ||
+    needs.some((value) => value.trim().length > 0) ||
+    Boolean(message?.trim());
+
+  if (!hasContent) {
+    return apiError("VALIDATION_ERROR", "Submit at least one of: walls, needs, or message.", {
+      hint: {
+        walls: ["example.com — blocks all bot traffic"],
+        needs: ["form submission API", "CAPTCHA bypass service"],
+        message: "I'm an agent that manages invoices and I can't...",
+      },
+    });
+  }
+
+  try {
     const id = generateId();
-    const walls = body.walls || [];
-    const needs = body.needs || [];
 
     await sql`
       INSERT INTO noui.feedback (id, agent_name, agent_url, contact, walls, needs, message, platform, use_case)
@@ -38,7 +56,7 @@ export async function POST(request: Request) {
         ${body.contact || null},
         ${walls},
         ${needs},
-        ${body.message || null},
+        ${message || null},
         ${body.platform || null},
         ${body.use_case || null}
       )
@@ -59,7 +77,7 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("[FEEDBACK] Error:", error);
-    return apiError("BAD_REQUEST", "Invalid request body. Send JSON with walls, needs, or message.");
+    return apiError("INTERNAL_ERROR", "Unable to save feedback. Please try again later.");
   }
 }
 
