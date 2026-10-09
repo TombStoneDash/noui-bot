@@ -7,20 +7,29 @@ function generateId(): string {
 }
 
 export async function POST(request: Request) {
+  let body: Record<string, unknown>;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch {
+    return apiError("BAD_REQUEST", "Malformed JSON request.");
+  }
 
-    if (!body.name?.trim() || !body.contact?.trim()) {
-      return apiError("VALIDATION_ERROR", "name and contact are required. We need to know who you are and how to reach you.", {
-        required: { name: "string", contact: "string — email, github, twitter, webhook" },
-      });
-    }
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return apiError("BAD_REQUEST", "Application must be a JSON object.");
+  }
+  if (typeof body.name !== "string" || !body.name.trim() ||
+      typeof body.contact !== "string" || !body.contact.trim()) {
+    return apiError("BAD_REQUEST", "name and contact are required. We need to know who you are and how to reach you.", {
+      required: { name: "string", contact: "string — email, github, twitter, webhook" },
+    });
+  }
 
-    const id = generateId();
-    const skills = body.skills || [];
-    const projects = body.projects || [];
-    const agents = body.agents || [];
+  const id = generateId();
+  const skills = body.skills || [];
+  const projects = body.projects || [];
+  const agents = body.agents || [];
 
+  try {
     await sql`
       INSERT INTO noui.applications (id, name, contact, type, skills, projects, agents, interest, pitch, availability)
       VALUES (
@@ -36,30 +45,23 @@ export async function POST(request: Request) {
         ${body.availability || null}
       )
     `;
-
-    console.log(
-      `[APPLY] ${id} | name=${body.name} | type=${body.type || "unspecified"} | interest=${body.interest || "unspecified"}`
-    );
-
-    return NextResponse.json(
-      {
-        received: true,
-        id,
-        message: "Application received. We review every one personally.",
-        context:
-          "We're a small team — one human, one AI. We're open to equity, partnership, and creative arrangements for builders who want to help grow the ecosystem.",
-        next_steps:
-          "If there's a fit, we'll reach out via your contact method. No ghosting — you'll hear back either way.",
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error("[APPLY] Error:", error);
-    return NextResponse.json(
-      { error: "Invalid request or internal error." },
-      { status: 400 }
-    );
+  } catch {
+    console.error("[APPLY] Failed to save application");
+    return apiError("INTERNAL_ERROR", "We couldn't save your application. Please try again later.");
   }
+
+  return NextResponse.json(
+    {
+      received: true,
+      id,
+      message: "Application received. We review every one personally.",
+      context:
+        "We're a small team — one human, one AI. We're open to equity, partnership, and creative arrangements for builders who want to help grow the ecosystem.",
+      next_steps:
+        "If there's a fit, we'll reach out via your contact method. No ghosting — you'll hear back either way.",
+    },
+    { status: 201 }
+  );
 }
 
 export async function GET() {
