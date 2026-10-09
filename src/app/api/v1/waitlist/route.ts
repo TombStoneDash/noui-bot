@@ -2,19 +2,29 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 
 export async function POST(request: Request) {
+  let body;
   try {
-    const { email, source } = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON body." },
+      { status: 400 }
+    );
+  }
 
-    if (!email || !email.includes("@")) {
-      return NextResponse.json(
-        { error: "Valid email required." },
-        { status: 400 }
-      );
-    }
+  const email = body?.email;
+  const normalized = typeof email === "string" ? email.trim().toLowerCase() : "";
+  const validEmail = /^[a-z0-9_%+-]+(?:\.[a-z0-9_%+-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/;
+  if (!validEmail.test(normalized)) {
+    return NextResponse.json(
+      { error: "Valid email required." },
+      { status: 400 }
+    );
+  }
 
-    const normalized = email.toLowerCase().trim();
-    const src = source || "api";
+  const src = body.source || "api";
 
+  try {
     // Upsert — don't fail on duplicate
     const result = await sql`
       INSERT INTO noui.waitlist (email, source)
