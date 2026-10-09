@@ -1,0 +1,8 @@
+{
+  "slug": "homepage-waitlist-anchor",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Make the roadmap signup link reach the homepage signup form",
+  "prompt": "Change only src/app/page.tsx among production files. Evidence: src/app/page.tsx:439-453 renders the Stay Updated section and WaitlistForm without an id. The roadmap's existing Join the Waitlist link targets /#waitlist at src/app/roadmap/page.tsx:185. An in-memory render confirmed the form exists but no element has id=\"waitlist\", so following that link cannot scroll to the advertised form.\n\nAdd id=\"waitlist\" to the existing outer email-capture section. Preserve its placement, contents, animation wrappers, and form behavior. This is one anchor correction, not a signup redesign; do not modify the roadmap or the form component. Give the target a scroll-margin utility only if necessary for the existing layout.\n\nAdd exactly one new test file, tests/homepage-waitlist-anchor.test.ts. Use node:test and the existing in-memory TypeScript transpilation/JSX-stub approach to render the actual homepage. Assert there is exactly one waitlist target, that its subtree contains WaitlistForm and the Stay Updated heading, and that the existing roadmap fragment resolves to it. Mock imported components without executing any form submission. Run node --experimental-strip-types --test tests/homepage-waitlist-anchor.test.ts and node --test tests/reveal-hidden-focus.test.ts. Keep dependencies unchanged; no credentials, deploys, sends, payments, migrations, workflow, package.json, or auth changes. work on the assigned branch you are on."
+}
