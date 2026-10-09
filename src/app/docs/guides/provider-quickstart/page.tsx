@@ -75,16 +75,16 @@ export default function ProviderQuickstartPage() {
         </Section>
 
         <Section title="Step 2: List Your Tools">
-          <Code>{`curl -X POST https://noui.bot/api/v1/bazaar/tools \\
+          <Code>{`curl -X POST https://noui.bot/api/bazaar/tools \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer baz_sk_..." \\
   -d '{
     "tools": [
       {
-        "name": "search_papers",
+        "tool_name": "search_papers",
         "description": "Search academic papers by topic",
-        "pricePerCall": 0.01,
-        "inputSchema": {
+        "price_cents_override": 1,
+        "input_schema": {
           "type": "object",
           "properties": {
             "query": { "type": "string" }
@@ -92,10 +92,10 @@ export default function ProviderQuickstartPage() {
         }
       },
       {
-        "name": "analyze_paper",
+        "tool_name": "analyze_paper",
         "description": "Deep analysis of a specific paper",
-        "pricePerCall": 0.05,
-        "inputSchema": {
+        "price_cents_override": 5,
+        "input_schema": {
           "type": "object",
           "properties": {
             "paper_id": { "type": "string" }
@@ -105,7 +105,7 @@ export default function ProviderQuickstartPage() {
     ]
   }'`}</Code>
           <p className="text-white/50 text-xs mt-2">
-            Set <code className="text-white/70">pricePerCall</code> to <code className="text-white/70">0</code> for free tools.
+            Set <code className="text-white/70">price_cents_override</code> to <code className="text-white/70">0</code> for free tools.
             You can mix free and paid tools.
           </p>
         </Section>
