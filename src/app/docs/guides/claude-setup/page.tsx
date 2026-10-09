@@ -66,20 +66,9 @@ export default function ClaudeSetupPage() {
 }`}
           </pre>
           <p className="mt-4 text-white/40">
-            Or connect directly via HTTP (no npm required):
+            This guide uses the packaged stdio server. https://noui.bot/api/v1 is an API index,
+            not a supported desktop MCP transport.
           </p>
-          <pre className="bg-gray-900 border border-gray-800 rounded p-4 overflow-x-auto text-green-400 text-xs">
-{`{
-  "mcpServers": {
-    "noui-bazaar": {
-      "url": "https://noui.bot/api/v1",
-      "headers": {
-        "Authorization": "Bearer bz_your_key_here"
-      }
-    }
-  }
-}`}
-          </pre>
         </section>
 
         {/* Step 3 */}
