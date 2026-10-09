@@ -25,12 +25,14 @@ function BadgePreview({
   label,
   children,
   svgCode,
+  svgFileName,
   htmlEmbed,
   markdown,
 }: {
   label: string;
   children: React.ReactNode;
   svgCode: string;
+  svgFileName: string;
   htmlEmbed: string;
   markdown: string;
 }) {
@@ -45,6 +47,10 @@ function BadgePreview({
       <div className="divide-y divide-[#1a1a1a]">
         <SnippetBlock label="SVG" code={svgCode} />
         <SnippetBlock label="HTML Embed" code={htmlEmbed} />
+        <div className="px-5 py-3 text-[10px] text-[#999] leading-[1.6]">
+          For Markdown, save the SVG shown above as <code className="text-[#00ff41]">{svgFileName}</code>{" "}
+          alongside your Markdown document before using the snippet.
+        </div>
         <SnippetBlock label="Markdown" code={markdown} />
       </div>
     </div>
@@ -129,8 +135,8 @@ export default function BadgePage() {
             <span className="text-[#00ff41]">BotProof</span> Badges
           </h1>
           <p className="text-[13px] text-[#999] leading-[1.8] max-w-[520px]">
-            Show the world your agent is verified. Embed these badges in your README,
-            documentation, or agent profile. Each links back to your BotProof verification.
+            Embed these badges in your README, documentation, or agent profile. Each links to
+            the BotProof leaderboard. These are static badges, not personalized verification lookups.
           </p>
         </div>
 
@@ -138,8 +144,9 @@ export default function BadgePage() {
         <BadgePreview
           label="Standard — Full width"
           svgCode={badgeFullSvg}
-          htmlEmbed={`<a href="https://noui.bot/bot-captcha/leaderboard" target="_blank" rel="noopener">\n  <img src="https://noui.bot/api/v1/botproof/badge.svg" alt="BotProof Verified" />\n</a>`}
-          markdown={`[![BotProof Verified](https://noui.bot/api/v1/botproof/badge.svg)](https://noui.bot/bot-captcha/leaderboard)`}
+          svgFileName="botproof-badge.svg"
+          htmlEmbed={`<a href="https://noui.bot/bot-captcha/leaderboard" target="_blank" rel="noopener">\n  ${badgeFullSvg}\n</a>`}
+          markdown="[![BotProof Verified](botproof-badge.svg)](https://noui.bot/bot-captcha/leaderboard)"
         >
           <div dangerouslySetInnerHTML={{ __html: badgeFullSvg }} />
         </BadgePreview>
@@ -148,8 +155,9 @@ export default function BadgePage() {
         <BadgePreview
           label="Compact — Inline use"
           svgCode={badgeCompactSvg}
-          htmlEmbed={`<a href="https://noui.bot/bot-captcha/leaderboard" target="_blank" rel="noopener">\n  <img src="https://noui.bot/api/v1/botproof/badge-compact.svg" alt="BotProof" />\n</a>`}
-          markdown={`[![BotProof](https://noui.bot/api/v1/botproof/badge-compact.svg)](https://noui.bot/bot-captcha/leaderboard)`}
+          svgFileName="botproof-badge-compact.svg"
+          htmlEmbed={`<a href="https://noui.bot/bot-captcha/leaderboard" target="_blank" rel="noopener">\n  ${badgeCompactSvg}\n</a>`}
+          markdown="[![BotProof](botproof-badge-compact.svg)](https://noui.bot/bot-captcha/leaderboard)"
         >
           <div dangerouslySetInnerHTML={{ __html: badgeCompactSvg }} />
         </BadgePreview>
@@ -158,8 +166,9 @@ export default function BadgePage() {
         <BadgePreview
           label="Dark Terminal — For dark backgrounds"
           svgCode={badgeDarkSvg}
-          htmlEmbed={`<a href="https://noui.bot/bot-captcha/leaderboard" target="_blank" rel="noopener">\n  <img src="https://noui.bot/api/v1/botproof/badge-dark.svg" alt="BotProof Verified" />\n</a>`}
-          markdown={`[![BotProof Verified](https://noui.bot/api/v1/botproof/badge-dark.svg)](https://noui.bot/bot-captcha/leaderboard)`}
+          svgFileName="botproof-badge-dark.svg"
+          htmlEmbed={`<a href="https://noui.bot/bot-captcha/leaderboard" target="_blank" rel="noopener">\n  ${badgeDarkSvg}\n</a>`}
+          markdown="[![BotProof Verified](botproof-badge-dark.svg)](https://noui.bot/bot-captcha/leaderboard)"
         >
           <div dangerouslySetInnerHTML={{ __html: badgeDarkSvg }} />
         </BadgePreview>
@@ -168,8 +177,9 @@ export default function BadgePage() {
         <BadgePreview
           label="Shield — GitHub README style"
           svgCode={badgeShieldSvg}
-          htmlEmbed={`<a href="https://noui.bot/bot-captcha/leaderboard" target="_blank" rel="noopener">\n  <img src="https://noui.bot/api/v1/botproof/badge-shield.svg" alt="BotProof Verified" />\n</a>`}
-          markdown={`[![BotProof Verified](https://noui.bot/api/v1/botproof/badge-shield.svg)](https://noui.bot/bot-captcha/leaderboard)`}
+          svgFileName="botproof-badge-shield.svg"
+          htmlEmbed={`<a href="https://noui.bot/bot-captcha/leaderboard" target="_blank" rel="noopener">\n  ${badgeShieldSvg}\n</a>`}
+          markdown="[![BotProof Verified](botproof-badge-shield.svg)](https://noui.bot/bot-captcha/leaderboard)"
         >
           <div dangerouslySetInnerHTML={{ __html: badgeShieldSvg }} />
         </BadgePreview>
