@@ -193,10 +193,11 @@ export function BotCaptcha() {
   const [botMode, setBotMode] = useState(false);
   const botModeRef = useRef(false);
 
-  // Ticker — seeded, then replaced by real stats via /api/v1/bot-captcha/stats
-  const [tickerHumans, setTickerHumans] = useState(47832);
-  const [tickerFails, setTickerFails] = useState(46291);
-  const [tickerBots, setTickerBots] = useState(1204);
+  // Ticker — show totals only from a successful stats response.
+  const [ticker, setTicker] = useState<
+    | { status: "loading" | "unavailable" }
+    | { status: "ready"; humans: number; fails: number; bots: number }
+  >({ status: "loading" });
 
   // Leaderboard — seeded, then replaced by /api/v1/bot-captcha/leaderboard
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>(initialLeaderboard);
@@ -254,44 +255,39 @@ export function BotCaptcha() {
   // Copy button
   const [copyLabel, setCopyLabel] = useState("Copy");
 
-  // ── Ticker effect — polls real stats, falls back to drift ──
+  // ── Ticker effect — polls real stats ──
   useEffect(() => {
     let cancelled = false;
 
     async function fetchStats() {
       try {
         const res = await fetch("/api/v1/bot-captcha/stats", { cache: "no-store" });
-        if (!res.ok) return;
+        if (!res.ok) throw new Error("Stats unavailable");
         const data = await res.json();
         if (cancelled) return;
-        if (typeof data.humans_tested === "number") setTickerHumans(data.humans_tested);
-        if (typeof data.humans_failed === "number") setTickerFails(data.humans_failed);
-        if (typeof data.bots_verified === "number") setTickerBots(data.bots_verified);
+        if (
+          !data ||
+          !Number.isSafeInteger(data.humans_tested) || data.humans_tested < 0 ||
+          !Number.isSafeInteger(data.humans_failed) || data.humans_failed < 0 ||
+          !Number.isSafeInteger(data.bots_verified) || data.bots_verified < 0
+        ) throw new Error("Invalid stats");
+        setTicker({
+          status: "ready",
+          humans: data.humans_tested,
+          fails: data.humans_failed,
+          bots: data.bots_verified,
+        });
       } catch {
-        // keep seeded values
+        if (!cancelled) setTicker({ status: "unavailable" });
       }
     }
 
     fetchStats();
     const poll = setInterval(fetchStats, 30000);
 
-    // Small local drift between polls so the numbers feel alive.
-    const drift = setInterval(() => {
-      const r = Math.random();
-      if (r < 0.7) {
-        setTickerHumans((h) => h + 1);
-        setTickerFails((f) => f + 1);
-      } else if (r < 0.85) {
-        setTickerHumans((h) => h + 1);
-      } else {
-        setTickerBots((b) => b + 1);
-      }
-    }, 3000 + Math.random() * 5000);
-
     return () => {
       cancelled = true;
       clearInterval(poll);
-      clearInterval(drift);
     };
   }, []);
 
@@ -617,6 +613,9 @@ export function BotCaptcha() {
   // ── Verdict ──
   const verdict = allDone ? verdicts[passedCount] : null;
 
+  const tickerValue = (key: "humans" | "fails" | "bots") =>
+    ticker.status === "ready" ? ticker[key].toLocaleString() : ticker.status === "loading" ? "…" : "—";
+
   return (
     <div className="min-h-screen bg-black font-mono relative">
       {/* Scanline overlay */}
@@ -632,10 +631,10 @@ export function BotCaptcha() {
         {/* LIVE TICKER */}
         <div className="text-center py-2.5 px-4 text-[10px] tracking-[3px] text-[#555] border-b border-[#1a1a1a] mb-10 uppercase overflow-hidden whitespace-nowrap">
           <span className="inline-block w-1.5 h-1.5 bg-[#00ff41] rounded-full mr-2 align-middle animate-pulse" />
-          <span className="text-[#00ff41] font-semibold">{tickerHumans.toLocaleString()}</span>{" "}
+          <span className="text-[#00ff41] font-semibold">{tickerValue("humans")}</span>{" "}
           humans tested{" · "}
-          <span className="text-[#ff3333]">{tickerFails.toLocaleString()} failed</span>{" · "}
-          <span className="text-[#00ff41] font-semibold">{tickerBots.toLocaleString()}</span>{" "}
+          <span className="text-[#ff3333]">{tickerValue("fails")} failed</span>{" · "}
+          <span className="text-[#00ff41] font-semibold">{tickerValue("bots")}</span>{" "}
           bots verified
         </div>
 
