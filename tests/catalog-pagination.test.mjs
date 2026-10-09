@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import vm from "node:vm";
+import * as catalogHygiene from "../src/lib/catalog-hygiene.ts";
 
 const require = createRequire(import.meta.url);
 // Support both a root install and the existing factory workspace install.
@@ -37,6 +38,7 @@ function loadRoute(result = { data: [], error: null }) {
       if (name === "@/lib/supabase") return {
         getSupabase() { databaseAccesses++; return query; },
       };
+      if (name === "@/lib/catalog-hygiene") return catalogHygiene;
       throw new Error(`Unexpected dependency: ${name}`);
     },
   }, { filename: "catalog/route.js" });
@@ -62,9 +64,9 @@ for (const [name, search, limit, offset] of [
     const response = await route.GET(request(search));
     assert.equal(response.status, 200);
     assert.equal(route.databaseAccesses, 1);
-    assert.deepEqual(route.calls.filter(([method]) => method === "range"), [["range", offset, offset + (limit - 1)]]);
+    assert.deepEqual(route.calls.filter(([method]) => method === "range"), []);
     assert.deepEqual(await response.json(), {
-      tools: [], total: 0, limit, offset,
+      tools: [], total: 0, providers: 0, limit, offset,
       categories: ["weather", "search", "code", "data", "comms", "other"],
     });
   });
@@ -115,23 +117,18 @@ test("preserves catalog output and category filtering", async () => {
     id: "tool-2", tool_name: "free", bazaar_providers: null,
   }, {
     id: "tool-3", tool_name: "provider-priced",
-    bazaar_providers: { default_price_cents: 10, pricing_model: "per_call" },
+    bazaar_providers: { name: "Test Provider", default_price_cents: 10, pricing_model: "per_call" },
   }], error: null });
-  const response = await route.GET(request("?category=weather&limit=3&offset=4"));
+  const response = await route.GET(request("?category=weather&limit=3&offset=0"));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.total, 3);
+  assert.equal(body.total, 1);
+  assert.equal(body.providers, 1);
   assert.deepEqual(body.tools, [{
     id: "tool-1", tool_name: "forecast", display_name: "Forecast", description: "Weather forecast",
     category: "weather", provider: { id: "provider-1", name: "Weather Co", verified: true },
     pricing: { model: "per_call", price_cents: 25, price: "$0.2500/call", free_tier_calls: 5 },
     stats: { total_calls: 12, avg_latency_ms: 30, uptime_pct: 99 },
-  }, {
-    id: "tool-2", tool_name: "free", display_name: "free", provider: {},
-    pricing: { model: "per_call", price_cents: 0, price: "Free", free_tier_calls: 0 }, stats: {},
-  }, {
-    id: "tool-3", tool_name: "provider-priced", display_name: "provider-priced", provider: {},
-    pricing: { model: "per_call", price_cents: 10, price: "$0.1000/call", free_tier_calls: 0 }, stats: {},
   }]);
   assert.deepEqual(route.calls.filter(([method]) => method === "eq"), [["eq", "active", true], ["eq", "category", "weather"]]);
   assert.equal(route.calls.find(([method]) => method === "from")[1], "bazaar_tools");
