@@ -63,7 +63,11 @@ function TryItWidget() {
     setResult(null);
     try {
       const res = await fetch("/api/bazaar/catalog");
+      if (!res.ok) throw new Error("Catalog request failed");
       const data = await res.json();
+      if (typeof data !== "object" || data === null || !Array.isArray(data.tools)) {
+        throw new Error("Invalid catalog response");
+      }
       const toolCount = data.tools?.length || 0;
       const providers = new Set(
         data.tools?.map((t: { provider: { id: string } }) => t.provider.id)
