@@ -32,6 +32,59 @@ interface Provider {
   avgUptime: number;
 }
 
+const CATALOG_PAGE_SIZE = 50;
+
+function isTool(value: unknown): value is Tool {
+  if (!value || typeof value !== "object") return false;
+  const tool = value as Partial<Tool>;
+  return (
+    typeof tool.id === "string" && tool.id.length > 0 &&
+    typeof tool.tool_name === "string" &&
+    typeof tool.display_name === "string" &&
+    (tool.description === null || typeof tool.description === "string") &&
+    !!tool.provider && typeof tool.provider.id === "string" &&
+    tool.provider.id.length > 0 && typeof tool.provider.name === "string" &&
+    typeof tool.provider.verified === "boolean" &&
+    !!tool.pricing && typeof tool.pricing.price === "string" &&
+    typeof tool.pricing.price_cents === "number" &&
+    !!tool.stats && typeof tool.stats.total_calls === "number" &&
+    Number.isFinite(tool.stats.total_calls) &&
+    (tool.stats.uptime_pct === null ||
+      (typeof tool.stats.uptime_pct === "number" && Number.isFinite(tool.stats.uptime_pct)))
+  );
+}
+
+async function fetchCatalogTools(): Promise<Tool[]> {
+  const tools: Tool[] = [];
+  const seen = new Set<string>();
+
+  for (let offset = 0; ; offset += CATALOG_PAGE_SIZE) {
+    const response = await fetch(`/api/bazaar/catalog?limit=${CATALOG_PAGE_SIZE}&offset=${offset}`);
+    if (!response.ok) throw new Error("Catalog request failed");
+
+    const payload: unknown = await response.json();
+    if (!payload || typeof payload !== "object") throw new Error("Invalid catalog response");
+    const page = payload as { tools?: unknown; limit?: unknown; offset?: unknown; total?: unknown };
+    if (!Array.isArray(page.tools) || page.tools.length > CATALOG_PAGE_SIZE ||
+        page.limit !== CATALOG_PAGE_SIZE || page.offset !== offset ||
+        page.total !== page.tools.length || !page.tools.every(isTool)) {
+      throw new Error("Invalid catalog response");
+    }
+
+    const before = seen.size;
+    for (const tool of page.tools) {
+      if (!seen.has(tool.id)) {
+        seen.add(tool.id);
+        tools.push(tool);
+      }
+    }
+    if (page.tools.length < CATALOG_PAGE_SIZE) return tools;
+    if (seen.size === before || offset > Number.MAX_SAFE_INTEGER - CATALOG_PAGE_SIZE) {
+      throw new Error("Catalog pagination did not advance");
+    }
+  }
+}
+
 function formatNumber(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
@@ -166,19 +219,20 @@ console.log(result);`;
 }
 
 export default function ProvidersPage() {
-  const [providers, setProviders] = useState<Provider[]>([]);
+  const [providers, setProviders] = useState<Provider[] | null>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const error = providers === null;
 
   useEffect(() => {
+    let active = true;
     async function fetchProviders() {
       try {
-        const res = await fetch("/api/bazaar/catalog");
-        const data = await res.json();
-        if (data.tools && data.tools.length > 0) {
+        const tools = await fetchCatalogTools();
+        if (active) {
           // Group tools by provider
           const map = new Map<string, Provider>();
-          for (const tool of data.tools as Tool[]) {
+          for (const tool of tools) {
             const pid = tool.provider.id;
             if (!map.has(pid)) {
               map.set(pid, {
@@ -212,15 +266,18 @@ export default function ProvidersPage() {
           );
         }
       } catch {
-        // fail silently
+        if (active) {
+          setProviders(null);
+        }
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     fetchProviders();
+    return () => { active = false; };
   }, []);
 
-  const filtered = providers.filter(
+  const filtered = (providers ?? []).filter(
     (p) =>
       !search ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -231,8 +288,8 @@ export default function ProvidersPage() {
       )
   );
 
-  const totalTools = providers.reduce((s, p) => s + p.tools.length, 0);
-  const totalCalls = providers.reduce((s, p) => s + p.totalCalls, 0);
+  const totalTools = (providers ?? []).reduce((s, p) => s + p.tools.length, 0);
+  const totalCalls = (providers ?? []).reduce((s, p) => s + p.totalCalls, 0);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -254,10 +311,10 @@ export default function ProvidersPage() {
         </p>
 
         {/* Stats */}
-        <div className="flex items-center gap-6 mt-8">
+        {!loading && !error && <div className="flex items-center gap-6 mt-8">
           <div>
             <span className="font-mono text-xl font-bold text-white">
-              {providers.length}
+              {providers?.length ?? 0}
             </span>
             <span className="text-xs text-white/30 font-mono ml-1.5">
               providers
@@ -281,7 +338,7 @@ export default function ProvidersPage() {
               total calls
             </span>
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* Search */}
@@ -302,6 +359,12 @@ export default function ProvidersPage() {
             <div className="font-mono text-sm text-white/30 animate-pulse">
               Loading providers...
             </div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20">
+            <p className="font-mono text-sm text-red-400">
+              Unable to load providers. Please try again later.
+            </p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
