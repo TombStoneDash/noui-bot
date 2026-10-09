@@ -53,7 +53,7 @@ export async function GET() {
           price_per_call_microcents: priceMicrocents,
           price_per_call_cents: priceCents,
           price_per_call: priceCents === 0 ? "Free" : `$${(priceCents / 100).toFixed(4)}`,
-          free_tier_calls: t.free_tier_calls || 100,
+          free_tier_calls: t.free_tier_calls ?? 100,
         },
       };
     });
