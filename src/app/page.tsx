@@ -80,7 +80,7 @@ export default function Home() {
               Browse Providers
             </a>
             <a
-              href="/docs/bazaar"
+              href="/docs/guides/bill-an-mcp-tool"
               className="font-mono text-sm px-6 py-3 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"
             >
               Read the Docs

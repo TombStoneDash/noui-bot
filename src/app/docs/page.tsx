@@ -52,6 +52,13 @@ export default function DocsPage() {
           Monetize your MCP server with zero code changes. Set per-call pricing and start earning.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <a href="/docs/guides/bill-an-mcp-tool" className="flex items-center gap-2 p-3 border border-white/[0.08] rounded hover:border-amber-500/30 transition-colors">
+            <span className="text-sm">🧾</span>
+            <div>
+              <div className="font-mono text-xs font-bold text-white/80">Bill an MCP tool in 5 minutes</div>
+              <div className="font-mono text-[10px] text-white/30">Register, meter, proxy, and verify</div>
+            </div>
+          </a>
           <a href="/docs/guides/provider-quickstart" className="flex items-center gap-2 p-3 border border-white/[0.08] rounded hover:border-amber-500/30 transition-colors">
             <span className="text-sm">📋</span>
             <div>
@@ -418,6 +425,10 @@ export default function DocsPage() {
             Step-by-step guides for connecting AI frameworks to Agent Bazaar&apos;s metered MCP tools.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a href="/docs/guides/bill-an-mcp-tool" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors md:col-span-2">
+              <h3 className="font-mono text-sm text-white/80 mb-1">Bill an MCP tool in 5 minutes</h3>
+              <p className="text-xs text-white/40">Register a provider, meter calls, proxy agents, and verify receipts.</p>
+            </a>
             <a href="/docs/guides/claude-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
               <h3 className="font-mono text-sm text-white/80 mb-1">Claude Desktop / Cursor / Windsurf</h3>
               <p className="text-xs text-white/40">Native MCP config for desktop AI clients.</p>
