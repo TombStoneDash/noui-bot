@@ -61,12 +61,12 @@ export interface ProxyResult {
   result: unknown;
   meta: {
     /** Cost in cents: 5 cents = $0.05 = 50,000 microcents. */
-    cost_cents: number;
-    latency_ms: number;
+    tool: string;
     provider: string;
+    cost_cents: number;
+    cost: string;
+    latency_ms: number;
     remaining_balance_cents: number;
-    tool_name: string;
-    invocation_id?: string;
   };
 }
 
@@ -135,12 +135,40 @@ export interface ProviderSummary {
 }
 
 export interface MeterPayload {
-  tool_name: string;
+  tool_id?: string;
+  tool_name?: string;
+  agent_id?: string;
+  status?: "success" | "error" | "timeout";
   duration_ms?: number;
-  tokens_used?: number;
-  success?: boolean;
-  consumer_id?: string;
+  input_tokens?: number;
+  output_tokens?: number;
   metadata?: Record<string, unknown>;
+}
+
+export interface Receipt {
+  receipt_id: string;
+  tool_id: string;
+  tool_name?: string;
+  agent_id: string;
+  provider_id: string;
+  timestamp: string;
+  duration_ms?: number;
+  cost_microcents: number;
+  status: string;
+  input_hash?: string;
+  output_hash?: string;
+  signature: string;
+  verify_url: string;
+}
+
+export interface ReceiptVerification {
+  receipt: Receipt;
+  verification: {
+    valid: boolean;
+    reason: string;
+    checked: { canonical: string; algorithm: "HMAC-SHA256" };
+    verified_at: string;
+  };
 }
 
 export interface RegisterProviderPayload {
@@ -228,6 +256,8 @@ export class Bazaar {
   public provider: ProviderAPI;
   /** Metering API for MCP middleware */
   public meter: MeterAPI;
+  /** Signed receipt lookup and public verification */
+  public receipts: ReceiptsAPI;
 
   constructor(config: BazaarConfig) {
     this.apiKey = config.apiKey;
@@ -242,6 +272,7 @@ export class Bazaar {
     this.stats = new StatsAPI(this);
     this.provider = new ProviderAPI(this);
     this.meter = new MeterAPI(this);
+    this.receipts = new ReceiptsAPI(this);
   }
 
   /** @internal */
@@ -254,7 +285,7 @@ export class Bazaar {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "User-Agent": "@forthebots/bazaar-sdk/0.1.0",
+      "User-Agent": "@forthebots/bazaar-sdk/0.1.3",
     };
     if (!opts?.noAuth) {
       headers["Authorization"] = `Bearer ${this.apiKey}`;
@@ -396,8 +427,36 @@ class MeterAPI {
   constructor(private client: Bazaar) {}
 
   /** Record a tool invocation (for MCP middleware integration) */
-  async record(payload: MeterPayload): Promise<{ recorded: boolean; invocation_id: string }> {
+  async record(payload: MeterPayload): Promise<{
+    metered: boolean;
+    tool_id: string;
+    agent_id: string;
+    cost_microcents: number;
+    cost_cents: number;
+    status: string;
+    timestamp: string;
+    receipt: { receipt_id: string; signature: string; verify_url: string };
+  }> {
     return this.client.request("POST", "/api/v1/bazaar/meter", payload);
+  }
+}
+
+class ReceiptsAPI {
+  constructor(private client: Bazaar) {}
+
+  /** Get a stored receipt (no auth required) */
+  async get(receiptId: string): Promise<ReceiptVerification> {
+    return this.client.request(
+      "GET",
+      `/api/v1/bazaar/receipts/${encodeURIComponent(receiptId)}`,
+      undefined,
+      { noAuth: true },
+    );
+  }
+
+  /** Verify a signed receipt envelope (no auth required) */
+  async verify(receipt: Receipt): Promise<ReceiptVerification> {
+    return this.client.request("POST", "/api/v1/verify", { receipt }, { noAuth: true });
   }
 }
 
