@@ -14,7 +14,13 @@ Source: `src/app/api/bazaar/proxy/route.ts`.
 
 `POST /api/bazaar/proxy` requires an authenticated consumer. The request body is `{tool_id|tool_name, input}`: provide `tool_id` or `tool_name`, plus `input`. If both identifiers are supplied, `tool_id` takes precedence. The route forwards `input` as the tool arguments.
 
-The success response is `{result, meta:{tool, provider, cost_cents, cost, latency_ms, remaining_balance_cents}}`. `result` is `mcpResponse.result || mcpResponse`; `tool` is the tool name and `provider` is the provider name. `cost_cents` is the actual cost; `cost` is `"Free"` for zero, otherwise `$` followed by `(actualCost / 100).toFixed(4)`. `latency_ms` is elapsed time, and `remaining_balance_cents` is `(owner.balance_cents ?? 0) - actualCost`.
+The success response is `{result, meta:{tool, provider, cost_cents, cost, latency_ms, remaining_balance_cents, receipt, receipt_persisted}}`. `result` is `mcpResponse.result || mcpResponse`; `tool` is the tool name and `provider` is the provider name. `cost_cents` is the actual cost; `cost` is `"Free"` for zero, otherwise `$` followed by `(actualCost / 100).toFixed(4)`. `latency_ms` is elapsed time, and `remaining_balance_cents` is the balance returned by the debit (`bazaar_debit_balance`), or `(owner.balance_cents ?? 0) - actualCost` on the read-modify-write fallback.
+
+`meta.receipt` is the signed receipt for this call (SS3 shape, `cost_microcents = cost_cents * 10_000`, `verify_url: "https://noui.bot/verify"`), persisted in `bazaar_receipts` before the response is sent; free calls carry a receipt with `cost_microcents: 0`. If the receipt could not be persisted the call still returns 200 (the upstream call already ran and was billed), with `meta.receipt: null`, `meta.receipt_persisted: false`, and `metadata.receipt_error` in the usage log. There is no silent success.
+
+**Idempotency.** An optional `Idempotency-Key` header (1-128 characters) makes the billed call replay-safe. The same key with the same request body returns the stored response byte-for-byte with the header `X-Bazaar-Idempotent-Replay: true`, makes no upstream call, and does not debit again. The same key with a different body returns 409 `IDEMPOTENCY_MISMATCH` without an upstream call. Only 2xx responses are stored, so a failed upstream call may be retried with the same key. Keys are scoped per consumer and stored in `bazaar_idempotency_keys` (`sql/008_proxy_receipts_idempotency.sql`).
+
+**Debit.** The balance is debited after a successful upstream call through `bazaar_debit_balance(p_consumer, p_cents)`, a conditional `UPDATE … WHERE balance_cents >= p_cents`, so concurrent calls cannot overdraw: a call whose debit is refused returns 402 `INSUFFICIENT_FUNDS` and logs `insufficient_funds`. When the function has not been applied yet the route falls back to the earlier read-modify-write and tags the usage log `metadata.atomic_debit: false`.
 
 Success responses and upstream failure responses carry these headers:
 
@@ -25,18 +31,22 @@ Success responses and upstream failure responses carry these headers:
 | `X-Bazaar-Latency` | `String(latencyMs)` |
 | `X-Bazaar-Tool` | `tool.tool_name` |
 | `X-Bazaar-Retried` | `"true"`, present only after a retry |
+| `X-Bazaar-Receipt` | `receipt.receipt_id`, present only on success with a persisted receipt |
+| `X-Bazaar-Idempotent-Replay` | `"true"`, present only when the response was replayed from the `Idempotency-Key` store |
 
 Errors use `{error:true, code, message, ...}`:
 
 | Code | HTTP status | Condition and additional fields |
 | --- | --- | --- |
 | `UNAUTHORIZED` | 401 | Missing, invalid, or non-consumer key; `docs: "https://noui.bot/docs/bazaar"` |
-| `BAD_REQUEST` | 400 | Invalid JSON |
+| `BAD_REQUEST` | 400 | Invalid JSON, or an `Idempotency-Key` that is empty or longer than 128 characters |
 | `VALIDATION_ERROR` | 422 | Missing tool identifier or `input` |
 | `RATE_LIMITED` | 429 | Consumer rate limit exceeded; `retry_after_seconds: 60`, header `Retry-After: 60` |
 | `NOT_FOUND` | 404 | Tool not found or inactive |
 | `UNAVAILABLE` | 503 | Provider inactive |
-| `INSUFFICIENT_FUNDS` | 402 | Balance below positive price; `cost_cents`, `balance_cents` |
+| `INSUFFICIENT_FUNDS` | 402 | Balance below positive price (checked before the call and again by the atomic debit); `cost_cents`, `balance_cents` |
+| `IDEMPOTENCY_MISMATCH` | 409 | `Idempotency-Key` reused with a different request body; no upstream call |
+| `RECEIPT_SIGNING_UNAVAILABLE` | 503 | `NODE_ENV=production`, `RECEIPT_SIGNING_ENFORCE=true` and no `RECEIPT_SIGNING_SECRET`; returned before any upstream call, nothing billed |
 | `PROXY_TIMEOUT` | 504 | Provider timeout; `tool`, `provider`, `latency_ms`, `cost_cents` |
 | `PROVIDER_ERROR` | 502 | Upstream failure, invalid JSON, or other call error; `tool`, `provider`, `latency_ms`, `cost_cents` |
 
