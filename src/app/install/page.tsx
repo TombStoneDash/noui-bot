@@ -160,21 +160,37 @@ asyncio.run(main())`,
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState(false);
 
-  const copy = useCallback(() => {
-    navigator.clipboard.writeText(text).then(() => {
+  const copy = useCallback(async () => {
+    try {
+      if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+        throw new Error("Clipboard unavailable");
+      }
+      await navigator.clipboard.writeText(text);
+      setError(false);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    } catch {
+      setCopied(false);
+      setError(true);
+    }
   }, [text]);
 
   return (
-    <button
-      onClick={copy}
-      className="absolute top-3 right-3 px-2.5 py-1 bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] hover:border-white/[0.2] rounded text-[11px] font-mono text-white/50 hover:text-white/80 transition-all cursor-pointer"
-    >
-      {copied ? "✓ Copied" : "Copy"}
-    </button>
+    <>
+      <button
+        onClick={copy}
+        className="absolute top-3 right-3 px-2.5 py-1 bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] hover:border-white/[0.2] rounded text-[11px] font-mono text-white/50 hover:text-white/80 transition-all cursor-pointer"
+      >
+        {copied ? "✓ Copied" : "Copy"}
+      </button>
+      {error && (
+        <p role="alert" className="mt-2 text-xs font-mono text-red-300">
+          Copy failed. Select and copy the visible snippet manually.
+        </p>
+      )}
+    </>
   );
 }
 
