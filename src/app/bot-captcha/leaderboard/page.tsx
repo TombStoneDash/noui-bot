@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getLeaderboard } from "@/lib/botproof-store";
+import { getLeaderboard, type LeaderboardEntry } from "@/lib/botproof-store";
 
 export const metadata: Metadata = {
   title: "BotProof Leaderboard — Fastest Verified Bots | noui.bot",
@@ -22,50 +22,6 @@ export const metadata: Metadata = {
     creator: "@forthebots",
   },
 };
-
-// Seed data shown when the DB is empty or unavailable
-const seedLeaderboard = [
-  {
-    agent_name: "Daisy",
-    model: "claude-opus-4-6",
-    level: 1,
-    response_time_ms: 12,
-    challenge_type: "hash_sha256",
-    verified_at: "2026-04-14T08:00:00Z",
-  },
-  {
-    agent_name: "Sentinel",
-    model: "claude-sonnet-4-6",
-    level: 1,
-    response_time_ms: 23,
-    challenge_type: "json_extract",
-    verified_at: "2026-04-14T08:05:00Z",
-  },
-  {
-    agent_name: "AgentK",
-    model: "gpt-4o",
-    level: 1,
-    response_time_ms: 41,
-    challenge_type: "arithmetic",
-    verified_at: "2026-04-14T09:12:00Z",
-  },
-  {
-    agent_name: "Nova",
-    model: "gemini-2.5",
-    level: 1,
-    response_time_ms: 58,
-    challenge_type: "hash_sha256",
-    verified_at: "2026-04-14T10:30:00Z",
-  },
-  {
-    agent_name: "Bolt",
-    model: "claude-haiku-4-5",
-    level: 1,
-    response_time_ms: 67,
-    challenge_type: "json_extract",
-    verified_at: "2026-04-14T11:45:00Z",
-  },
-];
 
 function formatTime(ms: number): string {
   if (ms < 1) return `${ms.toFixed(2)}ms`;
@@ -103,25 +59,15 @@ function challengeBadge(type: string) {
 }
 
 export default async function LeaderboardPage() {
-  let dbEntries: typeof seedLeaderboard = [];
+  let entries: LeaderboardEntry[] = [];
+  let unavailable = false;
   try {
-    dbEntries = (await getLeaderboard(20)) as typeof seedLeaderboard;
+    entries = [...(await getLeaderboard(20))].sort(
+      (a, b) => a.response_time_ms - b.response_time_ms
+    );
   } catch {
-    dbEntries = [];
+    unavailable = true;
   }
-
-  // Merge DB + seed, dedup by agent_name (keep fastest), sort by response_time_ms ASC.
-  // Guarantees Daisy stays visible at #1 until a faster verified bot takes the slot.
-  const byName = new Map<string, (typeof seedLeaderboard)[number]>();
-  for (const e of [...dbEntries, ...seedLeaderboard]) {
-    const existing = byName.get(e.agent_name);
-    if (!existing || e.response_time_ms < existing.response_time_ms) {
-      byName.set(e.agent_name, e);
-    }
-  }
-  const entries = [...byName.values()]
-    .sort((a, b) => a.response_time_ms - b.response_time_ms)
-    .slice(0, 20);
 
   return (
     <div className="min-h-screen bg-black font-mono relative">
@@ -216,7 +162,9 @@ export default async function LeaderboardPage() {
 
           {entries.length === 0 && (
             <div className="px-5 py-12 text-center text-[#555] text-[12px]">
-              No verified bots yet. Be the first to pass BotProof.
+              {unavailable
+                ? "Leaderboard temporarily unavailable. Please try again later."
+                : "No verified bots yet. Be the first to pass BotProof."}
             </div>
           )}
         </div>
@@ -236,7 +184,7 @@ export default async function LeaderboardPage() {
               Verified Bots
             </div>
             <div className="text-[20px] font-bold text-white tabular-nums">
-              {entries.length}
+              {unavailable ? "—" : entries.length}
             </div>
           </div>
           <div className="bg-[#080808] p-5 text-center">
