@@ -148,17 +148,26 @@ export interface MeterPayload {
 export interface Receipt {
   receipt_id: string;
   tool_id: string;
-  tool_name?: string;
+  tool_name?: string | null;
   agent_id: string;
   provider_id: string;
   timestamp: string;
-  duration_ms?: number;
+  duration_ms?: number | null;
   cost_microcents: number;
   status: string;
   input_hash?: string;
   output_hash?: string;
   signature: string;
-  verify_url: string;
+}
+
+/** Stored receipt lookup has a smaller verification summary than POST /verify. */
+export interface ReceiptLookup {
+  receipt: Receipt & { created_at: string };
+  verification: {
+    valid: boolean;
+    algorithm: "HMAC-SHA256";
+    verified_at: string;
+  };
 }
 
 export interface ReceiptVerification {
@@ -445,7 +454,7 @@ class ReceiptsAPI {
   constructor(private client: Bazaar) {}
 
   /** Get a stored receipt (no auth required) */
-  async get(receiptId: string): Promise<ReceiptVerification> {
+  async get(receiptId: string): Promise<ReceiptLookup> {
     return this.client.request(
       "GET",
       `/api/v1/bazaar/receipts/${encodeURIComponent(receiptId)}`,
