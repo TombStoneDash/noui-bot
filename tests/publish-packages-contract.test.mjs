@@ -8,17 +8,21 @@ const factoryPackage = JSON.parse(
   readFileSync('packages/noui-factory/package.json', 'utf8'),
 );
 
-test('SDK publication stays manual while its validation and factory publication remain', () => {
+test('SDK publication follows successful validation and preserves factory publication', () => {
   const publishStart = workflow.indexOf('\n  publish:\n');
   const testStart = workflow.indexOf('\n  test:\n');
   assert.ok(publishStart >= 0 && testStart > publishStart);
   const publishJob = workflow.slice(publishStart, testStart);
   const testJob = workflow.slice(testStart);
-  assert.doesNotMatch(publishJob, /bazaar-sdk/, 'no SDK steps may run in the automated publish job');
+  assert.match(publishJob, /needs: test/, 'publication waits for validation');
+  assert.match(publishJob, /Publish bazaar-sdk \(if version changed\)/);
   assert.match(publishJob, /Publish noui-factory \(if version changed\)/);
   assert.match(testJob, /working-directory: packages\/bazaar-sdk/);
   assert.match(testJob, /npm run build/);
   assert.match(testJob, /npm run typecheck/);
+  const sdkValidation = workflowStep('Test bazaar-sdk');
+  assert.match(sdkValidation, /npm test/);
+  assert.doesNotMatch(sdkValidation, /\|\| true|continue-on-error/);
   assert.doesNotMatch(testJob, /npm\s+(?:publish|view)\b/, 'validation must never contact the package registry to publish or inspect versions');
 });
 
@@ -44,13 +48,16 @@ test('factory publish guard queries the package declared by its manifest', () =>
 
 // Execute the actual workflow shell, replacing only npm's network operations.
 // node still reads the real package manifest from the workflow's directory.
+for (const packageDir of ['noui-factory', 'bazaar-sdk']) {
+const manifest = JSON.parse(readFileSync(`packages/${packageDir}/package.json`, 'utf8'));
 for (const scenario of [
-  { name: 'skips an already published version', version: factoryPackage.version, publishes: false },
+  { name: 'skips an already published version', version: manifest.version, publishes: false },
   { name: 'publishes a changed version', version: '0.0.0', publishes: true },
   { name: 'preserves the first-publication fallback', version: '', publishes: true, queryFails: true },
 ]) {
-  test(`factory publish guard ${scenario.name}`, () => {
-    const step = workflowStep('Publish noui-factory (if version changed)');
+  test(`${packageDir} publish guard ${scenario.name}`, () => {
+    const step = workflowStep(`Publish ${packageDir} (if version changed)`);
+    assert.ok(step.includes(`npm view ${manifest.name} version`));
     const run = step.match(/        run: \|\n((?:          .*\n)+)/);
     assert.ok(run, 'publish step must contain a shell script');
     const script = run[1].replace(/^          /gm, '');
@@ -68,7 +75,7 @@ for (const scenario of [
       }
       ${script}
     `], {
-      cwd: new URL('../packages/noui-factory/', import.meta.url),
+      cwd: new URL(`../packages/${packageDir}/`, import.meta.url),
       env: {
         ...process.env,
         PUBLISHED_VERSION: scenario.version,
@@ -85,4 +92,5 @@ for (const scenario of [
       assert.match(result.stdout, /version unchanged .* skipping/);
     }
   });
+}
 }
