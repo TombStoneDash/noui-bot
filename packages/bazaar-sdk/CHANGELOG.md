@@ -6,7 +6,7 @@
 ### Added
 - Added `client.receipts` lookup and public verification APIs
 ### Release procedure
-- Hudson runs `npm run build` and `npm publish` from packages/bazaar-sdk on his machine; no automation publishes this package.
+- After review and merge to main, the Publish Packages workflow validates the SDK and publishes a changed version to npm. An already published version is skipped.
 
 ## [0.1.2] - 2026-03-01
 - version bump only

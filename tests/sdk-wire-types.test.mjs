@@ -42,7 +42,7 @@ test('receipt APIs use the public wire endpoints', () => {
 test('changelog records the 0.1.3 release and 0.1.2 version bump', () => {
   assert.match(changelog, /## \[0\.1\.3\]/);
   assert.match(changelog, /## \[0\.1\.2\]/);
-  assert.match(changelog, /Hudson runs/);
+  assert.match(changelog, /After review and merge to main/);
 });
 
 test('package version changes without changing dev dependencies', () => {
