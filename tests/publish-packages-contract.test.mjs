@@ -35,6 +35,18 @@ function workflowStep(name) {
   return workflow.slice(start, nextStep === -1 ? undefined : nextStep);
 }
 
+test('SDK uses repository-bound OIDC while factory keeps its existing token route', () => {
+  assert.match(workflow, /id-token: write/);
+  assert.match(workflowStep('Set up SDK trusted publishing runtime'), /node-version: '22'/);
+  assert.match(workflowStep('Install OIDC-capable npm for SDK publishing'), /npm install --global npm@11/);
+  const sdkPublish = workflowStep('Publish bazaar-sdk (if version changed)');
+  assert.doesNotMatch(sdkPublish, /NODE_AUTH_TOKEN|secrets\.NPM_TOKEN/);
+  assert.match(workflowStep('Restore factory publishing runtime'), /node-version: '20'/);
+  assert.match(workflowStep('Publish noui-factory (if version changed)'), /NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_TOKEN \}\}/);
+  assert.ok(workflow.indexOf('Restore factory publishing runtime') > workflow.indexOf('Publish bazaar-sdk (if version changed)'));
+  assert.ok(workflow.indexOf('Restore factory publishing runtime') < workflow.indexOf('Install dependencies (noui-factory)'));
+});
+
 test('factory publish guard queries the package declared by its manifest', () => {
   const step = workflowStep('Publish noui-factory (if version changed)');
   const queries = [...step.matchAll(/npm view ([^\s]+) version/g)];
