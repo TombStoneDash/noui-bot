@@ -1,0 +1,8 @@
+{
+  "slug": "feedback-input-validation",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Reject malformed agent feedback without hiding storage failures",
+  "prompt": "Evidence: src/app/api/v1/feedback/route.ts:13-16 assumes walls and needs have length properties and message has trim(); lines 28-30 pass the unvalidated values to the database. For a JSON body such as {\"message\":42}, trim throws, and the catch at lines 60-63 labels every failure BAD_REQUEST, including a database outage. The GET schema at lines 73-80 says these fields are strings or string arrays. A client can therefore receive an unhelpful response, while valid feedback may appear to be the user's fault when storage fails.\n\nChange only src/app/api/v1/feedback/route.ts among production files. Validate that the body is an object, that walls and needs are arrays of strings when supplied, and that message is a string when supplied. Preserve the existing requirement for at least one nonempty feedback field. Return a client validation response for malformed JSON or invalid fields, and a server error for failed persistence, without exposing database details. Add tests/feedback-validation.test.mjs covering malformed types, empty content, valid content, and a mocked database rejection. Run node --test tests/feedback-validation.test.mjs and npm test. Work on the assigned branch you are on."
+}

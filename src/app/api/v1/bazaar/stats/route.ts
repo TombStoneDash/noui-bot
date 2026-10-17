@@ -21,9 +21,16 @@ export async function GET() {
       .eq("status", "success");
 
     // Unique consumers (agents)
-    const { data: consumers } = await sb
+    const { count: consumerCount, error: consumerError } = await sb
       .from("bazaar_consumers")
       .select("id", { count: "exact", head: true });
+
+    if (consumerError) {
+      return NextResponse.json(
+        { error: true, message: "Statistics temporarily unavailable" },
+        { status: 503 }
+      );
+    }
 
     // Unique tools
     const { data: tools } = await sb
@@ -73,7 +80,7 @@ export async function GET() {
     return NextResponse.json({
       total_tool_invocations: totalInvocations || 0,
       successful_calls: successfulCalls || 0,
-      unique_agents: consumers?.length || 0,
+      unique_agents: consumerCount ?? 0,
       unique_tools: tools?.length || 0,
       tools_listed: tools?.length || 0,
       providers: providers?.length || 0,

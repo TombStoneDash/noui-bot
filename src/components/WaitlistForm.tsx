@@ -25,7 +25,10 @@ export function WaitlistForm() {
         setEmail("");
       } else {
         setStatus("error");
-        setMessage(data.error || "Something went wrong.");
+        const errorMessage = [data?.message, data?.error].find(
+          (value): value is string => typeof value === "string" && value.trim().length > 0,
+        );
+        setMessage(errorMessage ?? "Something went wrong.");
       }
     } catch {
       setStatus("error");

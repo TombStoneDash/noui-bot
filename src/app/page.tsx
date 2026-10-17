@@ -80,7 +80,7 @@ export default function Home() {
               Browse Providers
             </a>
             <a
-              href="/docs/bazaar"
+              href="/docs/guides/bill-an-mcp-tool"
               className="font-mono text-sm px-6 py-3 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"
             >
               Read the Docs
@@ -437,7 +437,7 @@ export default function Home() {
       <Divider />
 
       {/* Email Capture */}
-      <section className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
+      <section id="waitlist" className="px-6 md:px-16 lg:px-24 py-24 max-w-5xl">
         <AnimatedSection>
           <h2 className="font-mono text-lg text-white/40 mb-8 tracking-wider uppercase">
             Stay Updated

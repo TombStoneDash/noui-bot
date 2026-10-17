@@ -110,9 +110,20 @@ const bazaar = new Bazaar({ apiKey: 'bz_your_provider_key' });
 await bazaar.meter.record({
   tool_name: 'my_tool',
   duration_ms: 150,
-  tokens_used: 500,
-  success: true,
+  input_tokens: 350,
+  output_tokens: 150,
+  status: 'success',
 });
+```
+
+## Receipts and verification
+
+Metering returns a signed receipt summary. Retrieve a stored receipt by ID or verify a signed receipt envelope without authentication:
+
+```typescript
+const receipt = await bazaar.receipts.get('rcpt_0123456789abcdef');
+const result = await bazaar.receipts.verify(receipt.receipt);
+console.log(result.verification.valid);
 ```
 
 ## API Reference

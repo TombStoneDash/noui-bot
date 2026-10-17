@@ -1,0 +1,8 @@
+{
+  "slug": "leaderboard-api-real-results",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Return only recorded verifications from the BotProof leaderboard API",
+  "prompt": "Evidence: src/app/api/v1/bot-captcha/leaderboard/route.ts:4-46 defines five seed agents with fixed times. The handler at lines 62-81 substitutes those agents when the database fails and merges them into every successful response. The public response at lines 83-89 therefore reports invented verified agents as API data. An agent reading this endpoint cannot tell whether any bot actually completed a challenge. This is separately visible from the leaderboard web page, which has its own seed list.\n\nChange only src/app/api/v1/bot-captcha/leaderboard/route.ts among production files. Return getLeaderboard records only, respecting a validated integer limit within the current 1-50 range. Return an empty entries array for an empty successful query and an explicit unavailable server response when the store fails, without leaking internals. Keep existing rate limiting and cache behavior for successful results. Add tests/botproof-leaderboard-api.test.mjs with mocked store results for empty data, real records, invalid limits, rate limiting, and store rejection. Run node --test tests/botproof-leaderboard-api.test.mjs and npm test. Work on the assigned branch you are on."
+}

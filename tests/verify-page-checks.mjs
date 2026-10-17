@@ -25,10 +25,12 @@ export async function testVerifyPage(t, baseUrl) {
       let finish;
       const finished = new Promise((resolve) => { finish = resolve; });
       const requests = [];
+      const attemptRef = { current: 0 };
       const modules = {
         "react/jsx-runtime": jsxRuntime,
         "next/link": { default: "a" },
         react: {
+          useRef() { return attemptRef; },
           useState(initial) {
             const index = cursor++;
             if (!(index in state)) state[index] = initial;
@@ -43,6 +45,9 @@ export async function testVerifyPage(t, baseUrl) {
       };
       const context = vm.createContext({
         exports: {},
+        AbortController,
+        setTimeout,
+        clearTimeout,
         require(name) {
           assert.ok(name in modules, `Unexpected page import: ${name}`);
           return modules[name];

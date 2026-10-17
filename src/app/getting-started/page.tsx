@@ -28,11 +28,19 @@ function Step({
 }
 
 function CopyBlock({ code, label }: { code: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-  function copy() {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
+  async function copy() {
+    setCopyStatus("idle");
+    try {
+      if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+        throw new Error("Clipboard unavailable");
+      }
+      await navigator.clipboard.writeText(code);
+      setCopyStatus("copied");
+      setTimeout(() => setCopyStatus("idle"), 2000);
+    } catch {
+      setCopyStatus("error");
+    }
   }
   return (
     <div>
@@ -49,9 +57,14 @@ function CopyBlock({ code, label }: { code: string; label?: string }) {
           onClick={copy}
           className="absolute top-2 right-2 font-mono text-[10px] text-white/30 hover:text-white/60 transition-colors bg-black/50 px-2 py-1 rounded"
         >
-          {copied ? "Copied!" : "Copy"}
+          {copyStatus === "copied" ? "Copied!" : "Copy"}
         </button>
       </div>
+      {copyStatus === "error" && (
+        <p role="alert" className="mt-1 font-mono text-xs text-red-400">
+          Copy failed. Select the snippet manually.
+        </p>
+      )}
     </div>
   );
 }

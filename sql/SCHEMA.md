@@ -47,6 +47,14 @@ Monthly payout rollups for providers.
 - Gross revenue → platform fee → net payout
 - Stripe Connect transfer integration
 
+### `bazaar_idempotency_keys` (008, additive)
+Stored proxy responses keyed by `(consumer_id, key)` for the `Idempotency-Key` header on `POST /api/bazaar/proxy`.
+- `response` JSONB holds `{body_hash, status, body, headers}`; `receipt_id` links the stored receipt
+- Index on `created_at` for a later purge job (24 h TTL is a follow-up)
+
+### `bazaar_debit_balance(p_consumer uuid, p_cents integer) returns integer` (008, additive)
+Conditional `UPDATE … WHERE balance_cents >= p_cents RETURNING balance_cents`. `NULL` means insufficient funds. The proxy falls back to read-modify-write and tags `metadata.atomic_debit=false` when the function is absent.
+
 ## Relationships
 ```
 bazaar_providers 1──N bazaar_tools
