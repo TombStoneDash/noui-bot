@@ -17,10 +17,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: actions/setup-node@v4
+      - name: Set up SDK trusted publishing runtime
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Install OIDC-capable npm for SDK publishing
+        run: npm install --global npm@11
       
       - name: Install dependencies (bazaar-sdk)
         working-directory: packages/bazaar-sdk
@@ -40,8 +44,13 @@ jobs:
           else
             echo "bazaar-sdk version unchanged ($LOCAL), skipping"
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Keep the separate factory package on its existing runtime and token route.
+      - name: Restore factory publishing runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies (noui-factory)
         working-directory: packages/noui-factory
