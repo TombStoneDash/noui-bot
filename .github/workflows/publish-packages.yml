@@ -21,27 +21,6 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
       
-      - name: Install dependencies (bazaar-sdk)
-        working-directory: packages/bazaar-sdk
-        run: npm ci --ignore-scripts || npm install
-      
-      - name: Build bazaar-sdk
-        working-directory: packages/bazaar-sdk
-        run: npm run build
-      
-      - name: Publish bazaar-sdk (if version changed)
-        working-directory: packages/bazaar-sdk
-        run: |
-          CURRENT=$(npm view @forthebots/bazaar-sdk version 2>/dev/null || echo "0.0.0")
-          LOCAL=$(node -p "require('./package.json').version")
-          if [ "$CURRENT" != "$LOCAL" ]; then
-            npm publish --provenance --access public
-          else
-            echo "bazaar-sdk version unchanged ($LOCAL), skipping"
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
       - name: Install dependencies (noui-factory)
         working-directory: packages/noui-factory
         run: npm ci --ignore-scripts || npm install

@@ -8,6 +8,20 @@ const factoryPackage = JSON.parse(
   readFileSync('packages/noui-factory/package.json', 'utf8'),
 );
 
+test('SDK publication stays manual while its validation and factory publication remain', () => {
+  const publishStart = workflow.indexOf('\n  publish:\n');
+  const testStart = workflow.indexOf('\n  test:\n');
+  assert.ok(publishStart >= 0 && testStart > publishStart);
+  const publishJob = workflow.slice(publishStart, testStart);
+  const testJob = workflow.slice(testStart);
+  assert.doesNotMatch(publishJob, /bazaar-sdk/, 'no SDK steps may run in the automated publish job');
+  assert.match(publishJob, /Publish noui-factory \(if version changed\)/);
+  assert.match(testJob, /working-directory: packages\/bazaar-sdk/);
+  assert.match(testJob, /npm run build/);
+  assert.match(testJob, /npm run typecheck/);
+  assert.doesNotMatch(testJob, /npm\s+(?:publish|view)\b/, 'validation must never contact the package registry to publish or inspect versions');
+});
+
 function workflowStep(name) {
   const marker = `      - name: ${name}`;
   const start = workflow.indexOf(marker);
