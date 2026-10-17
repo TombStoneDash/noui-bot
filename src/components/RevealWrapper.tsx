@@ -77,6 +77,7 @@ export function RevealWrapper({ children }: { children: ReactNode }) {
         ref={humanRef}
         className={revealed ? "" : "max-h-0 overflow-hidden"}
         aria-hidden={!revealed}
+        inert={!revealed}
       >
         {revealed ? (
           <motion.div

@@ -1,8 +1,61 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Bazaar, BazaarError } from "./index";
+import { Bazaar, BazaarError, type Receipt, type ReceiptLookup, type ReceiptVerification } from "./index";
 
 type FetchCall = { url: string; init: RequestInit | undefined };
+
+// Matches the stored-receipt GET route: nullable metadata, no verify_url,
+// and a top-level algorithm rather than the POST route's checked object.
+const storedReceipt: ReceiptLookup = {
+  receipt: {
+    receipt_id: "rcpt_0123456789abcdef", tool_id: "tool-1", tool_name: null,
+    agent_id: "agent-1", provider_id: "provider-1", timestamp: "2026-10-16T00:00:00Z",
+    duration_ms: null, cost_microcents: 0, status: "success",
+    signature: "0".repeat(64), created_at: "2026-10-16T00:00:00Z",
+  },
+  verification: { valid: true, algorithm: "HMAC-SHA256", verified_at: "2026-10-16T00:00:01Z" },
+};
+
+test("receipt lookup uses its actual wire shape, encodes the ID and sends no credentials", async () => {
+  const calls: FetchCall[] = [];
+  const client = new Bazaar({
+    apiKey: "test-key-must-not-be-sent",
+    fetch: fakeFetch(calls, () => ({ ok: true, status: 200, json: storedReceipt })),
+  });
+  const result = await client.receipts.get("receipt/with?reserved#characters");
+  assert.deepEqual(result, storedReceipt);
+  assert.equal(result.verification.algorithm, "HMAC-SHA256");
+  // @ts-expect-error Only POST /verify returns a checked object.
+  assert.equal(result.verification.checked, undefined);
+  assert.equal(calls[0].url, "https://noui.bot/api/v1/bazaar/receipts/receipt%2Fwith%3Freserved%23characters");
+  assert.equal(calls[0].init?.method, "GET");
+  assert.equal((calls[0].init?.headers as Record<string, string>).Authorization, undefined);
+});
+
+test("public verification accepts a looked-up receipt without a verify_url", async () => {
+  const calls: FetchCall[] = [];
+  const receipt: Receipt = storedReceipt.receipt;
+  const response: ReceiptVerification = {
+    receipt,
+    verification: {
+      valid: true, reason: "ok", checked: { canonical: "fixture", algorithm: "HMAC-SHA256" },
+      verified_at: "2026-10-16T00:00:01Z",
+    },
+  };
+  const client = new Bazaar({
+    apiKey: "test-key-must-not-be-sent",
+    fetch: fakeFetch(calls, () => ({ ok: true, status: 200, json: response })),
+  });
+  const result = await client.receipts.verify(receipt);
+  assert.deepEqual(result, response);
+  assert.equal(result.verification.checked.algorithm, "HMAC-SHA256");
+  // @ts-expect-error Only GET lookup returns the top-level algorithm.
+  assert.equal(result.verification.algorithm, undefined);
+  assert.equal(calls[0].url, "https://noui.bot/api/v1/verify");
+  assert.equal(calls[0].init?.method, "POST");
+  assert.deepEqual(JSON.parse(calls[0].init?.body as string), { receipt });
+  assert.equal((calls[0].init?.headers as Record<string, string>).Authorization, undefined);
+});
 
 function fakeFetch(calls: FetchCall[], respond: (call: FetchCall) => { ok: boolean; status: number; json: unknown }) {
   return (async (url: string, init?: RequestInit) => {

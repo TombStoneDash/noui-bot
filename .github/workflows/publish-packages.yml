@@ -9,6 +9,7 @@ on:
 
 jobs:
   publish:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -16,19 +17,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - uses: actions/setup-node@v4
+      - name: Set up SDK trusted publishing runtime
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Install OIDC-capable npm for SDK publishing
+        run: npm install --global npm@11
       
       - name: Install dependencies (bazaar-sdk)
         working-directory: packages/bazaar-sdk
         run: npm ci --ignore-scripts || npm install
-      
+
       - name: Build bazaar-sdk
         working-directory: packages/bazaar-sdk
         run: npm run build
-      
+
       - name: Publish bazaar-sdk (if version changed)
         working-directory: packages/bazaar-sdk
         run: |
@@ -39,9 +44,14 @@ jobs:
           else
             echo "bazaar-sdk version unchanged ($LOCAL), skipping"
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
+
+      # Keep the separate factory package on its existing runtime and token route.
+      - name: Restore factory publishing runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
       - name: Install dependencies (noui-factory)
         working-directory: packages/noui-factory
         run: npm ci --ignore-scripts || npm install
@@ -83,7 +93,8 @@ jobs:
         run: |
           npm install
           npm run build
-          npm run typecheck || true
+          npm run typecheck
+          npm test
       
       - name: Test noui-factory
         working-directory: packages/noui-factory

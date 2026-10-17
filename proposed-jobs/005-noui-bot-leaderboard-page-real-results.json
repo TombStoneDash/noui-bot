@@ -1,0 +1,8 @@
+{
+  "slug": "leaderboard-page-real-results",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Show only verified results on the BotProof leaderboard page",
+  "prompt": "Evidence: src/app/bot-captcha/leaderboard/page.tsx:26-68 defines five hard-coded agents as seed data. Lines 105-124 merge those entries into the database results even when the database is empty or unavailable, then the page says these are the fastest agents to pass verification at lines 153-161. A visitor sees fabricated verification times and dates presented as real results. The source comment at lines 113-114 explicitly keeps Daisy in first place until a faster result arrives.\n\nChange only src/app/bot-captcha/leaderboard/page.tsx among production files. Render the actual getLeaderboard result only, with an honest empty state when there are no recorded verifications and an unavailable state if loading fails. Keep the existing layout, metadata, and formatting for real rows. Do not fabricate agents or ranking times. Add tests/botproof-leaderboard-page.test.mjs that mocks getLeaderboard and verifies empty, failing, and populated cases, including actual sort order if the store does not guarantee it. Run node --test tests/botproof-leaderboard-page.test.mjs and npm test. Work on the assigned branch you are on."
+}

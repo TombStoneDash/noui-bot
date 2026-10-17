@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { authenticateKey } from "@/lib/bazaar-auth";
+import { requireSigningSecret } from "@/lib/receipts";
+import {
+  IDEMPOTENCY_KEY_MAX_LENGTH,
+  debitAtomic,
+  hashIdempotencyBody,
+  persistProxyReceipt,
+  withIdempotency,
+  type ProxyReceipt,
+  type StoredIdempotentResponse,
+} from "@/lib/proxy-billing";
 
 export async function POST(request: Request) {
   // 1. Authenticate consumer
@@ -31,6 +41,15 @@ export async function POST(request: Request) {
   }
 
   const requestSizeBytes = new TextEncoder().encode(rawBody).length;
+
+  // 2a. Idempotency-Key (optional). Same key + same body replays the stored response.
+  const idempotencyKey = request.headers.get("idempotency-key");
+  if (idempotencyKey !== null && (idempotencyKey.length === 0 || idempotencyKey.length > IDEMPOTENCY_KEY_MAX_LENGTH)) {
+    return NextResponse.json(
+      { error: true, code: "BAD_REQUEST", message: `Idempotency-Key must be 1-${IDEMPOTENCY_KEY_MAX_LENGTH} characters` },
+      { status: 400 }
+    );
+  }
 
   const toolId = body.tool_id as string;
   const toolName = body.tool_name as string;
@@ -140,6 +159,78 @@ export async function POST(request: Request) {
     );
   }
 
+  // 5b. Receipts are signed on every proxy call; fail closed before any upstream call
+  //     when production has no real signing secret and enforcement is on.
+  try {
+    requireSigningSecret();
+  } catch {
+    return NextResponse.json(
+      {
+        error: true,
+        code: "RECEIPT_SIGNING_UNAVAILABLE",
+        message: "Receipt signing is not configured; the call was not forwarded and nothing was billed",
+      },
+      { status: 503 }
+    );
+  }
+
+  // 5c. Idempotency lookup (only when the header is present), then the billed call.
+  const bodyHash = hashIdempotencyBody(body);
+  const outcome = await withIdempotency(sb, owner.id, idempotencyKey, bodyHash, () =>
+    executeProxyCall({
+      sb,
+      owner,
+      tool,
+      provider,
+      input,
+      priceCents,
+      pricingModel,
+      requestSizeBytes,
+      startTime,
+      bodyHash,
+      idempotencyKey,
+    })
+  );
+
+  if (outcome.kind === "mismatch") {
+    return NextResponse.json(
+      {
+        error: true,
+        code: "IDEMPOTENCY_MISMATCH",
+        message: "Idempotency-Key was already used with a different request body",
+      },
+      { status: 409 }
+    );
+  }
+
+  const headers: Record<string, string> = { ...outcome.response.headers };
+  if (outcome.kind === "replay") headers["X-Bazaar-Idempotent-Replay"] = "true";
+  return NextResponse.json(outcome.response.body, { status: outcome.response.status, headers });
+}
+
+type ProxyCallParams = {
+  sb: ReturnType<typeof getSupabase>;
+  owner: { id: string; balance_cents?: number | null };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- joined Supabase row, same shape the handler already uses
+  tool: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  provider: any;
+  input: Record<string, unknown>;
+  priceCents: number;
+  pricingModel: string;
+  requestSizeBytes: number;
+  startTime: number;
+  bodyHash: string;
+  idempotencyKey: string | null;
+};
+
+/**
+ * Upstream call -> atomic debit -> signed receipt -> usage log -> tool stats.
+ * Returns a serialisable response so it can be stored under the Idempotency-Key.
+ */
+async function executeProxyCall(params: ProxyCallParams): Promise<{ response: StoredIdempotentResponse; receiptId: string | null }> {
+  const { sb, owner, tool, provider, input, priceCents, pricingModel, requestSizeBytes, startTime, bodyHash, idempotencyKey } = params;
+
   // 6. Forward request to provider's MCP endpoint
   let mcpResponse: any;
   let mcpResponseRaw = "";
@@ -230,17 +321,68 @@ export async function POST(request: Request) {
   const latencyMs = Date.now() - startTime;
   const responseSizeBytes = new TextEncoder().encode(mcpResponseRaw).length;
 
-  // 7. Debit consumer balance (only for successful calls with cost)
+  // 7. Debit consumer balance atomically (only for successful calls with cost).
+  //    The conditional UPDATE refuses when a concurrent call already spent the balance.
   const actualCost = status === "success" ? priceCents : 0;
+  let atomicDebit = true;
+  let remainingBalance = owner.balance_cents ?? 0;
 
   if (actualCost > 0) {
-    await sb
-      .from("bazaar_consumers")
-      .update({
-        balance_cents: (owner.balance_cents ?? 0) - actualCost,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", owner.id);
+    const debit = await debitAtomic(sb, owner.id, actualCost, owner.balance_cents ?? 0);
+    atomicDebit = debit.atomic;
+    if (!debit.ok) {
+      await sb.from("bazaar_usage_logs").insert({
+        consumer_id: owner.id,
+        provider_id: provider.id,
+        tool_id: tool.id,
+        status: "insufficient_funds",
+        cost_cents: 0,
+        latency_ms: latencyMs,
+        request_size_bytes: requestSizeBytes,
+        response_size_bytes: responseSizeBytes,
+        metadata: { pricing_model: pricingModel, atomic_debit: true, debit_refused: true },
+      });
+      return {
+        receiptId: null,
+        response: {
+          body_hash: bodyHash,
+          status: 402,
+          headers: {},
+          body: {
+            error: true,
+            code: "INSUFFICIENT_FUNDS",
+            message: `Insufficient balance. Cost: $${(actualCost / 100).toFixed(4)}, Balance: $${(debit.balance_cents / 100).toFixed(2)}`,
+            cost_cents: actualCost,
+            balance_cents: debit.balance_cents,
+          },
+        },
+      };
+    }
+    remainingBalance = debit.balance_cents;
+  }
+
+  // 7b. Signed receipt for every successful call (cost_microcents = cents * 10,000).
+  //     Persistence failure never turns a completed call into a 500: the response
+  //     says receipt_persisted:false and the usage log records receipt_error.
+  let receipt: ProxyReceipt | null = null;
+  let receiptError: string | null = null;
+  if (status === "success") {
+    try {
+      receipt = await persistProxyReceipt(sb, {
+        toolId: tool.id,
+        toolName: tool.tool_name ?? null,
+        agentId: owner.id,
+        providerId: provider.id,
+        durationMs: latencyMs,
+        costCents: actualCost,
+        status,
+        metadata: { pricing_model: pricingModel, atomic_debit: atomicDebit, ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}) },
+      });
+    } catch (err: unknown) {
+      const message = (err as { message?: unknown } | null)?.message;
+      receiptError = typeof message === "string" && message ? message : "receipt_insert_failed";
+      console.error("[bazaar] proxy receipt persistence failed:", receiptError);
+    }
   }
 
   // 8. Log usage (with data volume tracking)
@@ -254,7 +396,13 @@ export async function POST(request: Request) {
     error_message: errorMessage,
     request_size_bytes: requestSizeBytes,
     response_size_bytes: responseSizeBytes,
-    metadata: { pricing_model: pricingModel },
+    metadata: {
+      pricing_model: pricingModel,
+      atomic_debit: atomicDebit,
+      receipt_id: receipt?.receipt_id ?? null,
+      ...(receiptError ? { receipt_error: receiptError } : {}),
+      ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
+    },
   });
 
   // 9. Update tool stats
@@ -276,35 +424,48 @@ export async function POST(request: Request) {
     "X-Bazaar-Latency": String(latencyMs),
     "X-Bazaar-Tool": tool.tool_name,
     ...(retried ? { "X-Bazaar-Retried": "true" } : {}),
+    ...(receipt ? { "X-Bazaar-Receipt": receipt.receipt_id } : {}),
   };
 
   if (status !== "success") {
-    return NextResponse.json(
-      {
-        error: true,
-        code: status === "timeout" ? "PROXY_TIMEOUT" : "PROVIDER_ERROR",
-        message: errorMessage,
-        tool: tool.tool_name,
-        provider: provider.name,
-        latency_ms: latencyMs,
-        cost_cents: actualCost,
+    return {
+      receiptId: null,
+      response: {
+        body_hash: bodyHash,
+        status: status === "timeout" ? 504 : 502,
+        headers: enrichmentHeaders,
+        body: {
+          error: true,
+          code: status === "timeout" ? "PROXY_TIMEOUT" : "PROVIDER_ERROR",
+          message: errorMessage,
+          tool: tool.tool_name,
+          provider: provider.name,
+          latency_ms: latencyMs,
+          cost_cents: actualCost,
+        },
       },
-      { status: status === "timeout" ? 504 : 502, headers: enrichmentHeaders }
-    );
+    };
   }
 
-  return NextResponse.json(
-    {
-      result: mcpResponse.result || mcpResponse,
-      meta: {
-        tool: tool.tool_name,
-        provider: provider.name,
-        cost_cents: actualCost,
-        cost: actualCost === 0 ? "Free" : `$${(actualCost / 100).toFixed(4)}`,
-        latency_ms: latencyMs,
-        remaining_balance_cents: (owner.balance_cents ?? 0) - actualCost,
+  return {
+    receiptId: receipt?.receipt_id ?? null,
+    response: {
+      body_hash: bodyHash,
+      status: 200,
+      headers: enrichmentHeaders,
+      body: {
+        result: mcpResponse.result || mcpResponse,
+        meta: {
+          tool: tool.tool_name,
+          provider: provider.name,
+          cost_cents: actualCost,
+          cost: actualCost === 0 ? "Free" : `$${(actualCost / 100).toFixed(4)}`,
+          latency_ms: latencyMs,
+          remaining_balance_cents: remainingBalance,
+          receipt,
+          receipt_persisted: receipt !== null,
+        },
       },
     },
-    { headers: enrichmentHeaders }
-  );
+  };
 }

@@ -8,6 +8,24 @@ const factoryPackage = JSON.parse(
   readFileSync('packages/noui-factory/package.json', 'utf8'),
 );
 
+test('SDK publication follows successful validation and preserves factory publication', () => {
+  const publishStart = workflow.indexOf('\n  publish:\n');
+  const testStart = workflow.indexOf('\n  test:\n');
+  assert.ok(publishStart >= 0 && testStart > publishStart);
+  const publishJob = workflow.slice(publishStart, testStart);
+  const testJob = workflow.slice(testStart);
+  assert.match(publishJob, /needs: test/, 'publication waits for validation');
+  assert.match(publishJob, /Publish bazaar-sdk \(if version changed\)/);
+  assert.match(publishJob, /Publish noui-factory \(if version changed\)/);
+  assert.match(testJob, /working-directory: packages\/bazaar-sdk/);
+  assert.match(testJob, /npm run build/);
+  assert.match(testJob, /npm run typecheck/);
+  const sdkValidation = workflowStep('Test bazaar-sdk');
+  assert.match(sdkValidation, /npm test/);
+  assert.doesNotMatch(sdkValidation, /\|\| true|continue-on-error/);
+  assert.doesNotMatch(testJob, /npm\s+(?:publish|view)\b/, 'validation must never contact the package registry to publish or inspect versions');
+});
+
 function workflowStep(name) {
   const marker = `      - name: ${name}`;
   const start = workflow.indexOf(marker);
@@ -16,6 +34,18 @@ function workflowStep(name) {
   const nextStep = workflow.indexOf('\n      - name:', start + marker.length);
   return workflow.slice(start, nextStep === -1 ? undefined : nextStep);
 }
+
+test('SDK uses repository-bound OIDC while factory keeps its existing token route', () => {
+  assert.match(workflow, /id-token: write/);
+  assert.match(workflowStep('Set up SDK trusted publishing runtime'), /node-version: '22'/);
+  assert.match(workflowStep('Install OIDC-capable npm for SDK publishing'), /npm install --global npm@11/);
+  const sdkPublish = workflowStep('Publish bazaar-sdk (if version changed)');
+  assert.doesNotMatch(sdkPublish, /NODE_AUTH_TOKEN|secrets\.NPM_TOKEN/);
+  assert.match(workflowStep('Restore factory publishing runtime'), /node-version: '20'/);
+  assert.match(workflowStep('Publish noui-factory (if version changed)'), /NODE_AUTH_TOKEN: \$\{\{ secrets\.NPM_TOKEN \}\}/);
+  assert.ok(workflow.indexOf('Restore factory publishing runtime') > workflow.indexOf('Publish bazaar-sdk (if version changed)'));
+  assert.ok(workflow.indexOf('Restore factory publishing runtime') < workflow.indexOf('Install dependencies (noui-factory)'));
+});
 
 test('factory publish guard queries the package declared by its manifest', () => {
   const step = workflowStep('Publish noui-factory (if version changed)');
@@ -30,13 +60,16 @@ test('factory publish guard queries the package declared by its manifest', () =>
 
 // Execute the actual workflow shell, replacing only npm's network operations.
 // node still reads the real package manifest from the workflow's directory.
+for (const packageDir of ['noui-factory', 'bazaar-sdk']) {
+const manifest = JSON.parse(readFileSync(`packages/${packageDir}/package.json`, 'utf8'));
 for (const scenario of [
-  { name: 'skips an already published version', version: factoryPackage.version, publishes: false },
+  { name: 'skips an already published version', version: manifest.version, publishes: false },
   { name: 'publishes a changed version', version: '0.0.0', publishes: true },
   { name: 'preserves the first-publication fallback', version: '', publishes: true, queryFails: true },
 ]) {
-  test(`factory publish guard ${scenario.name}`, () => {
-    const step = workflowStep('Publish noui-factory (if version changed)');
+  test(`${packageDir} publish guard ${scenario.name}`, () => {
+    const step = workflowStep(`Publish ${packageDir} (if version changed)`);
+    assert.ok(step.includes(`npm view ${manifest.name} version`));
     const run = step.match(/        run: \|\n((?:          .*\n)+)/);
     assert.ok(run, 'publish step must contain a shell script');
     const script = run[1].replace(/^          /gm, '');
@@ -54,7 +87,7 @@ for (const scenario of [
       }
       ${script}
     `], {
-      cwd: new URL('../packages/noui-factory/', import.meta.url),
+      cwd: new URL(`../packages/${packageDir}/`, import.meta.url),
       env: {
         ...process.env,
         PUBLISHED_VERSION: scenario.version,
@@ -71,4 +104,5 @@ for (const scenario of [
       assert.match(result.stdout, /version unchanged .* skipping/);
     }
   });
+}
 }

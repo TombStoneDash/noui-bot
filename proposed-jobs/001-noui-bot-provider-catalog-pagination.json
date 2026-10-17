@@ -1,0 +1,8 @@
+{
+  "slug": "provider-catalog-pagination",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Show every provider in the public provider directory",
+  "prompt": "Evidence: README.md:164-168 calls /providers the public provider catalog. In src/app/providers/page.tsx:173-181 the page fetches /api/bazaar/catalog once with no limit or offset, then groups only that response. The API defaults to 50 tools at src/app/api/bazaar/catalog/route.ts:9-10 and returns a page at lines 68-69. A provider whose tools fall after the first 50 is absent from the directory, and the displayed provider and tool totals are incomplete. The pending provider-detail pagination branch targets src/app/providers/[id]/page.tsx, not this directory file.\n\nChange only src/app/providers/page.tsx among production files. Fetch successive catalog pages using the existing limit and offset contract until the final page, and build the provider cards and totals from all returned tools. Keep a clear empty state for a truly empty catalog and an error state if any page fails; do not present partial data as the full directory. Guard against malformed payloads and duplicate tool IDs. Add tests/providers-directory-pagination.test.mjs using mocked catalog responses to cover 51+ tools with a provider on page two, an exact page boundary, and a later page failure. Run node --test tests/providers-directory-pagination.test.mjs and npm test. Work on the assigned branch you are on."
+}

@@ -165,113 +165,41 @@ function ToolCard({ tool }: { tool: Tool }) {
   );
 }
 
-// Seed tools to show when DB is empty (demo mode)
-const SEED_TOOLS: Tool[] = [
-  {
-    id: "seed-1",
-    tool_name: "web_search",
-    display_name: "Web Search",
-    description: "Search the web using multiple engines. Returns titles, URLs, and snippets. Supports region filtering and freshness controls.",
-    category: "search",
-    provider: { id: "p1", name: "Firecrawl", verified: true },
-    pricing: { model: "per_call", price_cents: 1, price: "$0.0100/call", free_tier_calls: 100 },
-    stats: { total_calls: 14200, avg_latency_ms: 340, uptime_pct: 99.8 },
-  },
-  {
-    id: "seed-2",
-    tool_name: "weather_forecast",
-    display_name: "Weather Forecast",
-    description: "7-day weather forecast for any location. Includes temperature, precipitation, wind, humidity, and UV index.",
-    category: "weather",
-    provider: { id: "p2", name: "WeatherStack", verified: true },
-    pricing: { model: "per_call", price_cents: 0, price: "Free", free_tier_calls: 0 },
-    stats: { total_calls: 8900, avg_latency_ms: 120, uptime_pct: 99.95 },
-  },
-  {
-    id: "seed-3",
-    tool_name: "code_execute",
-    display_name: "Code Sandbox",
-    description: "Execute Python, JavaScript, or TypeScript code in a secure sandbox. 30-second timeout, 256MB memory limit. Returns stdout, stderr, and exit code.",
-    category: "code",
-    provider: { id: "p3", name: "E2B", verified: true },
-    pricing: { model: "per_call", price_cents: 5, price: "$0.0500/call", free_tier_calls: 50 },
-    stats: { total_calls: 23400, avg_latency_ms: 890, uptime_pct: 99.5 },
-  },
-  {
-    id: "seed-4",
-    tool_name: "scrape_url",
-    display_name: "URL Scraper",
-    description: "Extract structured content from any URL. Returns clean markdown, metadata, and links. Handles JavaScript-rendered pages.",
-    category: "data",
-    provider: { id: "p1", name: "Firecrawl", verified: true },
-    pricing: { model: "per_call", price_cents: 2, price: "$0.0200/call", free_tier_calls: 50 },
-    stats: { total_calls: 31200, avg_latency_ms: 1200, uptime_pct: 99.3 },
-  },
-  {
-    id: "seed-5",
-    tool_name: "send_email",
-    display_name: "Send Email",
-    description: "Send transactional emails via verified domains. Supports HTML templates, attachments, and tracking. SPF/DKIM authenticated.",
-    category: "comms",
-    provider: { id: "p4", name: "Resend", verified: true },
-    pricing: { model: "per_call", price_cents: 0, price: "$0.0010/call", free_tier_calls: 200 },
-    stats: { total_calls: 5600, avg_latency_ms: 450, uptime_pct: 99.9 },
-  },
-  {
-    id: "seed-6",
-    tool_name: "vector_search",
-    display_name: "Vector Search",
-    description: "Semantic similarity search across document collections. 1536-dimension embeddings, cosine similarity, with metadata filtering.",
-    category: "data",
-    provider: { id: "p5", name: "Pinecone", verified: false },
-    pricing: { model: "per_call", price_cents: 1, price: "$0.0100/call", free_tier_calls: 100 },
-    stats: { total_calls: 18700, avg_latency_ms: 45, uptime_pct: 99.99 },
-  },
-  {
-    id: "seed-7",
-    tool_name: "pdf_extract",
-    display_name: "PDF Extraction",
-    description: "Extract text, tables, and images from PDF documents. Handles scanned PDFs via OCR. Returns structured markdown with table detection.",
-    category: "data",
-    provider: { id: "p6", name: "Unstructured", verified: true },
-    pricing: { model: "per_call", price_cents: 3, price: "$0.0300/call", free_tier_calls: 25 },
-    stats: { total_calls: 9100, avg_latency_ms: 2100, uptime_pct: 99.1 },
-  },
-  {
-    id: "seed-8",
-    tool_name: "image_generate",
-    display_name: "Image Generation",
-    description: "Generate images from text prompts using SDXL and Flux models. Supports style presets, negative prompts, and aspect ratios.",
-    category: "other",
-    provider: { id: "p7", name: "Replicate", verified: true },
-    pricing: { model: "per_call", price_cents: 4, price: "$0.0400/call", free_tier_calls: 10 },
-    stats: { total_calls: 42000, avg_latency_ms: 3500, uptime_pct: 98.7 },
-  },
-  {
-    id: "seed-9",
-    tool_name: "github_search",
-    display_name: "GitHub Code Search",
-    description: "Search GitHub repositories, code, issues, and pull requests. Filter by language, stars, forks, and update date.",
-    category: "code",
-    provider: { id: "p8", name: "GitMCP", verified: false },
-    pricing: { model: "per_call", price_cents: 1, price: "$0.0100/call", free_tier_calls: 200 },
-    stats: { total_calls: 15300, avg_latency_ms: 280, uptime_pct: 99.7 },
-  },
-  {
-    id: "seed-10",
-    tool_name: "seo_analysis",
-    display_name: "SEO Analysis",
-    description: "Comprehensive SEO audit for any URL. SERP position, backlink count, keyword density, page speed, and competitor comparison.",
-    category: "data",
-    provider: { id: "p9", name: "DataForSEO", verified: true },
-    pricing: { model: "per_call", price_cents: 10, price: "$0.1000/call", free_tier_calls: 10 },
-    stats: { total_calls: 3200, avg_latency_ms: 4200, uptime_pct: 99.2 },
-  },
-];
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isTool(value: unknown): value is Tool {
+  if (!isRecord(value)) return false;
+  const { provider, pricing, stats } = value;
+  return (
+    [value.id, value.tool_name, value.display_name, value.description, value.category]
+      .every((field) => typeof field === "string") &&
+    isRecord(provider) &&
+    typeof provider.id === "string" &&
+    typeof provider.name === "string" &&
+    typeof provider.verified === "boolean" &&
+    isRecord(pricing) &&
+    typeof pricing.model === "string" &&
+    typeof pricing.price === "string" &&
+    isFiniteNumber(pricing.price_cents) &&
+    isFiniteNumber(pricing.free_tier_calls) &&
+    isRecord(stats) &&
+    isFiniteNumber(stats.total_calls) &&
+    (stats.avg_latency_ms === null || isFiniteNumber(stats.avg_latency_ms)) &&
+    (stats.uptime_pct === null || isFiniteNumber(stats.uptime_pct))
+  );
+}
 
 export default function MarketplacePage() {
-  const [tools, setTools] = useState<Tool[]>(SEED_TOOLS);
-  const [loading, setLoading] = useState(true);
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [catalogStatus, setCatalogStatus] = useState<
+    "loading" | "success" | "error"
+  >("loading");
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -279,17 +207,16 @@ export default function MarketplacePage() {
     async function fetchTools() {
       try {
         const res = await fetch("/api/bazaar/catalog");
-        const data = await res.json();
-        if (data.tools && data.tools.length > 0) {
-          setTools(data.tools);
-        } else {
-          // Show seed/demo tools when catalog is empty
-          setTools(SEED_TOOLS);
+        if (!res.ok) throw new Error("Catalog request failed");
+        const data: unknown = await res.json();
+        if (!isRecord(data) || !Array.isArray(data.tools) || !data.tools.every(isTool)) {
+          throw new Error("Invalid catalog response");
         }
+        setTools(data.tools);
+        setCatalogStatus("success");
       } catch {
-        setTools(SEED_TOOLS);
-      } finally {
-        setLoading(false);
+        setTools([]);
+        setCatalogStatus("error");
       }
     }
     fetchTools();
@@ -332,43 +259,45 @@ export default function MarketplacePage() {
         </p>
 
         {/* Stats bar */}
-        <div className="flex items-center gap-6 mt-8">
-          <div>
-            <span className="font-mono text-xl font-bold text-white">
-              {tools.length}
-            </span>
-            <span className="text-xs text-white/30 font-mono ml-1.5">
-              tools
-            </span>
+        {catalogStatus === "success" && tools.length > 0 && (
+          <div className="flex items-center gap-6 mt-8">
+            <div>
+              <span className="font-mono text-xl font-bold text-white">
+                {tools.length}
+              </span>
+              <span className="text-xs text-white/30 font-mono ml-1.5">
+                tools
+              </span>
+            </div>
+            <div className="w-px h-4 bg-white/10" />
+            <div>
+              <span className="font-mono text-xl font-bold text-white">
+                {providers}
+              </span>
+              <span className="text-xs text-white/30 font-mono ml-1.5">
+                providers
+              </span>
+            </div>
+            <div className="w-px h-4 bg-white/10" />
+            <div>
+              <span className="font-mono text-xl font-bold text-emerald-400">
+                {formatNumber(totalCalls)}
+              </span>
+              <span className="text-xs text-white/30 font-mono ml-1.5">
+                calls metered
+              </span>
+            </div>
+            <div className="w-px h-4 bg-white/10" />
+            <div>
+              <span className="font-mono text-xl font-bold text-white">
+                {avgUptime.toFixed(1)}%
+              </span>
+              <span className="text-xs text-white/30 font-mono ml-1.5">
+                avg uptime
+              </span>
+            </div>
           </div>
-          <div className="w-px h-4 bg-white/10" />
-          <div>
-            <span className="font-mono text-xl font-bold text-white">
-              {providers}
-            </span>
-            <span className="text-xs text-white/30 font-mono ml-1.5">
-              providers
-            </span>
-          </div>
-          <div className="w-px h-4 bg-white/10" />
-          <div>
-            <span className="font-mono text-xl font-bold text-emerald-400">
-              {formatNumber(totalCalls)}
-            </span>
-            <span className="text-xs text-white/30 font-mono ml-1.5">
-              calls metered
-            </span>
-          </div>
-          <div className="w-px h-4 bg-white/10" />
-          <div>
-            <span className="font-mono text-xl font-bold text-white">
-              {avgUptime.toFixed(1)}%
-            </span>
-            <span className="text-xs text-white/30 font-mono ml-1.5">
-              avg uptime
-            </span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -404,11 +333,23 @@ export default function MarketplacePage() {
 
       {/* Tool grid */}
       <div className="px-6 md:px-16 lg:px-24 py-8">
-        {loading ? (
+        {catalogStatus === "loading" ? (
           <div className="flex items-center justify-center py-20">
             <div className="font-mono text-sm text-white/30 animate-pulse">
               Loading catalog...
             </div>
+          </div>
+        ) : catalogStatus === "error" ? (
+          <div role="alert" className="text-center py-20">
+            <p className="font-mono text-sm text-white/50">
+              Unable to load the catalog. Please try again later.
+            </p>
+          </div>
+        ) : tools.length === 0 ? (
+          <div role="status" className="text-center py-20">
+            <p className="font-mono text-sm text-white/30">
+              No tools are available in the catalog yet.
+            </p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">

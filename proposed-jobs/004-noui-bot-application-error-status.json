@@ -1,0 +1,8 @@
+{
+  "slug": "application-error-status",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Report application storage failures as server errors",
+  "prompt": "Evidence: src/app/api/v1/apply/route.ts:13-16 validates required name and contact, and lines 24-38 insert an application. The broad catch at lines 56-61 returns HTTP 400 for every exception, including a failed database insert. A builder who supplied a valid application is told the request is invalid when the service failed to save it. The GET description at lines 65-83 advertises a builder application endpoint, so accurate failure reporting affects a real user flow.\n\nChange only src/app/api/v1/apply/route.ts among production files. Isolate JSON parsing and field validation from persistence. Keep 400 for malformed JSON and missing or non-string required fields. If the insert rejects, return a generic 500 response and avoid suggesting that the applicant should edit valid data; do not leak the database error or log submitted contact details. Preserve the successful 201 shape. Add tests/application-error-status.test.mjs using a mocked SQL function to assert malformed input never inserts, valid input returns 201, and an insert failure returns 500. Run node --test tests/application-error-status.test.mjs and npm test. Work on the assigned branch you are on."
+}

@@ -165,33 +165,62 @@ export default function ProviderDetailPage({
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    setLoading(true);
+    setNotFound(false);
+    setLoadError(false);
+    setTools([]);
+    setProviderName("");
+    setVerified(false);
+
     async function fetchProvider() {
       try {
-        const res = await fetch("/api/bazaar/catalog");
-        const data = await res.json();
-        if (data.tools) {
-          const providerTools = (data.tools as Tool[]).filter(
-            (t) => t.provider.id === id
+        const limit = 50;
+        let offset = 0;
+        const providerTools: Tool[] = [];
+        while (active) {
+          const res = await fetch(
+            `/api/bazaar/catalog?limit=${limit}&offset=${offset}`,
+            { signal: controller.signal }
           );
-          if (providerTools.length === 0) {
-            setNotFound(true);
-          } else {
-            setTools(providerTools);
-            setProviderName(providerTools[0].provider.name);
-            setVerified(providerTools[0].provider.verified);
+          if (!res.ok) throw new Error("Catalog request failed");
+          const data = await res.json();
+          if (!active) return;
+          if (!Array.isArray(data.tools)) {
+            throw new Error("Invalid catalog response");
           }
-        } else {
-          setNotFound(true);
+          const page = data.tools as Tool[];
+          providerTools.push(...page.filter((t) => t.provider.id === id));
+          const effectiveLimit =
+            Number.isSafeInteger(data.limit) && data.limit > 0
+              ? data.limit
+              : limit;
+          // `total` is the returned-page count, not the catalog size.
+          if (page.length < effectiveLimit) break;
+          offset += effectiveLimit;
+        }
+        if (!active) return;
+        setNotFound(providerTools.length === 0);
+        setTools(providerTools);
+        if (providerTools.length > 0) {
+          setProviderName(providerTools[0].provider.name);
+          setVerified(providerTools[0].provider.verified);
         }
       } catch {
-        setNotFound(true);
+        if (active) setLoadError(true);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     fetchProvider();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [id]);
 
   const totalCalls = tools.reduce((s, t) => s + t.stats.total_calls, 0);
@@ -213,7 +242,7 @@ export default function ProviderDetailPage({
     );
   }
 
-  if (notFound) {
+  if (notFound || loadError) {
     return (
       <div className="min-h-screen bg-black text-white px-6 md:px-16 lg:px-24 py-16">
         <Link
@@ -224,10 +253,12 @@ export default function ProviderDetailPage({
         </Link>
         <div className="mt-16 text-center">
           <h1 className="font-mono text-2xl font-bold mb-4">
-            Provider not found
+            {loadError ? "Unable to load provider" : "Provider not found"}
           </h1>
           <p className="text-white/40 font-mono text-sm mb-8">
-            This provider doesn&apos;t exist or has no active tools.
+            {loadError
+              ? "Please try again later."
+              : "This provider doesn't exist or has no active tools."}
           </p>
           <Link
             href="/providers"
