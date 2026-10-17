@@ -1,0 +1,8 @@
+{
+  "slug": "waitlist-email-validation",
+  "repo_dir": "~/.local/share/daisy/hermes-factory-checkouts/noui-bot",
+  "gh_repo": "TombStoneDash/noui-bot",
+  "base": "main",
+  "title": "Make waitlist signup reject invalid addresses consistently",
+  "prompt": "Evidence: src/app/api/v1/waitlist/route.ts:6-15 accepts any value with an includes method and an @ sign, then lowercases and trims it. A string such as \"@\" or \"a@\" passes, while a JSON object or number reaches the catch and produces a 500 at lines 44-49. The public GET description at lines 53-58 says email is a required string. Users submitting a typo can get a successful signup even though the address is unusable, and malformed clients see an apparent server outage.\n\nChange only src/app/api/v1/waitlist/route.ts among production files. Validate the parsed body and require a nonempty string email with a practical address shape after trim; normalize it once before the insert. Reject invalid or non-string email with 400 and do not call the database. Preserve the duplicate signup response and source default. Distinguish invalid JSON from a persistence failure so database errors remain 500. Add tests/waitlist-email-validation.test.mjs with malformed types, whitespace/case normalization, invalid addresses, duplicate entry, and storage failure cases. Run node --test tests/waitlist-email-validation.test.mjs and npm test. Work on the assigned branch you are on."
+}
