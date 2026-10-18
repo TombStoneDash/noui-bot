@@ -121,16 +121,18 @@ export default async function ProviderDetailPage({ params }: Props) {
           </div>
         </section>
 
-        {/* Add to Agent */}
+        {/* Bazaar availability */}
         <section className="mb-12">
           <h2 className="font-mono text-xs text-white/50 uppercase tracking-wider mb-4">
-            Connect via Bazaar
+            Use through Bazaar
           </h2>
-          <div className="bg-white/[0.03] border border-white/[0.08] rounded-lg p-5 overflow-x-auto">
-            <pre className="font-mono text-xs text-white/60 whitespace-pre-wrap">{`curl -X POST https://noui.bot/api/bazaar/connect \\
-  -H "Authorization: Bearer bz_your_api_key" \\
-  -H "Content-Type: application/json" \\
-  -d '{"provider": "${provider.slug}"}'`}</pre>
+          <div className="bg-white/[0.03] border border-white/[0.08] rounded-lg p-5 font-mono text-xs text-white/60 leading-relaxed">
+            <p>
+              Check the <Link href="/marketplace" className="text-emerald-400 hover:underline">live marketplace</Link> for available tools, then follow the <Link href="/get-started" className="text-emerald-400 hover:underline">developer guide</Link> to use them through Bazaar.
+            </p>
+            <p className="mt-3">
+              A tool must be listed in the live catalog before you can use it through Bazaar. This static provider page and its slug do not establish availability.
+            </p>
           </div>
         </section>
 

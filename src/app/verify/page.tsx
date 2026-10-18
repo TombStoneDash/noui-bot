@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import type { VerifyOutcome } from "@/lib/receipt-verify";
 import goodReceipt from "../../../tests/fixtures/receipt.good.json";
 import tamperedReceipt from "../../../tests/fixtures/receipt.tampered.json";
@@ -11,6 +11,7 @@ export default function VerifyPage() {
   const [verification, setVerification] = useState<VerifyOutcome | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const attempt = useRef(0);
 
   function clearResult() {
     setVerification(null);
@@ -18,23 +19,43 @@ export default function VerifyPage() {
   }
 
   async function verify(receipt: unknown) {
+    const currentAttempt = ++attempt.current;
+    const controller = new AbortController();
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     clearResult();
     setPending(true);
     try {
-      const response = await fetch("/api/v1/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(receipt),
+      const deadline = new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          reject(new Error("Verification timed out after 10 seconds. Please try again."));
+          controller.abort();
+        }, 10_000);
       });
-      const data = await response.json();
+      const { response, data } = await Promise.race([
+        (async () => {
+          const response = await fetch("/api/v1/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(receipt),
+            signal: controller.signal,
+          });
+          const data = await response.json();
+          return { response, data };
+        })(),
+        deadline,
+      ]);
+      if (currentAttempt !== attempt.current) return;
       if (!response.ok) {
         throw new Error(data.message || data.code || "Verification request failed");
       }
       setVerification(data.verification);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Verification request failed");
+      if (currentAttempt === attempt.current) {
+        setError(cause instanceof Error ? cause.message : "Verification request failed");
+      }
     } finally {
-      setPending(false);
+      if (timeout !== undefined) clearTimeout(timeout);
+      if (currentAttempt === attempt.current) setPending(false);
     }
   }
 

@@ -21,7 +21,11 @@ function loadRoute(result = { data: [], error: null }) {
   let databaseAccesses = 0;
   const calls = [];
   const query = {
-    then(resolve, reject) { return Promise.resolve(result).then(resolve, reject); },
+    then(resolve, reject) {
+      const range = calls.filter(([method]) => method === "range").at(-1);
+      const page = range && result.data ? { ...result, data: result.data.slice(range[1], range[2] + 1) } : result;
+      return Promise.resolve(page).then(resolve, reject);
+    },
   };
   for (const method of ["from", "select", "eq", "order", "range"]) {
     query[method] = (...args) => {
@@ -47,6 +51,21 @@ function loadRoute(result = { data: [], error: null }) {
 
 const request = (search = "") => new Request(`https://example.test/api/bazaar/catalog${search}`);
 
+test("public offsets remain available beyond the first database page after filtering", async () => {
+  const data = Array.from({ length: 1002 }, (_, i) => ({
+    id: `tool-${i}`, tool_name: `tool-${i}`,
+    bazaar_providers: { id: "real-provider", name: "Weather Co" },
+  }));
+  data[0].bazaar_providers.name = "Test Provider";
+  const route = loadRoute({ data, error: null });
+  const response = await route.GET(request("?offset=1000&limit=1"));
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.total, 1001);
+  assert.equal(body.tools[0].id, "tool-1001");
+  assert.deepEqual(route.calls.filter(([method]) => method === "range"), [["range", 0, 999], ["range", 1000, 1999]]);
+});
+
 for (const [name, search, limit, offset] of [
   ["defaults", "", 50, 0],
   ["valid offset with default limit", "?offset=12", 50, 12],
@@ -64,7 +83,7 @@ for (const [name, search, limit, offset] of [
     const response = await route.GET(request(search));
     assert.equal(response.status, 200);
     assert.equal(route.databaseAccesses, 1);
-    assert.deepEqual(route.calls.filter(([method]) => method === "range"), []);
+    assert.deepEqual(route.calls.filter(([method]) => method === "range"), [["range", 0, 999]]);
     assert.deepEqual(await response.json(), {
       tools: [], total: 0, providers: 0, limit, offset,
       categories: ["weather", "search", "code", "data", "comms", "other"],

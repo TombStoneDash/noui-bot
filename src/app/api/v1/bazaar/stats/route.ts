@@ -22,9 +22,16 @@ export async function GET() {
       .eq("status", "success");
 
     // Unique consumers (agents)
-    const { data: consumers } = await sb
+    const { count: consumerCount, error: consumerError } = await sb
       .from("bazaar_consumers")
       .select("id", { count: "exact", head: true });
+
+    if (consumerError) {
+      return NextResponse.json(
+        { error: true, message: "Statistics temporarily unavailable" },
+        { status: 503 }
+      );
+    }
 
     // Public tools and their distinct providers use the catalog hygiene policy.
     const { data: tools } = await sb
@@ -74,7 +81,7 @@ export async function GET() {
     return NextResponse.json({
       total_tool_invocations: totalInvocations || 0,
       successful_calls: successfulCalls || 0,
-      unique_agents: consumers?.length || 0,
+      unique_agents: consumerCount ?? 0,
       unique_tools: filtered.length,
       tools_listed: filtered.length,
       providers: countRealProviders(filtered),

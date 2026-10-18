@@ -62,7 +62,7 @@ for (const path of [
 
 test("catalog filters before pagination and keeps sensitive fields out of its response mapping", async () => {
   const source = await read("../src/app/api/bazaar/catalog/route.ts");
-  assert.doesNotMatch(source, /\.range\(/);
+  assert.match(source, /query\.range\(start, start \+ pageSize - 1\)/);
   assert.match(source, /filtered\.slice\(offset, offset \+ limit\)\.map/);
   assert.match(source, /total: filtered\.length/);
   assert.match(source, /providers: countRealProviders\(filtered\)/);

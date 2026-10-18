@@ -341,7 +341,7 @@ export async function getLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
     .order("response_time_ms", { ascending: true })
     .limit(limit * 3); // Over-fetch to dedup by agent_name
 
-  if (error || !data) return [];
+  if (error || !data) throw new Error("Leaderboard unavailable");
 
   // Deduplicate: keep fastest per agent_name
   const seen = new Set<string>();

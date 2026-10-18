@@ -93,20 +93,23 @@ async def get_bazaar_tools(session: ClientSession) -> list[StructuredTool]:
     tools_result = await session.list_tools()
     lc_tools = []
 
-    for tool in tools_result.tools:
-        # Capture tool name for closure
-        tool_name = tool.name
-
-        async def _call(session=session, name=tool_name, **kwargs):
-            result = await session.call_tool(name, arguments=kwargs)
+    def make_callbacks(tool_name):
+        async def _call(**kwargs):
+            result = await session.call_tool(tool_name, arguments=kwargs)
             return json.dumps([c.text for c in result.content])
+
+        return (
+            lambda **kw: asyncio.get_event_loop().run_until_complete(_call(**kw)),
+            lambda **kw: _call(**kw),
+        )
+
+    for tool in tools_result.tools:
+        sync_call, async_call = make_callbacks(tool.name)
 
         lc_tools.append(
             StructuredTool.from_function(
-                func=lambda **kw: asyncio.get_event_loop().run_until_complete(
-                    _call(**kw)
-                ),
-                coroutine=lambda **kw: _call(**kw),
+                func=sync_call,
+                coroutine=async_call,
                 name=tool.name,
                 description=tool.description or "",
                 # Accept any kwargs — Bazaar tools define their own schemas

@@ -68,13 +68,24 @@ export async function GET(request: Request) {
       )
     `)
     .eq("active", true)
-    .order("call_count", { ascending: false });
+    .order("call_count", { ascending: false })
+    .order("id", { ascending: true });
 
   if (category) {
     query = query.eq("category", category);
   }
 
-  const { data: tools, error } = await query;
+  // Filter before public pagination, but do not silently stop at PostgREST's
+  // default first-page limit. Stable ID ordering resolves call-count ties.
+  const tools: NonNullable<Awaited<typeof query>["data"]> = [];
+  let error: Awaited<typeof query>["error"] = null;
+  const pageSize = 1000;
+  for (let start = 0; ; start += pageSize) {
+    const page = await query.range(start, start + pageSize - 1);
+    if (page.error) { error = page.error; break; }
+    tools.push(...(page.data || []));
+    if (!page.data || page.data.length < pageSize) break;
+  }
 
   if (error) {
     return NextResponse.json(
