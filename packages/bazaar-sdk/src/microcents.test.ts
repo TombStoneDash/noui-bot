@@ -8,6 +8,11 @@ import { Bazaar } from "./index";
 // Execute the actual API handlers behind the SDK without network or database access.
 // Resolve TypeScript from this package, since the test runner compiles into /tmp.
 const ts: typeof import("typescript") = createRequire(resolve("package.json"))("typescript");
+const hygiene: Record<string, unknown> = {};
+new Function("exports", ts.transpileModule(
+  readFileSync(resolve("../../src/lib/catalog-hygiene.ts"), "utf8"),
+  { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } },
+).outputText)(hygiene);
 
 function route(name: string, cents: number) {
   const inserts: Record<string, Record<string, unknown>> = {};
@@ -38,6 +43,7 @@ function route(name: string, cents: number) {
   const dependencies: Record<string, unknown> = {
     "next/server": { NextResponse: { json: Response.json } },
     "@/lib/supabase": { getSupabase: () => sb },
+    "@/lib/catalog-hygiene": hygiene,
     "@/lib/bazaar-auth": {
       authenticateKey: async () => ({ id: "consumer-test", type: "consumer", balance_cents: cents }),
     },
