@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { filterCatalogRows } from "@/lib/catalog-hygiene";
 import { getSupabase } from "@/lib/supabase";
 
 /**
@@ -23,6 +24,10 @@ export async function GET() {
         bazaar_providers:provider_id (
           id,
           name,
+          email,
+          endpoint_url,
+          api_key_hash,
+          api_key_prefix,
           pricing_model,
           default_price_cents
         )
@@ -34,8 +39,10 @@ export async function GET() {
       return NextResponse.json({ error: true, message: error.message }, { status: 500 });
     }
 
+    const filtered = filterCatalogRows(tools || []);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pricing = (tools || []).map((t: any) => {
+    const pricing = filtered.map((t: any) => {
       const provider = t.bazaar_providers;
       const priceCents = t.price_cents_override ?? provider?.default_price_cents ?? 0;
       const priceMicrocents = priceCents * 10_000;
@@ -60,7 +67,7 @@ export async function GET() {
 
     return NextResponse.json({
       pricing,
-      total: pricing.length,
+      total: filtered.length,
       platform_fee: "10%",
       note: "Prices are set by providers. Platform fee is deducted from provider earnings.",
       timestamp: new Date().toISOString(),

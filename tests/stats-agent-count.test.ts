@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import vm from "node:vm";
+import * as catalogHygiene from "../src/lib/catalog-hygiene.ts";
 
 const require = createRequire(import.meta.url);
 const ts = require(require.resolve("typescript", {
@@ -21,7 +22,7 @@ function loadRoute(consumerResult) {
     total: { count: 10, data: null, error: null },
     successful: { count: 8, data: null, error: null },
     consumers: consumerResult,
-    tools: { data: [{ id: "tool-1" }, { id: "tool-2" }], error: null },
+    tools: { data: [{ id: "tool-1", bazaar_providers: { id: "provider-1", name: "Weather Co" } }, { id: "tool-2", bazaar_providers: { id: "provider-2", name: "Data Co" } }], error: null },
     providers: { data: [{ id: "provider-1" }, { id: "provider-2" }, { id: "provider-3" }], error: null },
     revenue: { data: [{ cost_cents: 125 }, { cost_cents: 75 }], error: null },
     latency: { data: [{ latency_ms: 20 }, { latency_ms: 40 }], error: null },
@@ -62,6 +63,7 @@ function loadRoute(consumerResult) {
     require(name) {
       if (name === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
       if (name === "@/lib/supabase") return { getSupabase: () => client };
+      if (name === "@/lib/catalog-hygiene") return catalogHygiene;
       throw new Error(`Unexpected import: ${name}`);
     },
   }, { filename: "stats/route.js" });
@@ -80,7 +82,7 @@ for (const count of [7, 0]) {
       unique_agents: count,
       unique_tools: 2,
       tools_listed: 2,
-      providers: 3,
+      providers: 2,
       total_revenue_microcents: 2_000_000,
       total_revenue_cents: 200,
       total_revenue: "$2.00",
@@ -93,7 +95,7 @@ for (const count of [7, 0]) {
     assert.equal(queries[2].column, "id");
     assert.equal(queries[2].options.count, "exact");
     assert.equal(queries[2].options.head, true);
-    assert.equal(queries.length, 8);
+    assert.equal(queries.length, 7);
   });
 }
 

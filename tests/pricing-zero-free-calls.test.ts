@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import test from "node:test";
 import vm from "node:vm";
+import * as catalogHygiene from "../src/lib/catalog-hygiene.ts";
 
 const require = createRequire(import.meta.url);
 let ts: typeof import("../packages/noui-factory/node_modules/typescript");
@@ -51,6 +52,7 @@ async function executeGET(tool: Record<string, unknown>) {
           },
         }),
       };
+      if (name === "@/lib/catalog-hygiene") return catalogHygiene;
       throw new Error(`Unexpected import: ${name}`);
     },
   });
@@ -76,7 +78,7 @@ for (const [label, allowance, expected] of [
       pricing_model_override: "per_call",
       bazaar_providers: {
         id: "provider-1",
-        name: "Example Provider",
+        name: "Weather Provider",
         pricing_model: "subscription",
         default_price_cents: 50,
       },

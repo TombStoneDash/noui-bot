@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { filterCatalogRows, countRealProviders } from "@/lib/catalog-hygiene";
 import { getSupabase } from "@/lib/supabase";
 
 export async function GET(request: Request) {
@@ -36,8 +37,6 @@ export async function GET(request: Request) {
       { status: 400 }
     );
   }
-  const rangeEnd = offset + (limit - 1);
-
   const sb = getSupabase();
 
   let query = sb
@@ -58,6 +57,10 @@ export async function GET(request: Request) {
       bazaar_providers:provider_id (
         id,
         name,
+        email,
+        endpoint_url,
+        api_key_hash,
+        api_key_prefix,
         description,
         pricing_model,
         default_price_cents,
@@ -66,13 +69,23 @@ export async function GET(request: Request) {
     `)
     .eq("active", true)
     .order("call_count", { ascending: false })
-    .range(offset, rangeEnd);
+    .order("id", { ascending: true });
 
   if (category) {
     query = query.eq("category", category);
   }
 
-  const { data: tools, error } = await query;
+  // Filter before public pagination, but do not silently stop at PostgREST's
+  // default first-page limit. Stable ID ordering resolves call-count ties.
+  const tools: NonNullable<Awaited<typeof query>["data"]> = [];
+  let error: Awaited<typeof query>["error"] = null;
+  const pageSize = 1000;
+  for (let start = 0; ; start += pageSize) {
+    const page = await query.range(start, start + pageSize - 1);
+    if (page.error) { error = page.error; break; }
+    tools.push(...(page.data || []));
+    if (!page.data || page.data.length < pageSize) break;
+  }
 
   if (error) {
     return NextResponse.json(
@@ -81,8 +94,11 @@ export async function GET(request: Request) {
     );
   }
 
+  const filtered = filterCatalogRows(tools || []);
+
   return NextResponse.json({
-    tools: (tools || []).map((t: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tools: filtered.slice(offset, offset + limit).map((t: any) => {
       const provider = t.bazaar_providers;
       const priceCents = t.price_cents_override ?? provider?.default_price_cents ?? 0;
       const pricingModel = t.pricing_model_override ?? provider?.pricing_model ?? "per_call";
@@ -111,7 +127,8 @@ export async function GET(request: Request) {
         },
       };
     }),
-    total: (tools || []).length,
+    total: filtered.length,
+    providers: countRealProviders(filtered),
     limit,
     offset,
     categories: ["weather", "search", "code", "data", "comms", "other"],
