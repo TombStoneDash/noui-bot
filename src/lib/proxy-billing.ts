@@ -16,6 +16,15 @@ export type BillingClient = {
 
 export const PROXY_RECEIPT_VERIFY_URL = "https://noui.bot/verify";
 export const IDEMPOTENCY_KEY_MAX_LENGTH = 128;
+/** Stored idempotent responses are honoured for 24 h; older rows are expired and purged. */
+export const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** True when a stored row's `created_at` is older than the TTL. A missing/invalid timestamp is not expired. */
+export function isIdempotencyExpired(createdAt: unknown, nowMs: number = Date.now()): boolean {
+  if (typeof createdAt !== "string") return false;
+  const t = Date.parse(createdAt);
+  return Number.isFinite(t) && nowMs - t > IDEMPOTENCY_TTL_MS;
+}
 
 /** PostgREST / Postgres codes meaning "the function does not exist" (SQL 008 not applied yet). */
 const RPC_MISSING_CODES = new Set(["PGRST202", "42883"]);
@@ -156,23 +165,35 @@ export type IdempotencyLookup =
 /**
  * Look up a stored response for (consumer, key). A hit whose body hash differs
  * is a mismatch (caller returns 409). A lookup error (e.g. the table does not
- * exist yet) is treated as a miss with `available: false`.
+ * exist yet) is treated as a miss with `available: false`. A row older than
+ * the 24 h TTL is deleted and treated as a miss, so the key can be reused.
  */
 export async function lookupIdempotency(
   sb: BillingClient,
   consumerId: string,
   key: string,
-  bodyHash: string
+  bodyHash: string,
+  nowMs: number = Date.now()
 ): Promise<IdempotencyLookup> {
   const { data, error } = await sb
     .from("bazaar_idempotency_keys")
-    .select("response")
+    .select("response, created_at")
     .eq("consumer_id", consumerId)
     .eq("key", key)
     .maybeSingle();
   if (error) return { kind: "miss", available: false };
   if (!data) return { kind: "miss", available: true };
-  const stored = (data as { response: StoredIdempotentResponse }).response;
+  const row = data as { response: StoredIdempotentResponse; created_at?: string };
+  if (isIdempotencyExpired(row.created_at, nowMs)) {
+    const { error: delErr } = await sb
+      .from("bazaar_idempotency_keys")
+      .delete()
+      .eq("consumer_id", consumerId)
+      .eq("key", key);
+    // If the expired row cannot be removed, the new response cannot be stored under the key.
+    return { kind: "miss", available: !delErr };
+  }
+  const stored = row.response;
   if (!stored || stored.body_hash !== bodyHash) return { kind: "mismatch" };
   return { kind: "hit", stored };
 }
