@@ -1,7 +1,69 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
-import { authenticateKey } from "@/lib/bazaar-auth";
+import type Stripe from "stripe";
+import { authenticateKey, type KeyOwner } from "@/lib/bazaar-auth";
 import { getStripe } from "@/lib/stripe";
+
+/** Caller-supplied redirect URL (absolute https), the fallback when absent, or null when invalid. */
+function redirectUrl(value: unknown, fallback: string): string | null {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value !== "string") return null;
+  try {
+    return new URL(value).protocol === "https:" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Return the provider's Connect account, creating it at most once.
+ * The idempotency key makes concurrent first calls share one Stripe account,
+ * and the conditional update never replaces an account that is already linked
+ * (payouts go to whichever account is stored).
+ */
+async function ensureConnectAccount(stripe: Stripe, owner: KeyOwner): Promise<string> {
+  const sb = getSupabase();
+  const { data: provider } = await sb
+    .from("bazaar_providers")
+    .select("stripe_account_id")
+    .eq("id", owner.id)
+    .single();
+  if (provider?.stripe_account_id) return provider.stripe_account_id;
+
+  const account = await stripe.accounts.create(
+    {
+      type: "express",
+      email: owner.email,
+      metadata: {
+        bazaar_provider_id: owner.id,
+        provider_name: owner.name,
+      },
+      capabilities: {
+        transfers: { requested: true },
+      },
+    },
+    { idempotencyKey: `bazaar-provider-connect-${owner.id}` }
+  );
+
+  const { data: linked } = await sb
+    .from("bazaar_providers")
+    .update({
+      stripe_account_id: account.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", owner.id)
+    .is("stripe_account_id", null)
+    .select("stripe_account_id");
+  if (linked && linked.length > 0) return account.id;
+
+  // Another request linked an account first; use that one.
+  const { data: winner } = await sb
+    .from("bazaar_providers")
+    .select("stripe_account_id")
+    .eq("id", owner.id)
+    .single();
+  return winner?.stripe_account_id || account.id;
+}
 
 /**
  * POST /api/bazaar/connect — Start Stripe Connect onboarding
@@ -24,54 +86,36 @@ export async function POST(request: Request) {
     );
   }
 
-  const sb = getSupabase();
-
-  // Check if provider already has a Stripe account
-  const { data: provider } = await sb
-    .from("bazaar_providers")
-    .select("stripe_account_id")
-    .eq("id", owner.id)
-    .single();
-
-  let accountId = provider?.stripe_account_id;
-
-  // Create a Stripe Connect account if none exists
-  if (!accountId) {
-    const account = await stripe.accounts.create({
-      type: "express",
-      email: owner.email,
-      metadata: {
-        bazaar_provider_id: owner.id,
-        provider_name: owner.name,
-      },
-      capabilities: {
-        transfers: { requested: true },
-      },
-    });
-
-    accountId = account.id;
-
-    // Save to DB
-    await sb
-      .from("bazaar_providers")
-      .update({
-        stripe_account_id: accountId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", owner.id);
+  // Validate redirect URLs before creating anything in Stripe
+  const body = await request.json().catch(() => ({}));
+  const returnUrl = redirectUrl(body?.return_url, "https://noui.bot/bazaar/connect/complete");
+  const refreshUrl = redirectUrl(body?.refresh_url, "https://noui.bot/bazaar/connect/refresh");
+  if (!returnUrl || !refreshUrl) {
+    return NextResponse.json(
+      { error: true, code: "VALIDATION_ERROR", message: "return_url and refresh_url must be absolute https URLs" },
+      { status: 422 }
+    );
   }
 
-  // Create an account link for onboarding
-  const body = await request.json().catch(() => ({})) as Record<string, string>;
-  const returnUrl = body.return_url || "https://noui.bot/bazaar/connect/complete";
-  const refreshUrl = body.refresh_url || "https://noui.bot/bazaar/connect/refresh";
+  let accountId: string;
+  let accountLink: Stripe.AccountLink;
+  try {
+    accountId = await ensureConnectAccount(stripe, owner);
 
-  const accountLink = await stripe.accountLinks.create({
-    account: accountId,
-    return_url: returnUrl,
-    refresh_url: refreshUrl,
-    type: "account_onboarding",
-  });
+    // Create an account link for onboarding
+    accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      return_url: returnUrl,
+      refresh_url: refreshUrl,
+      type: "account_onboarding",
+    });
+  } catch (err: unknown) {
+    console.error("[connect] Stripe error:", err instanceof Error ? err.message : err);
+    return NextResponse.json(
+      { error: true, code: "STRIPE_ERROR", message: "Could not start Stripe Connect onboarding" },
+      { status: 502 }
+    );
+  }
 
   return NextResponse.json({
     provider_id: owner.id,

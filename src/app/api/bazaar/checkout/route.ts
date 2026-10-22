@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripe, STRIPE_PRO_PRICE_ID } from "@/lib/stripe";
-import { authenticateKey as authenticateRequest } from "@/lib/bazaar-auth";
+import { authenticateKey as authenticateRequest, type KeyOwner } from "@/lib/bazaar-auth";
 import { getSupabase } from "@/lib/supabase";
 import { PLANS as PLAN_DEFS } from "@/lib/subscription";
 
@@ -24,6 +24,46 @@ const PLANS: Record<
   },
 };
 
+/**
+ * Return the consumer's Stripe customer, creating it at most once.
+ * The idempotency key makes concurrent first checkouts share one customer,
+ * and the conditional update never replaces a customer that is already linked.
+ */
+async function ensureStripeCustomer(stripe: Stripe, consumer: KeyOwner): Promise<string> {
+  const sb = getSupabase();
+  const { data: row } = await sb
+    .from("bazaar_consumers")
+    .select("stripe_customer_id")
+    .eq("id", consumer.id)
+    .single();
+  if (row?.stripe_customer_id) return row.stripe_customer_id;
+
+  const customer = await stripe.customers.create(
+    {
+      email: consumer.email,
+      name: consumer.name,
+      metadata: { bazaar_consumer_id: consumer.id },
+    },
+    { idempotencyKey: `bazaar-consumer-customer-${consumer.id}` }
+  );
+
+  const { data: linked } = await sb
+    .from("bazaar_consumers")
+    .update({ stripe_customer_id: customer.id })
+    .eq("id", consumer.id)
+    .is("stripe_customer_id", null)
+    .select("stripe_customer_id");
+  if (linked && linked.length > 0) return customer.id;
+
+  // Another request linked a customer first; use that one.
+  const { data: winner } = await sb
+    .from("bazaar_consumers")
+    .select("stripe_customer_id")
+    .eq("id", consumer.id)
+    .single();
+  return winner?.stripe_customer_id || customer.id;
+}
+
 export async function POST(request: Request) {
   const stripe = getStripe();
   if (!stripe) {
@@ -33,10 +73,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = await request.json();
-  const plan = body.plan as string;
+  const body = await request.json().catch(() => null);
+  const plan = body && typeof body === "object" ? (body as { plan?: unknown }).plan : undefined;
 
-  if (!plan || !PLANS[plan]) {
+  // Own keys only: "toString" or "__proto__" must not resolve to a plan.
+  if (typeof plan !== "string" || !Object.prototype.hasOwnProperty.call(PLANS, plan)) {
     return NextResponse.json(
       { error: true, message: "Invalid plan. Use 'pro' or 'scale'." },
       { status: 400 }
@@ -45,39 +86,19 @@ export async function POST(request: Request) {
 
   const { name, priceAmountCents, stripePriceId } = PLANS[plan];
 
-  // If authenticated, link checkout to existing consumer
+  // If authenticated as a consumer, link checkout to that consumer.
+  // Provider keys must not be recorded as a consumer_id.
   const auth = await authenticateRequest(request);
+  const consumer = auth && auth.type === "consumer" ? auth : null;
   let customerId: string | undefined;
   let customerEmail: string | undefined;
 
-  if (auth && auth.type === "consumer") {
-    customerEmail = auth.email;
-    const sb = getSupabase();
-    const { data: consumer } = await sb
-      .from("bazaar_consumers")
-      .select("stripe_customer_id")
-      .eq("id", auth.id)
-      .single();
-
-    if (consumer?.stripe_customer_id) {
-      customerId = consumer.stripe_customer_id;
-    } else {
-      // Create Stripe customer and link to consumer
-      const customer = await stripe.customers.create({
-        email: auth.email,
-        name: auth.name,
-        metadata: { bazaar_consumer_id: auth.id },
-      });
-      customerId = customer.id;
-
-      await sb
-        .from("bazaar_consumers")
-        .update({ stripe_customer_id: customer.id })
-        .eq("id", auth.id);
-    }
-  }
-
   try {
+    if (consumer) {
+      customerEmail = consumer.email;
+      customerId = await ensureStripeCustomer(stripe, consumer);
+    }
+
     // Use Stripe Price ID if configured, otherwise fall back to inline price_data
     const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = stripePriceId
       ? { price: stripePriceId, quantity: 1 }
@@ -96,7 +117,7 @@ export async function POST(request: Request) {
       line_items: [lineItem],
       success_url: `${new URL(request.url).origin}/developers/dashboard?checkout=success`,
       cancel_url: `${new URL(request.url).origin}/pricing?checkout=cancelled`,
-      metadata: { plan, ...(auth ? { consumer_id: auth.id } : {}) },
+      metadata: { plan, ...(consumer ? { consumer_id: consumer.id } : {}) },
     };
 
     if (customerId) {
@@ -109,7 +130,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Checkout failed";
-    return NextResponse.json({ error: true, message }, { status: 500 });
+    console.error("[checkout] Stripe error:", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: true, message: "Checkout failed" }, { status: 502 });
   }
 }
