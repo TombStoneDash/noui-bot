@@ -36,7 +36,7 @@ export async function GET() {
       .order("tool_name");
 
     if (error) {
-      return NextResponse.json({ error: true, message: error.message }, { status: 500 });
+      return NextResponse.json({ error: true, message: "Pricing temporarily unavailable" }, { status: 500 });
     }
 
     const filtered = filterCatalogRows(tools || []);
@@ -76,8 +76,7 @@ export async function GET() {
         "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
       },
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: true, message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: true, message: "Pricing temporarily unavailable" }, { status: 500 });
   }
 }

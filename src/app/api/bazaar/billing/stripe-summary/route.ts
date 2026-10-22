@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
   if (allErr) {
     return NextResponse.json(
-      { error: true, message: allErr.message },
+      { error: true, message: "Billing summary temporarily unavailable" },
       { status: 500 }
     );
   }
