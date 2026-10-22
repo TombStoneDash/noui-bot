@@ -111,7 +111,8 @@ async function loadVerify({ challenge, issuedAgoMs = 10 } = {}) {
     type: "json_extract",
     level: 1,
     answer_hash: await sha256Hex(ANSWER),
-    time_limit_ms: 200,
+    // Generous so cold-start test latency never trips the timeout path.
+    time_limit_ms: 30_000,
     issued_at: new Date(now - issuedAgoMs).toISOString(),
     expires_at: new Date(now + 60_000).toISOString(),
     consumed: false,
@@ -202,7 +203,7 @@ for (const [label, overrides, reason] of [
   ["slow answer", { slow: true }, "timeout"],
 ]) {
   test(`a ${label} burns the challenge so it cannot be retried`, async () => {
-    const { POST, row } = await loadVerify({ issuedAgoMs: overrides.slow ? 5_000 : 10 });
+    const { POST, row } = await loadVerify({ issuedAgoMs: overrides.slow ? 45_000 : 10 });
     const res = await post(POST, { challenge_id: CHALLENGE_ID, response: overrides.response ?? ANSWER });
     assert.equal(res.status, 401);
     assert.equal((await res.json()).reason, reason);
