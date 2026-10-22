@@ -47,13 +47,14 @@ function mountCopyButton(navigatorMock) {
     useCallback(callback) { return callback; },
   };
   const jsx = (type, props) => ({ type, props: props ?? {} });
-  const module = { exports: {} };
+  const cjsModule = { exports: {} };
   runInNewContext(compiled, {
-    module,
-    exports: module.exports,
+    module: cjsModule,
+    exports: cjsModule.exports,
     require(id) {
       if (id === "react") return react;
       if (id === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: Symbol.for("react.fragment") };
+      if (id === "next/link") return { default: "Link" };
       throw new Error(`Unexpected import: ${id}`);
     },
     navigator: navigatorMock,
@@ -61,7 +62,7 @@ function mountCopyButton(navigatorMock) {
   });
 
   // Get the actual CopyButton component and its supplied snippet from the page tree.
-  const page = module.exports.default();
+  const page = cjsModule.exports.default();
   const copyElement = visit(page, (node) => typeof node.type === "function" && node.type.name === "CopyButton");
   assert.ok(copyElement);
   states.length = 0;

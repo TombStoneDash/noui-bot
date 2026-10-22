@@ -59,6 +59,7 @@ function mountCatalog() {
     require(name) {
       if (name === "react") return react;
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx };
+      if (name === "next/link") return { default: "Link" };
       throw new Error(`Unexpected import: ${name}`);
     },
     fetch(url) {

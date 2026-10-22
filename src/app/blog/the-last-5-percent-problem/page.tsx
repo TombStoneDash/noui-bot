@@ -230,9 +230,9 @@ export default function Last5PercentPost() {
           <p>
             If you&apos;re running AI agents that hit these walls — or if you want to
             be one of the first humans earning money by helping agents —{" "}
-            <a href="/#waitlist" className="text-white underline underline-offset-4 hover:text-white/80">
+            <Link href="/#waitlist" className="text-white underline underline-offset-4 hover:text-white/80">
               join the waitlist
-            </a>
+            </Link>
             .
           </p>
           <p className="text-white/40 italic mt-8">

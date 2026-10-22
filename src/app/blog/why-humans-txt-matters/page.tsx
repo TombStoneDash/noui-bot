@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Why humans.txt Matters — Agent Bazaar Blog",
@@ -176,9 +177,9 @@ export default function HumansTxtBlogPost() {
 
           <p>
             Every provider on Agent Bazaar gets a{" "}
-            <a href="/providers/tombstonedash" className="text-green-400 hover:underline">
+            <Link href="/providers/tombstonedash" className="text-green-400 hover:underline">
               Verified Human profile
-            </a>
+            </Link>
             . When you register, we verify your identity through GitHub OAuth. Your
             profile shows your real name, location, bio, and a{" "}
             <span className="text-green-400 font-mono text-sm">
@@ -231,12 +232,12 @@ export default function HumansTxtBlogPost() {
               </a>
             </li>
             <li>
-              <a
+              <Link
                 href="/providers/register"
                 className="text-green-400 hover:underline"
               >
                 Register as a provider
-              </a>{" "}
+              </Link>{" "}
               and get your Verified Human profile
             </li>
           </ul>

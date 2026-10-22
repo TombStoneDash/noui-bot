@@ -31,6 +31,7 @@ function loadValidator(fetch) {
     require(name) {
       if (name === "react") return { useState() { throw new Error("Unexpected render"); } };
       if (name === "react/jsx-runtime") return {};
+      if (name === "next/link") return { default: "Link" };
       throw new Error(`Unexpected import: ${name}`);
     },
   });

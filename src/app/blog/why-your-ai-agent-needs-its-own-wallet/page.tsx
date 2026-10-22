@@ -111,12 +111,12 @@ export default function AgentWalletBlog() {
           </p>
 
           <div className="bg-white/5 border border-white/10 rounded-lg p-6 my-8 font-mono text-sm">
-            <p className="text-green-400 mb-2">// Register an agent</p>
+            <p className="text-green-400 mb-2">{"// Register an agent"}</p>
             <p className="text-white/60">POST /api/v1/register</p>
             <p className="text-yellow-300">{`{ "owner_email": "you@example.com", "agent_name": "Daisy" }`}</p>
             <p className="text-green-400 mt-2">{`→ { "api_key": "bw_abc123..." }`}</p>
             <br />
-            <p className="text-green-400 mb-2">// Agent spends (policy-checked)</p>
+            <p className="text-green-400 mb-2">{"// Agent spends (policy-checked)"}</p>
             <p className="text-white/60">POST /api/v1/spend</p>
             <p className="text-white/60">Authorization: Bearer bw_abc123...</p>
             <p className="text-yellow-300">{`{ "amount_cents": 499, "merchant": "replicate.com" }`}</p>

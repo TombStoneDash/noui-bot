@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Building an Agent Tool Marketplace from Zero — Lessons from Week 1 | noui.bot",
@@ -130,7 +131,7 @@ export default function BlogPost() {
         </ul>
         <p>
           10% gives providers 90% of revenue while covering Stripe processing fees (~2.9%),
-          infrastructure costs, and leaving margin for the platform. We've prioritized
+          infrastructure costs, and leaving margin for the platform. We&apos;ve prioritized
           trust — exactly-once billing, dispute resolution, and SLA enforcement — over
           undercutting on price alone.
         </p>
@@ -168,9 +169,9 @@ export default function BlogPost() {
         </ul>
         <p>
           If you maintain an MCP server and want to monetize it,{" "}
-          <a href="/providers/register" className="text-white/80 underline underline-offset-4 hover:text-white">
+          <Link href="/providers/register" className="text-white/80 underline underline-offset-4 hover:text-white">
             register as a provider
-          </a>
+          </Link>
           . Setup takes 5 minutes. The billing spec is{" "}
           <a href="https://github.com/TombStoneDash/mcp-billing-spec" className="text-white/80 underline underline-offset-4 hover:text-white">
             open source

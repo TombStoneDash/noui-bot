@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Quickstart — Agent Bazaar | noui.bot",
@@ -224,12 +225,12 @@ console.log(\`Total cost: $\${(usage.total_spend_cents / 100).toFixed(2)}\`);`}<
         <ul className="space-y-2 text-sm text-white/50">
           <li>
             →{" "}
-            <a
+            <Link
               href="/providers/register"
               className="text-white/70 underline underline-offset-4 hover:text-white"
             >
               List your own MCP server
-            </a>{" "}
+            </Link>{" "}
             and start earning
           </li>
           <li>

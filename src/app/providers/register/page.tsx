@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 interface RegistrationResult {
   provider_id: string;
@@ -65,12 +66,12 @@ export default function ProviderRegisterPage() {
 
   return (
     <div className="min-h-screen bg-black text-white px-6 md:px-16 lg:px-24 py-16 max-w-3xl">
-      <a
+      <Link
         href="/"
         className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors"
       >
         &larr; noui.bot
-      </a>
+      </Link>
 
       <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-2">
         Register Your MCP Server
@@ -230,18 +231,18 @@ export default function ProviderRegisterPage() {
           </div>
 
           <div className="flex gap-4 pt-4">
-            <a
+            <Link
               href="/providers/dashboard"
               className="font-mono text-sm bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors"
             >
               Go to Dashboard →
-            </a>
-            <a
+            </Link>
+            <Link
               href="/providers"
               className="font-mono text-sm bg-white/10 text-white px-6 py-3 rounded hover:bg-white/20 transition-colors"
             >
               View All Providers
-            </a>
+            </Link>
           </div>
         </div>
       )}

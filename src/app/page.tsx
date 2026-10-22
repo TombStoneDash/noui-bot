@@ -5,6 +5,7 @@ import {
 } from "@/components/RevealWrapper";
 import { BazaarStatus } from "@/components/BazaarStatus";
 import { WaitlistForm } from "@/components/WaitlistForm";
+import Link from "next/link";
 
 function FlowStep({
   step,
@@ -73,12 +74,12 @@ export default function Home() {
             >
               Get Started &rarr;
             </a>
-            <a
+            <Link
               href="/providers"
               className="font-mono text-sm px-6 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors"
             >
               Browse Providers
-            </a>
+            </Link>
             <a
               href="/docs/guides/bill-an-mcp-tool"
               className="font-mono text-sm px-6 py-3 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"
@@ -106,9 +107,9 @@ export default function Home() {
                 <li>&rarr; Exactly-once billing, signed receipts</li>
                 <li>&rarr; Listed in the provider marketplace</li>
               </ul>
-              <a href="/providers/register" className="font-mono text-xs text-green-400 hover:text-green-300 transition-colors">
+              <Link href="/providers/register" className="font-mono text-xs text-green-400 hover:text-green-300 transition-colors">
                 List your tools &rarr;
-              </a>
+              </Link>
             </div>
 
             <div className="border border-white/10 p-6">
@@ -236,12 +237,12 @@ export default function Home() {
           <BazaarStatus />
 
           <div className="flex flex-wrap gap-4 mt-8">
-            <a
+            <Link
               href="/providers/register"
               className="font-mono text-sm px-6 py-3 bg-white text-black hover:bg-white/90 transition-colors"
             >
               List Your MCP Server &rarr;
-            </a>
+            </Link>
             <a
               href="/developers/register"
               className="font-mono text-sm px-6 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors"
@@ -478,12 +479,12 @@ export default function Home() {
             >
               Developer Quick Start &rarr;
             </a>
-            <a
+            <Link
               href="/providers/register"
               className="font-mono text-sm px-6 py-3 border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors"
             >
               List Your MCP Server
-            </a>
+            </Link>
             <a
               href="/pricing"
               className="font-mono text-sm px-6 py-3 border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 transition-colors"

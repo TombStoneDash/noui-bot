@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "API Reference — Swagger UI | noui.bot",
@@ -9,12 +10,12 @@ export default function ApiDocsPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="px-6 md:px-16 lg:px-24 py-8">
-        <a
+        <Link
           href="/"
           className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors"
         >
           &larr; noui.bot
-        </a>
+        </Link>
         <h1 className="font-mono text-2xl font-bold mt-6 mb-2">
           API Reference
         </h1>

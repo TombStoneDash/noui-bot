@@ -43,6 +43,7 @@ test("the displayed quickstart SDK example runs against the repository SDK", asy
   const page = vm.createContext({
     exports: {},
     require(name) {
+      if (name === "next/link") return { default: "Link" };
       assert.equal(name, "react/jsx-runtime");
       return { jsx, jsxs: jsx };
     },

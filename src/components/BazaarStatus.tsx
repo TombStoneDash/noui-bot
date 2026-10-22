@@ -13,7 +13,7 @@ export function BazaarStatus() {
       .then((d) => {
         if (!Array.isArray(d?.tools)) throw new Error("Invalid catalog payload");
         const tools = d.tools.length;
-        const providerSet = new Set(d.tools.map((t: any) => t.provider?.id).filter(Boolean));
+        const providerSet = new Set(d.tools.map((t: { provider?: { id?: string } }) => t.provider?.id).filter(Boolean));
         setStatus({ tools, providers: providerSet.size });
       })
       .catch(() => setStatus(null));
