@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const ipHash = await hashIP(ip);
 
     // Rate limit: 100 req/min
-    if (!checkRateLimit(ipHash, 100)) {
+    if (!checkRateLimit(ipHash, 100, "token-verify")) {
       return NextResponse.json(
         { error: "Rate limit exceeded." },
         { status: 429 }

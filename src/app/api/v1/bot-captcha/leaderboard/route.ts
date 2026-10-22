@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const ipHash = await hashIP(ip);
 
-    if (!checkRateLimit(ipHash, 100)) {
+    if (!checkRateLimit(ipHash, 100, "leaderboard")) {
       return NextResponse.json({ error: "Rate limit exceeded." }, { status: 429 });
     }
 
