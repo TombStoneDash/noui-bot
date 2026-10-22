@@ -13,6 +13,12 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const period = url.searchParams.get("period") || "30d";
+  if (!["24h", "7d", "30d", "90d"].includes(period)) {
+    return NextResponse.json(
+      { error: true, code: "BAD_REQUEST", message: "period must be one of: 24h | 7d | 30d | 90d" },
+      { status: 400 }
+    );
+  }
 
   const now = new Date();
   let startDate: Date;

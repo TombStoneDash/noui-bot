@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { authenticateKey } from "@/lib/bazaar-auth";
+import { parsePagination } from "@/lib/pagination";
 
 /**
  * GET /api/v1/bazaar/receipts — List receipts
@@ -16,8 +17,14 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
-  const offset = parseInt(url.searchParams.get("offset") || "0");
+  const page = parsePagination(url.searchParams, { defaultLimit: 50, maxLimit: 100 });
+  if ("error" in page) {
+    return NextResponse.json(
+      { error: true, code: "BAD_REQUEST", message: page.error },
+      { status: 400 }
+    );
+  }
+  const { limit, offset } = page;
   const toolId = url.searchParams.get("tool_id");
   const status = url.searchParams.get("status");
 

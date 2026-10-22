@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { authenticateKey } from "@/lib/bazaar-auth";
+import { parsePagination } from "@/lib/pagination";
 
 export async function GET(request: Request) {
   const owner = await authenticateKey(request);
@@ -13,7 +14,22 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const period = url.searchParams.get("period") || "30d";
-  const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 200);
+  // An unknown period used to fall through to 30d while the response still
+  // echoed the requested value, mislabelling the data.
+  if (!["24h", "7d", "30d", "90d"].includes(period)) {
+    return NextResponse.json(
+      { error: true, code: "BAD_REQUEST", message: "period must be one of: 24h | 7d | 30d | 90d" },
+      { status: 400 }
+    );
+  }
+  const page = parsePagination(url.searchParams, { defaultLimit: 50, maxLimit: 200 });
+  if ("error" in page) {
+    return NextResponse.json(
+      { error: true, code: "BAD_REQUEST", message: page.error },
+      { status: 400 }
+    );
+  }
+  const { limit } = page;
 
   const sb = getSupabase();
 
@@ -26,6 +42,9 @@ export async function GET(request: Request) {
       break;
     case "7d":
       startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case "90d":
+      startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
       break;
     case "30d":
     default:
