@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { generateBazaarKey } from "@/lib/bazaar-auth";
 
+const FREE_PLAN_RPM = 60;
+
 export async function GET() {
   return NextResponse.json({
     endpoint: "/api/bazaar/register-consumer",
@@ -10,7 +12,7 @@ export async function GET() {
     schema: {
       name: "string (required) — your name or org",
       email: "string (required) — contact email",
-      rate_limit_rpm: "number (optional) — requests per minute (default: 60)",
+      rate_limit_rpm: "integer (optional) — requests per minute, 1-60 (default: 60); higher limits come with a paid plan",
     },
   });
 }
@@ -36,6 +38,15 @@ export async function POST(request: Request) {
     );
   }
 
+  // Self-registration gets at most the free plan's limit; pro/scale limits are set by the subscription webhook.
+  const rateLimitRpm = body.rate_limit_rpm ?? FREE_PLAN_RPM;
+  if (typeof rateLimitRpm !== "number" || !Number.isInteger(rateLimitRpm) || rateLimitRpm < 1 || rateLimitRpm > FREE_PLAN_RPM) {
+    return NextResponse.json(
+      { error: true, code: "VALIDATION_ERROR", message: `rate_limit_rpm must be an integer between 1 and ${FREE_PLAN_RPM}` },
+      { status: 422 }
+    );
+  }
+
   const sb = getSupabase();
   const consumerKey = generateBazaarKey();
 
@@ -44,7 +55,7 @@ export async function POST(request: Request) {
     .insert({
       name,
       email,
-      rate_limit_rpm: (body.rate_limit_rpm as number) || 60,
+      rate_limit_rpm: rateLimitRpm,
       balance_cents: 0,
     })
     .select()
@@ -58,7 +69,7 @@ export async function POST(request: Request) {
   }
 
   // Create API key
-  await sb.from("bazaar_api_keys").insert({
+  const { error: keyErr } = await sb.from("bazaar_api_keys").insert({
     key_hash: consumerKey.hash,
     key_prefix: consumerKey.prefix,
     owner_type: "consumer",
@@ -66,6 +77,13 @@ export async function POST(request: Request) {
     name: "Default Consumer Key",
     permissions: ["read", "call_tools"],
   });
+
+  if (keyErr) {
+    return NextResponse.json(
+      { error: true, code: "INTERNAL_ERROR", message: "API key could not be created" },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json(
     {
