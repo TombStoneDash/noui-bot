@@ -31,6 +31,7 @@ function route(name: string, cents: number) {
         ...result,
         select: () => query, eq: () => query, order: () => query,
         not: () => query, limit: () => query,
+        or: () => query, gt: () => query, range: () => query,
         single: async () => ({ data: tool, error: null }),
         insert: async (value: Record<string, unknown>) => {
           inserts[table] = value;
