@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { generateBazaarKey } from "@/lib/bazaar-auth";
+import { isPriceCents } from "@/lib/price-cents";
 import { createHash } from "crypto";
 
 export async function GET() {
@@ -14,7 +15,7 @@ export async function GET() {
       endpoint_url: "string (required) — your MCP server URL",
       description: "string (optional)",
       pricing_model: "string (optional) — per_call | per_token | flat_monthly | free (default: per_call)",
-      default_price_cents: "number (optional) — price per call in cents (default: 0)",
+      default_price_cents: "integer (optional) — price per call in cents, >= 0 (default: 0)",
       tools: "array (optional) — list of tools to register: [{ tool_name, description, category, price_cents_override }]",
     },
   });
@@ -42,6 +43,23 @@ export async function POST(request: Request) {
     );
   }
 
+  const defaultPriceCents = body.default_price_cents ?? 0;
+  if (!isPriceCents(defaultPriceCents)) {
+    return NextResponse.json(
+      { error: true, code: "VALIDATION_ERROR", message: "default_price_cents must be a non-negative integer" },
+      { status: 422 }
+    );
+  }
+
+  const tools: Array<Record<string, unknown>> = Array.isArray(body.tools) ? body.tools : [];
+  const badTool = tools.find((tool) => tool.price_cents_override != null && !isPriceCents(tool.price_cents_override));
+  if (badTool) {
+    return NextResponse.json(
+      { error: true, code: "VALIDATION_ERROR", message: `price_cents_override for ${String(badTool.tool_name)} must be a non-negative integer or null` },
+      { status: 422 }
+    );
+  }
+
   const sb = getSupabase();
   const providerKey = generateBazaarKey();
 
@@ -54,7 +72,7 @@ export async function POST(request: Request) {
       endpoint_url: endpointUrl,
       description: (body.description as string) || null,
       pricing_model: (body.pricing_model as string) || "per_call",
-      default_price_cents: (body.default_price_cents as number) || 0,
+      default_price_cents: defaultPriceCents,
       api_key_hash: providerKey.hash,
       api_key_prefix: providerKey.prefix,
     })
@@ -79,7 +97,6 @@ export async function POST(request: Request) {
   });
 
   // Register tools if provided
-  const tools = (body.tools as Array<Record<string, unknown>>) || [];
   const registeredTools = [];
 
   for (const tool of tools) {
@@ -91,7 +108,8 @@ export async function POST(request: Request) {
         display_name: (tool.display_name as string) || null,
         description: (tool.description as string) || null,
         category: (tool.category as string) || "other",
-        price_cents_override: (tool.price_cents_override as number) || null,
+        // ?? keeps an explicit 0 (a free tool) instead of falling back to the provider default
+        price_cents_override: (tool.price_cents_override as number | null | undefined) ?? null,
         input_schema: (tool.input_schema as object) || null,
       })
       .select()

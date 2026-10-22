@@ -28,10 +28,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const amountCents = body.amount_cents as number;
-  if (!amountCents || amountCents < 100 || amountCents > 100000) {
+  const amountCents = body?.amount_cents;
+  if (typeof amountCents !== "number" || !Number.isInteger(amountCents) || amountCents < 100 || amountCents > 100000) {
     return NextResponse.json(
-      { error: true, code: "VALIDATION_ERROR", message: "amount_cents must be between 100 ($1) and 100000 ($1000)" },
+      { error: true, code: "VALIDATION_ERROR", message: "amount_cents must be an integer between 100 ($1) and 100000 ($1000)" },
       { status: 422 }
     );
   }
@@ -77,13 +77,20 @@ export async function POST(request: Request) {
   const currentBalance = owner.balance_cents ?? 0;
   const newBalance = currentBalance + amountCents;
 
-  await sb
+  const { error: updateErr } = await sb
     .from("bazaar_consumers")
     .update({
       balance_cents: newBalance,
       updated_at: new Date().toISOString(),
     })
     .eq("id", owner.id);
+
+  if (updateErr) {
+    return NextResponse.json(
+      { error: true, code: "INTERNAL_ERROR", message: "Balance could not be updated" },
+      { status: 500 }
+    );
+  }
 
   // Log the transaction (table may not exist yet — ignore errors)
   try {

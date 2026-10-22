@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { authenticateKey } from "@/lib/bazaar-auth";
+import { isPriceCents } from "@/lib/price-cents";
 
 export async function GET() {
   return NextResponse.json({
@@ -69,6 +70,11 @@ export async function POST(request: Request) {
       .single();
 
     if (existing) {
+      if (tool.price_cents_override != null && !isPriceCents(tool.price_cents_override)) {
+        errors.push({ tool_name: toolName, error: "price_cents_override must be a non-negative integer or null" });
+        continue;
+      }
+
       // Update existing tool instead of failing
       const { data: updated, error: updErr } = await sb
         .from("bazaar_tools")
@@ -94,8 +100,8 @@ export async function POST(request: Request) {
 
     const pricing = tool.pricing as Record<string, unknown> | undefined;
     const priceCents = (tool.price_cents_override as number) ?? (pricing?.price_cents as number) ?? null;
-    if (priceCents !== null && priceCents < 0) {
-      errors.push({ tool_name: toolName, error: "price_cents_override must be >= 0" });
+    if (priceCents !== null && !isPriceCents(priceCents)) {
+      errors.push({ tool_name: toolName, error: "price_cents_override must be a non-negative integer or null" });
       continue;
     }
 
