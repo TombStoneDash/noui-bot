@@ -305,3 +305,64 @@ test("NODE_ENV=production + RECEIPT_SIGNING_ENFORCE=false + no secret -> proceed
   assert.equal(r.status, 200, r.text);
   assert.equal(upstreamCalls.length, 1);
 });
+
+test("JSON-RPC error inside HTTP 200 -> 502 PROVIDER_ERROR, no debit, no receipt, key not consumed", async () => {
+  const sb = fakeSupabase({ priceCents: 5, balance: 100 });
+  const upstream = async () => ({ status: 200, body: { jsonrpc: "2.0", id: "1", error: { code: -32602, message: "Unknown tool" } } });
+  const { call } = loadRoute({ sb, upstream });
+  const r = await call(REQUEST, { "Idempotency-Key": "rpc-error" });
+  assert.equal(r.status, 502, r.text);
+  assert.equal(r.body.code, "PROVIDER_ERROR");
+  assert.equal(r.body.message, "Provider returned JSON-RPC error -32602: Unknown tool");
+  assert.equal(r.body.cost_cents, 0);
+  assert.equal(r.headers["x-bazaar-cost"], "0");
+  assert.equal(sb.state.rpcCalls, 0);
+  assert.equal(sb.state.balance, 100);
+  assert.equal(sb.state.receipts.length, 0);
+  assert.equal(sb.state.idempotency.size, 0);
+  assert.equal(sb.state.usageLogs[0].status, "error");
+  assert.equal(sb.state.usageLogs[0].cost_cents, 0);
+});
+
+test("upstream 200 with a null body -> 502, not billed, never a 500 after the debit", async () => {
+  const sb = fakeSupabase({ priceCents: 5, balance: 100 });
+  const { call } = loadRoute({ sb, upstream: async () => ({ status: 200, body: null }) });
+  const r = await call(REQUEST);
+  assert.equal(r.status, 502, r.text);
+  assert.equal(r.body.message, "Provider returned an empty response");
+  assert.equal(sb.state.balance, 100);
+});
+
+test("falsy JSON-RPC result is passed through as the result, not the whole envelope", async () => {
+  const sb = fakeSupabase({ priceCents: 0, balance: 0 });
+  const { call } = loadRoute({ sb, upstream: async () => ({ status: 200, body: { jsonrpc: "2.0", id: "1", result: 0 } }) });
+  const r = await call(REQUEST);
+  assert.equal(r.status, 200, r.text);
+  assert.equal(r.body.result, 0);
+});
+
+for (const [label, payload] of [["null", null], ["an array", [REQUEST]], ["a string", "tool"]]) {
+  test(`request body that is ${label} -> 400 BAD_REQUEST, not a 500`, async () => {
+    const sb = fakeSupabase();
+    const { call, upstreamCalls } = loadRoute({ sb, upstream: okUpstream });
+    const r = await call(payload);
+    assert.equal(r.status, 400, r.text);
+    assert.equal(r.body.code, "BAD_REQUEST");
+    assert.equal(upstreamCalls.length, 0);
+  });
+}
+
+for (const [label, payload] of [
+  ["input is a string", { tool_id: TOOL, input: "account=a" }],
+  ["input is an array", { tool_id: TOOL, input: ["a"] }],
+  ["tool_id is a number", { tool_id: 7, input: {} }],
+]) {
+  test(`${label} -> 422 VALIDATION_ERROR before any upstream call`, async () => {
+    const sb = fakeSupabase();
+    const { call, upstreamCalls } = loadRoute({ sb, upstream: okUpstream });
+    const r = await call(payload);
+    assert.equal(r.status, 422, r.text);
+    assert.equal(r.body.code, "VALIDATION_ERROR");
+    assert.equal(upstreamCalls.length, 0);
+  });
+}

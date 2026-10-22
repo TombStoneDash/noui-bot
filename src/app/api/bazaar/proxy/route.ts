@@ -40,6 +40,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!isPlainObject(body)) {
+    return NextResponse.json(
+      { error: true, code: "BAD_REQUEST", message: "Request body must be a JSON object" },
+      { status: 400 }
+    );
+  }
+
   const requestSizeBytes = new TextEncoder().encode(rawBody).length;
 
   // 2a. Idempotency-Key (optional). Same key + same body replays the stored response.
@@ -51,13 +58,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const toolId = body.tool_id as string;
-  const toolName = body.tool_name as string;
-  const input = body.input as Record<string, unknown>;
+  const toolId = typeof body.tool_id === "string" ? body.tool_id : "";
+  const toolName = typeof body.tool_name === "string" ? body.tool_name : "";
+  const input = body.input;
 
-  if ((!toolId && !toolName) || !input) {
+  if ((!toolId && !toolName) || !isPlainObject(input)) {
     return NextResponse.json(
-      { error: true, code: "VALIDATION_ERROR", message: "tool_id (or tool_name) and input are required" },
+      { error: true, code: "VALIDATION_ERROR", message: "tool_id (or tool_name) must be a string and input must be an object" },
       { status: 422 }
     );
   }
@@ -208,6 +215,20 @@ export async function POST(request: Request) {
   return NextResponse.json(outcome.response.body, { status: outcome.response.status, headers });
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** "<code>: <message>" when the provider body is a JSON-RPC error response, else null. */
+function jsonRpcError(response: unknown): string | null {
+  if (!isPlainObject(response) || !("error" in response) || "result" in response) return null;
+  const error = response.error;
+  if (!isPlainObject(error)) return String(error);
+  const code = typeof error.code === "number" ? error.code : "unknown";
+  const message = typeof error.message === "string" && error.message ? error.message : "no message";
+  return `${code}: ${message}`;
+}
+
 type ProxyCallParams = {
   sb: ReturnType<typeof getSupabase>;
   owner: { id: string; balance_cents?: number | null };
@@ -284,6 +305,17 @@ async function executeProxyCall(params: ProxyCallParams): Promise<{ response: St
       mcpResponse = { error: errorMessage };
     } else {
       mcpResponse = JSON.parse(mcpResponseRaw);
+      // An HTTP 200 can still carry a JSON-RPC error; that is a failed call, never billed.
+      const rpcError = jsonRpcError(mcpResponse);
+      if (mcpResponse === null) {
+        status = "error";
+        errorMessage = "Provider returned an empty response";
+        mcpResponse = { error: errorMessage };
+      } else if (rpcError) {
+        status = "error";
+        errorMessage = `Provider returned JSON-RPC error ${rpcError}`;
+        mcpResponse = { error: errorMessage };
+      }
     }
   } catch (err: any) {
     if (err.name === "TimeoutError") {
@@ -454,7 +486,7 @@ async function executeProxyCall(params: ProxyCallParams): Promise<{ response: St
       status: 200,
       headers: enrichmentHeaders,
       body: {
-        result: mcpResponse.result || mcpResponse,
+        result: isPlainObject(mcpResponse) && "result" in mcpResponse ? mcpResponse.result : mcpResponse,
         meta: {
           tool: tool.tool_name,
           provider: provider.name,
