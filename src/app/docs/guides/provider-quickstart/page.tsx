@@ -53,31 +53,32 @@ export default function ProviderQuickstartPage() {
         </Section>
 
         <Section title="Step 1: Register as a Provider">
-          <Code>{`curl -X POST https://noui.bot/api/v1/bazaar/register-provider \\
+          <Code>{`curl -X POST https://noui.bot/api/bazaar/register-provider \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "your-mcp-server",
-    "displayName": "Your MCP Server",
-    "description": "What your server does",
-    "mcpServerUrl": "https://your-server.com/mcp",
-    "contact": "you@example.com"
+    "email": "you@example.com",
+    "endpoint_url": "https://your-server.com/mcp",
+    "description": "What your server does"
   }'
 
-# Response:
+# Response (201):
 # {
-#   "providerId": "prov_abc123",
-#   "apiKey": "baz_sk_...",
-#   "status": "pending_verification"
+#   "registered": true,
+#   "provider_id": "…",
+#   "api_key": "bz_…",
+#   "api_key_prefix": "bz_…",
+#   "tools_registered": 0
 # }`}</Code>
           <p className="text-white/50 text-xs mt-2">
-            Save your <code className="text-white/70">apiKey</code> — you&apos;ll need it for all provider operations.
+            Save your <code className="text-white/70">api_key</code> — you&apos;ll need it for all provider operations.
           </p>
         </Section>
 
         <Section title="Step 2: List Your Tools">
           <Code>{`curl -X POST https://noui.bot/api/bazaar/tools \\
   -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer baz_sk_..." \\
+  -H "Authorization: Bearer bz_..." \\
   -d '{
     "tools": [
       {
@@ -114,22 +115,24 @@ export default function ProviderQuickstartPage() {
           <p className="text-white/60 text-sm leading-relaxed mb-4">
             Verified providers get a trust badge, higher catalog placement, and more consumer confidence.
           </p>
-          <Code>{`# Start email verification
+          <Code>{`# Email: instant if your registration email is on record
 curl -X POST https://noui.bot/api/v1/bazaar/providers/verify \\
-  -H "Authorization: Bearer baz_sk_..." \\
-  -d '{ "method": "email" }'
+  -H "Authorization: Bearer bz_..." \\
+  -d '{ "level": "email" }'
 
-# You'll receive a verification code at your contact email.
-# Submit it:
+# Domain: the first call returns a DNS TXT challenge
 curl -X POST https://noui.bot/api/v1/bazaar/providers/verify \\
-  -H "Authorization: Bearer baz_sk_..." \\
-  -d '{ "method": "email", "code": "ABC123" }'`}</Code>
+  -H "Authorization: Bearer bz_..." \\
+  -d '{ "level": "domain", "domain": "example.com" }'
+
+# Publish the TXT record at _noui-verify.example.com, then
+# repeat the same call to check it and complete verification.`}</Code>
         </Section>
 
         <Section title="Step 4: Monitor Your Earnings">
           <Code>{`# Check your trust score and SLA
 curl https://noui.bot/api/v1/bazaar/providers/YOUR_ID/trust \\
-  -H "Authorization: Bearer baz_sk_..."
+  -H "Authorization: Bearer bz_..."
 
 # Response includes:
 # - trustScore (0-100)
