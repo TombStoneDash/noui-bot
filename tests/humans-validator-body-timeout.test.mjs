@@ -33,6 +33,7 @@ function loadRoute(fetch) {
     exports: {},
     AbortController,
     Error,
+    URL,
     fetch(url, options) {
       assert.equal(url, target);
       assert.ok(options.signal instanceof AbortSignal);
@@ -49,6 +50,8 @@ function loadRoute(fetch) {
       timers.delete(id);
     },
     require(name) {
+      // The SSRF guard has its own tests (humans-validator-ssrf); pass every URL here.
+      if (name === "@/lib/public-url") return { checkPublicUrl: async (input) => ({ ok: true, url: new URL(input) }) };
       assert.equal(name, "next/server");
       return { NextResponse: { json: (body, init) => Response.json(body, init) } };
     },

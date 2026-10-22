@@ -24,7 +24,7 @@ export async function GET() {
       "POST /api/v1/waitlist":   "Join waitlist (body: { email })",
       "POST /api/v1/feedback":   "Report walls and needs (GET for schema)",
       "POST /api/v1/apply":      "Apply to build with us (GET for schema)",
-      "POST /api/v1/init":       "Initialize database schema (idempotent)",
+      "POST /api/v1/init":       "Initialize database schema (idempotent, operator-only)",
     },
     bazaar: {
       description: "Agent Bazaar — billing, metering, and auth for MCP servers",
