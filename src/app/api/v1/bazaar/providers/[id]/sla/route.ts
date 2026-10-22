@@ -35,12 +35,14 @@ export async function GET(
     .eq("provider_id", providerId)
     .gte("created_at", thirtyDaysAgo);
 
-  if (logsErr) {
-    return NextResponse.json(
-      { error: true, message: logsErr.message },
-      { status: 500 }
+  // Never report partial metrics, and never echo database error details.
+  const slaUnavailable = () =>
+    NextResponse.json(
+      { error: true, code: "SLA_UNAVAILABLE", message: "SLA metrics unavailable" },
+      { status: 503 }
     );
-  }
+
+  if (logsErr) return slaUnavailable();
 
   const totalCalls = logs?.length || 0;
   const successCalls = logs?.filter((l) => l.status === "success").length || 0;
@@ -62,26 +64,31 @@ export async function GET(
     : 0;
 
   // Count receipts issued
-  const { count: receiptsCount } = await sb
+  const { count: receiptsCount, error: receiptsCountErr } = await sb
     .from("bazaar_receipts")
     .select("*", { count: "exact", head: true })
     .eq("provider_id", providerId)
     .gte("created_at", thirtyDaysAgo);
 
+  if (receiptsCountErr) return slaUnavailable();
+
   // Count disputes — look up through receipts
   // Disputes reference receipt_id, and receipts have provider_id
-  const { data: providerReceipts } = await sb
+  const { data: providerReceipts, error: receiptsErr } = await sb
     .from("bazaar_receipts")
     .select("receipt_id")
     .eq("provider_id", providerId);
 
+  if (receiptsErr) return slaUnavailable();
+
   const receiptIds = (providerReceipts || []).map((r) => r.receipt_id);
   let disputesCount = 0;
   if (receiptIds.length > 0) {
-    const { count } = await sb
+    const { count, error: disputesErr } = await sb
       .from("bazaar_disputes")
       .select("*", { count: "exact", head: true })
       .in("receipt_id", receiptIds);
+    if (disputesErr) return slaUnavailable();
     disputesCount = count || 0;
   }
 

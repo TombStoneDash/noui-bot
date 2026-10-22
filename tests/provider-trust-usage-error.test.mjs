@@ -29,7 +29,14 @@ const provider = {
   verified_at: null,
 };
 
-async function executeGET({ usage, receipts = [], disputes = [0, 0], providerRecord = provider }) {
+async function executeGET({
+  usage,
+  receipts = [],
+  receiptsError = null,
+  disputes = [0, 0],
+  disputeErrors = [null, null],
+  providerRecord = provider,
+}) {
   const queries = [];
   let disputeQuery = 0;
   const context = vm.createContext({
@@ -85,7 +92,7 @@ async function executeGET({ usage, receipts = [], disputes = [0, 0], providerRec
                       eq(column, value) {
                         assert.equal(column, "provider_id");
                         assert.equal(value, provider.id);
-                        return Promise.resolve({ data: receipts, error: null });
+                        return Promise.resolve(receiptsError ? { data: null, error: receiptsError } : { data: receipts, error: null });
                       },
                     };
                   },
@@ -102,13 +109,13 @@ async function executeGET({ usage, receipts = [], disputes = [0, 0], providerRec
                         assert.equal(column, "receipt_id");
                         assert.deepEqual(values, receipts.map((receipt) => receipt.receipt_id));
                         const index = disputeQuery++;
-                        if (index === 0) return Promise.resolve({ count: disputes[0], error: null });
+                        if (index === 0) return Promise.resolve({ count: disputes[0], error: disputeErrors[0] });
                         assert.equal(index, 1);
                         return {
                           eq(column, value) {
                             assert.equal(column, "status");
                             assert.equal(value, "resolved_denied");
-                            return Promise.resolve({ count: disputes[1], error: null });
+                            return Promise.resolve({ count: disputes[1], error: disputeErrors[1] });
                           },
                         };
                       },
@@ -197,3 +204,59 @@ test("mixed usage logs retain uptime, latency, and dispute thresholds", async ()
     "bazaar_disputes",
   ]);
 });
+
+const databaseMessage = "private database connection details";
+const someUsage = { data: [{ status: "success", latency_ms: 100 }], error: null };
+
+function assertDisputesUnavailable(response, body) {
+  assert.equal(response.status, 503);
+  assert.deepEqual(body, {
+    error: true,
+    code: "DISPUTES_UNAVAILABLE",
+    message: "Trust score unavailable",
+  });
+  assert.equal(JSON.stringify(body).includes(databaseMessage), false);
+}
+
+test("receipt lookup error fails closed instead of scoring zero disputes", async () => {
+  const { response, body, queries } = await executeGET({
+    usage: someUsage,
+    receiptsError: { message: databaseMessage },
+  });
+  assertDisputesUnavailable(response, body);
+  assert.deepEqual(queries, ["bazaar_providers", "bazaar_usage_logs", "bazaar_receipts"]);
+});
+
+for (const [label, disputeErrors, expectedQueries] of [
+  ["total dispute count", [{ message: databaseMessage }, null], 4],
+  ["denied dispute count", [null, { message: databaseMessage }], 5],
+]) {
+  test(`${label} error fails closed instead of scoring zero disputes`, async () => {
+    const { response, body, queries } = await executeGET({
+      usage: someUsage,
+      receipts: [{ receipt_id: "receipt-1" }],
+      disputes: [0, 0],
+      disputeErrors,
+    });
+    assertDisputesUnavailable(response, body);
+    assert.equal(queries.length, expectedQueries);
+  });
+}
+
+for (const { name, latencies, p95 } of [
+  { name: "twenty samples", latencies: Array.from({ length: 20 }, (_, i) => 20 - i), p95: 19 },
+  { name: "ten samples", latencies: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1], p95: 10 },
+  { name: "one hundred samples", latencies: Array.from({ length: 100 }, (_, i) => i + 1), p95: 95 },
+  { name: "one sample", latencies: [42], p95: 42 },
+]) {
+  test(`trust p95 uses nearest rank for ${name}`, async () => {
+    const { response, body } = await executeGET({
+      usage: {
+        data: latencies.map((latency_ms) => ({ status: "success", latency_ms })),
+        error: null,
+      },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(body.details.p95_latency_ms, p95);
+  });
+}
