@@ -84,7 +84,7 @@ import { BazaarClient } from '@forthebots/bazaar-sdk';
 
 const bazaar = new BazaarClient({
   baseUrl: 'https://noui.bot/api/v1',
-  apiKey: 'baz_sk_your_key_here', // from Step 2
+  apiKey: 'bz_your_key_here', // from Step 2
 });
 
 async function listTools() {
@@ -147,7 +147,7 @@ import { BazaarClient } from '@forthebots/bazaar-sdk';
 
 const bazaar = new BazaarClient({
   baseUrl: 'https://noui.bot/api/v1',
-  apiKey: 'baz_sk_your_key_here',
+  apiKey: 'bz_your_key_here',
 });
 
 async function verify() {
@@ -172,7 +172,7 @@ import { BazaarClient } from '@forthebots/bazaar-sdk';
 
 const bazaar = new BazaarClient({
   baseUrl: 'https://noui.bot/api/v1',
-  apiKey: 'baz_sk_your_key_here',
+  apiKey: 'bz_your_key_here',
 });
 
 async function checkDashboard() {

@@ -66,7 +66,7 @@ test("Step 2 renders a registrable tool payload with prices in cents", async () 
   const url = new URL(endpoint[1]);
   assert.equal(url.pathname, "/api/bazaar/tools");
   assert.match(await readFile(new URL(`../src/app${url.pathname}/route.ts`, import.meta.url), "utf8"), /export async function POST\(/);
-  assert.match(curl, /-H "Authorization: Bearer baz_sk_\.\.\."/);
+  assert.match(curl, /-H "Authorization: Bearer bz_\.\.\."/);
 
   const data = curl.match(/-d '(\{[\s\S]*\})'/);
   assert.ok(data, "curl has a JSON body");
