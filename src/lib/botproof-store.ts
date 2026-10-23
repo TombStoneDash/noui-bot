@@ -164,9 +164,10 @@ export async function getChallenge(id: string): Promise<ChallengeRow | null> {
     .from("bot_captcha_challenges")
     .select("*")
     .eq("id", id)
-    .single();
-  if (error || !data) return null;
-  return data as ChallengeRow;
+    .maybeSingle();
+  // A failed read is not "no such challenge": throw so callers report an outage.
+  if (error) throw new Error(`getChallenge: ${error.message}`);
+  return (data as ChallengeRow | null) ?? null;
 }
 
 /**
@@ -252,8 +253,10 @@ export async function getVerificationByToken(token: string): Promise<Verificatio
     .select("*")
     .eq("token", token)
     .eq("revoked", false)
-    .single();
-  if (error || !data) return null;
+    .maybeSingle();
+  // A failed read is not "invalid token": throw so callers report an outage.
+  if (error) throw new Error(`getVerificationByToken: ${error.message}`);
+  if (!data) return null;
   // Map bot_captcha_tokens schema to VerificationRow
   const metadata = (data.metadata || {}) as Record<string, unknown>;
   return {

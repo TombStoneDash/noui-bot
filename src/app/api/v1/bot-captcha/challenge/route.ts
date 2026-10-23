@@ -106,8 +106,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json().catch(() => ({}));
-    const level = Math.min(3, Math.max(1, Number(body.level) || 1));
+    // The body is optional; a missing, malformed or non-object body means level 1.
+    const body: unknown = await request.json().catch(() => null);
+    const requestedLevel = body !== null && typeof body === "object" && !Array.isArray(body)
+      ? (body as { level?: unknown }).level
+      : undefined;
+    const level = Math.min(3, Math.max(1, Number(requestedLevel) || 1));
 
     // For MVP, only Level 1 challenges are implemented
     if (level > 1) {
