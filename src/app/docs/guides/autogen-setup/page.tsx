@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BAZAAR_PYTHON_CLIENT } from "../bazaar-python-client";
 
 export const metadata: Metadata = {
   title: "Use Bazaar MCP Tools with AutoGen | noui.bot",
@@ -45,12 +46,12 @@ export default function AutoGenSetupPage() {
         <section>
           <h2 className="font-mono text-lg text-white/90 mb-4">1. Install Dependencies</h2>
           <pre className="bg-gray-900 border border-gray-800 rounded p-4 overflow-x-auto text-green-400 text-xs">
-{`pip install autogen-agentchat autogen-ext[mcp]`}
+{`pip install autogen-agentchat "autogen-ext[openai]"`}
           </pre>
           <p className="mt-4 text-white/40">
-            AutoGen&apos;s <code className="text-white/60">autogen-ext[mcp]</code> package
-            includes <code className="text-white/60">McpWorkbench</code>, which bridges
-            MCP servers into AutoGen&apos;s tool system.
+            Bazaar runs each provider&apos;s MCP server for you behind one HTTPS proxy, so your
+            agents need no MCP workbench; each Bazaar tool becomes a plain{" "}
+            <code className="text-white/60">FunctionTool</code>.
           </p>
         </section>
 
@@ -65,106 +66,109 @@ export OPENAI_API_KEY="sk-..."   # or Azure OpenAI credentials`}
 
         {/* Step 3 */}
         <section>
-          <h2 className="font-mono text-lg text-white/90 mb-4">3. Connect AutoGen to Bazaar</h2>
+          <h2 className="font-mono text-lg text-white/90 mb-4">3. Save the Bazaar Client</h2>
           <p className="mb-4">
-            Use <code className="text-white/60">McpWorkbench</code> to connect to Bazaar&apos;s
-            SSE endpoint. All discovered tools are automatically available to your agents:
+            Save this as <code className="text-white/60">bazaar_client.py</code>. It lists tools from{" "}
+            <code className="text-white/60">GET /api/bazaar/catalog</code> and runs them through{" "}
+            <code className="text-white/60">POST /api/bazaar/proxy</code>:
           </p>
           <pre className="bg-gray-900 border border-gray-800 rounded p-4 overflow-x-auto text-green-400 text-xs">
-{`import os
-import asyncio
-from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.ui import Console
-from autogen_ext.tools.mcp import McpWorkbench, SseServerParams
-from autogen_ext.models.openai import OpenAIChatCompletionClient
-
-API_KEY = os.environ["NOUI_API_KEY"]
-
-# Configure the Bazaar MCP connection
-bazaar_params = SseServerParams(
-    url="https://noui.bot/api/mcp/sse",
-    headers={"Authorization": f"Bearer {API_KEY}"},
-)
-
-
-async def main():
-    # Connect to Bazaar and discover tools
-    async with McpWorkbench(bazaar_params) as workbench:
-        tools = workbench.tools
-        print(f"Loaded {len(tools)} Bazaar tools")
-
-        # Create an AutoGen agent with Bazaar tools
-        model_client = OpenAIChatCompletionClient(model="gpt-4o")
-
-        agent = AssistantAgent(
-            name="bazaar_agent",
-            model_client=model_client,
-            tools=tools,
-            system_message=(
-                "You are a helpful agent with access to "
-                "Bazaar MCP tools. Use them to answer questions."
-            ),
-        )
-
-        # Run a task
-        result = await Console(
-            agent.run_stream(
-                task="Check the platform stats on noui.bot"
-            )
-        )
-        print(result)
-
-
-asyncio.run(main())`}
+{BAZAAR_PYTHON_CLIENT}
           </pre>
         </section>
 
         {/* Step 4 */}
         <section>
-          <h2 className="font-mono text-lg text-white/90 mb-4">4. Multi-Agent Conversations</h2>
+          <h2 className="font-mono text-lg text-white/90 mb-4">4. Give the Tools to an AutoGen Agent</h2>
           <p className="mb-4">
-            AutoGen excels at multi-agent setups. Give Bazaar tools to specific agents
-            in a group chat:
+            Save this as <code className="text-white/60">agent.py</code> next to the client and run it:
           </p>
           <pre className="bg-gray-900 border border-gray-800 rounded p-4 overflow-x-auto text-green-400 text-xs">
-{`from autogen_agentchat.agents import AssistantAgent
+{`import asyncio
+
+from autogen_agentchat.agents import AssistantAgent
+from autogen_core.tools import FunctionTool
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+from bazaar_client import (
+    call_bazaar_tool,
+    list_bazaar_tools,
+    tool_description,
+    tool_function_name,
+)
+
+
+def make_autogen_tool(tool: dict) -> FunctionTool:
+    tool_id = tool["id"]
+
+    def run(arguments: dict) -> str:
+        return call_bazaar_tool(tool_id, arguments)
+
+    return FunctionTool(run, description=tool_description(tool), name=tool_function_name(tool))
+
+
+async def main() -> None:
+    tools = [make_autogen_tool(t) for t in list_bazaar_tools()]
+    print(f"Loaded {len(tools)} Bazaar tools")
+
+    model_client = OpenAIChatCompletionClient(model="gpt-4o")
+    agent = AssistantAgent(
+        name="bazaar_agent",
+        model_client=model_client,
+        tools=tools,
+        system_message="Use Bazaar tools when they help. Every call is billed to your balance.",
+        reflect_on_tool_use=True,
+    )
+
+    result = await agent.run(task="What is the weather in Paris?")
+    print(result.messages[-1].content)
+    await model_client.close()
+
+
+asyncio.run(main())`}
+          </pre>
+          <p className="mt-4 text-white/40">
+            The catalog does not publish parameter schemas yet, so each tool takes one{" "}
+            <code className="text-white/60">arguments</code> object and the model reads the expected
+            fields from the tool description.
+          </p>
+        </section>
+
+        {/* Multi-agent */}
+        <section>
+          <h2 className="font-mono text-lg text-white/90 mb-4">Multi-Agent Conversations</h2>
+          <p className="mb-4">
+            Give Bazaar tools only to the agent that needs them, and always cap the conversation
+            so a loop cannot keep calling paid tools:
+          </p>
+          <pre className="bg-gray-900 border border-gray-800 rounded p-4 overflow-x-auto text-green-400 text-xs">
+{`from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
 from autogen_agentchat.teams import RoundRobinGroupChat
-from autogen_agentchat.conditions import TextMentionTermination
 
-async def multi_agent_example():
-    async with McpWorkbench(bazaar_params) as workbench:
-        model = OpenAIChatCompletionClient(model="gpt-4o")
 
-        # Tool-using agent has Bazaar access
-        tool_agent = AssistantAgent(
-            name="tool_user",
-            model_client=model,
-            tools=workbench.tools,
-            system_message="You fetch data using Bazaar tools.",
-        )
+async def multi_agent_example() -> None:
+    tools = [make_autogen_tool(t) for t in list_bazaar_tools()]
+    model_client = OpenAIChatCompletionClient(model="gpt-4o")
 
-        # Analyst agent has no tools — just reasoning
-        analyst = AssistantAgent(
-            name="analyst",
-            model_client=model,
-            system_message=(
-                "You analyze data provided by tool_user. "
-                "Say TERMINATE when analysis is complete."
-            ),
-        )
+    tool_agent = AssistantAgent(
+        name="tool_user",
+        model_client=model_client,
+        tools=tools,
+        system_message="You fetch data using Bazaar tools.",
+    )
+    analyst = AssistantAgent(
+        name="analyst",
+        model_client=model_client,
+        system_message="You analyze data provided by tool_user. Say TERMINATE when done.",
+    )
 
-        termination = TextMentionTermination("TERMINATE")
-        team = RoundRobinGroupChat(
-            [tool_agent, analyst],
-            termination_condition=termination,
-        )
-
-        result = await Console(
-            team.run_stream(
-                task="Get noui.bot stats and analyze the trends"
-            )
-        )
-        print(result)`}
+    team = RoundRobinGroupChat(
+        [tool_agent, analyst],
+        termination_condition=TextMentionTermination("TERMINATE") | MaxMessageTermination(10),
+    )
+    result = await team.run(task="Get the Paris weather forecast and summarize it")
+    print(result.messages[-1].content)
+    await model_client.close()`}
           </pre>
         </section>
 
@@ -177,7 +181,7 @@ async def multi_agent_example():
           <div className="bg-gray-900 border border-gray-800 rounded p-4">
             <p className="text-white/60 text-xs mb-2">What happens on each tool call:</p>
             <ol className="list-decimal list-inside space-y-1 text-xs text-white/50">
-              <li>Your AutoGen agent calls a Bazaar tool via MCP</li>
+              <li>Your AutoGen agent calls a Bazaar tool through the proxy</li>
               <li>Bazaar checks your balance and the tool&apos;s per-call price</li>
               <li>The tool executes and returns results</li>
               <li>Your balance is debited and a receipt is issued</li>
@@ -188,7 +192,7 @@ async def multi_agent_example():
 curl https://noui.bot/api/v1/bazaar/balance \\
   -H "Authorization: Bearer bz_your_key"
 
-# View receipts
+# View usage and spend
 curl https://noui.bot/api/v1/bazaar/usage/summary \\
   -H "Authorization: Bearer bz_your_key"`}
           </pre>
@@ -199,10 +203,10 @@ curl https://noui.bot/api/v1/bazaar/usage/summary \\
           <h2 className="font-mono text-lg text-white/90 mb-4">6. Production Tips</h2>
           <div className="space-y-4">
             <div className="border border-white/10 rounded p-4">
-              <h3 className="font-mono text-sm text-white/80 mb-2">Context Manager</h3>
+              <h3 className="font-mono text-sm text-white/80 mb-2">Close the Model Client</h3>
               <p className="text-xs text-white/40">
-                Always use <code className="text-white/60">async with McpWorkbench(...)</code>.
-                It handles connection lifecycle, reconnection, and cleanup automatically.
+                Call <code className="text-white/60">await model_client.close()</code> when the run
+                ends. Bazaar calls are stateless HTTPS requests, so there is no tool connection to clean up.
               </p>
             </div>
             <div className="border border-white/10 rounded p-4">
