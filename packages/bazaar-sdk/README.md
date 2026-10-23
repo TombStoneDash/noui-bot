@@ -32,7 +32,7 @@ console.log(result.meta.latency_ms);  // How long it took
 
 // Check usage
 const usage = await client.usage.summary();
-console.log(`Total spend: ${usage.total_spend}`);
+console.log(`Total spend: ${usage.summary.total_spend}`);
 ```
 
 ## For Providers
@@ -58,12 +58,12 @@ await provider.tools.register([
 ]);
 
 // 4. Check your earnings
-const earnings = await provider.provider.summary();
-console.log(`Net earnings: $${(earnings.net_earnings_cents / 100).toFixed(2)}`);
+const { earnings } = await provider.provider.summary();
+console.log(`Net earnings: ${earnings.net_earnings}`);
 
 // 5. Connect Stripe for payouts
-const { url } = await provider.provider.connectStripe('https://my-site.com/success');
-console.log(`Complete onboarding: ${url}`);
+const { onboarding_url } = await provider.provider.connectStripe('https://my-site.com/success');
+console.log(`Complete onboarding: ${onboarding_url}`);
 ```
 
 ## For Consumers (Agent Developers)
@@ -94,7 +94,8 @@ const { balance } = await client.balance.get();
 console.log(`Remaining: ${balance}`);
 
 // 6. Load more funds
-const { url } = await client.balance.load(1000); // $10.00
+const loaded = await client.balance.load(1000); // $10.00
+if (loaded.mode === "live") console.log(`Pay here: ${loaded.checkout_url}`);
 ```
 
 ## MCP Middleware Integration

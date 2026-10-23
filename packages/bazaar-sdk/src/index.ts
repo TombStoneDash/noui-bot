@@ -70,14 +70,27 @@ export interface ProxyResult {
   };
 }
 
+/** GET /api/v1/bazaar/usage/summary. Totals are nested under `summary`. */
 export interface UsageSummary {
-  total_calls: number;
-  total_spend_cents: number;
-  total_spend: string;
-  calls_by_tool: Record<string, number>;
-  calls_by_day: Record<string, number>;
-  top_tools: Array<{ tool_name: string; calls: number; spend_cents: number }>;
+  owner: { id: string; type: "consumer" | "provider"; name: string };
   period: string;
+  summary: {
+    total_calls: number;
+    successful_calls: number;
+    /** Percentage string, e.g. "2.5%" */
+    error_rate: string;
+    total_spend_cents: number;
+    /** Formatted dollars, e.g. "$1.25" */
+    total_spend: string;
+    data_volume: {
+      request_bytes: number;
+      response_bytes: number;
+      tokens_input: number;
+      tokens_output: number;
+    };
+  };
+  top_tools: Array<{ tool: string; calls: number; spend_cents: number; spend: string }>;
+  calls_by_day: Array<{ date: string; calls: number; spend_cents: number; errors: number }>;
 }
 
 export interface UsageRecord {
@@ -120,18 +133,65 @@ export interface StatsInfo {
   timestamp: string;
 }
 
+/** POST /api/bazaar/billing/provider-summary. Earnings are nested under `earnings`. */
 export interface ProviderSummary {
-  gross_revenue_cents: number;
-  platform_fee_cents: number;
-  net_earnings_cents: number;
-  total_calls: number;
+  provider: { id: string; name: string };
+  period: string;
+  /** e.g. "10%" */
+  platform_fee_rate: string;
+  earnings: {
+    gross_revenue_cents: number;
+    gross_revenue: string;
+    platform_fee_cents: number;
+    platform_fee: string;
+    net_earnings_cents: number;
+    net_earnings: string;
+  };
+  payout: {
+    pending_balance_cents: number;
+    pending_balance: string;
+    last_payout_date: string | null;
+    last_payout_cents: number | null;
+  };
   by_tool: Array<{
-    tool_name: string;
+    tool: string;
     calls: number;
     gross_cents: number;
+    platform_fee_cents: number;
     net_cents: number;
   }>;
-  period: string;
+  by_week: Array<{ week_of: string; calls: number; gross_cents: number; net_cents: number }>;
+}
+
+/**
+ * POST /api/bazaar/balance/load. In live mode, pay at `checkout_url` to fund
+ * the balance; check `mode` before reading mode-specific fields.
+ */
+export type BalanceLoadResult =
+  | {
+      mode: "live";
+      checkout_url: string;
+      session_id: string;
+      amount_cents: number;
+      amount: string;
+      message: string;
+    }
+  | {
+      mode: "dry_run";
+      previous_balance_cents: number;
+      added_cents: number;
+      new_balance_cents: number;
+      new_balance: string;
+      message: string;
+      note: string;
+    };
+
+/** POST /api/bazaar/connect: send the provider to `onboarding_url`. */
+export interface ConnectOnboarding {
+  provider_id: string;
+  stripe_account_id: string;
+  onboarding_url: string;
+  expires_at: string;
 }
 
 export interface MeterPayload {
@@ -385,7 +445,7 @@ class BalanceAPI {
   }
 
   /** Load balance via Stripe Checkout */
-  async load(amountCents: number): Promise<{ url?: string; balance_cents?: number }> {
+  async load(amountCents: number): Promise<BalanceLoadResult> {
     return this.client.request("POST", "/api/bazaar/balance/load", {
       amount_cents: amountCents,
     });
@@ -412,7 +472,7 @@ class ProviderAPI {
   }
 
   /** Start Stripe Connect onboarding */
-  async connectStripe(returnUrl: string): Promise<{ url: string }> {
+  async connectStripe(returnUrl: string): Promise<ConnectOnboarding> {
     return this.client.request("POST", "/api/bazaar/connect", { return_url: returnUrl });
   }
 
