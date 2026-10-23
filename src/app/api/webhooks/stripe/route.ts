@@ -36,14 +36,19 @@ export async function POST(request: Request) {
     );
   }
 
+  // Fail closed: without the signing secret any caller could post a forged
+  // checkout.session.completed and upgrade an account's plan for free.
+  if (!WEBHOOK_SECRET) {
+    console.error("Stripe webhook rejected: STRIPE_WEBHOOK_SECRET is not set");
+    return NextResponse.json(
+      { error: true, message: "Stripe webhook signing secret not configured" },
+      { status: 503 }
+    );
+  }
+
   let event: Stripe.Event;
   try {
-    if (WEBHOOK_SECRET) {
-      event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET);
-    } else {
-      // Dev mode — parse without verification
-      event = JSON.parse(body) as Stripe.Event;
-    }
+    event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Invalid signature";
     return NextResponse.json(
