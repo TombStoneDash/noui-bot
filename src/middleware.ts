@@ -24,6 +24,12 @@ const PRIVATE_CACHE_ROUTES = new Set([
   "/api/v1/bazaar/receipts",
 ]);
 
+// Browser clients send Idempotency-Key to the proxy and need to read the
+// rate-limit and replay headers, which CORS hides unless they are exposed.
+const CORS_ALLOW_HEADERS = "Content-Type, Authorization, Idempotency-Key";
+const CORS_EXPOSE_HEADERS =
+  "Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-Bazaar-Idempotent-Replay";
+
 function getCacheControl(pathname: string, method: string): string {
   // Mutations are never cached
   if (method !== "GET") return "no-store";
@@ -66,7 +72,7 @@ export function middleware(request: NextRequest) {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": allowedMethods,
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Headers": CORS_ALLOW_HEADERS,
         "Access-Control-Max-Age": "86400",
       },
     });
@@ -98,6 +104,7 @@ export function middleware(request: NextRequest) {
             "X-RateLimit-Limit": String(result.limit),
             "X-RateLimit-Remaining": "0",
             "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": CORS_EXPOSE_HEADERS,
             "X-Noui-Version": "0.2.0",
           },
         }
@@ -114,7 +121,8 @@ export function middleware(request: NextRequest) {
     response.headers.set("X-Noui-Discovery", "https://noui.bot/.well-known/agents.json");
     response.headers.set("Access-Control-Allow-Origin", "*");
     response.headers.set("Access-Control-Allow-Methods", allowedMethods);
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    response.headers.set("Access-Control-Allow-Headers", CORS_ALLOW_HEADERS);
+    response.headers.set("Access-Control-Expose-Headers", CORS_EXPOSE_HEADERS);
     response.headers.set("X-Response-Time", `${Date.now() - start}ms`);
 
     // Cache-Control — only set if the route handler didn't already set one
