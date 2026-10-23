@@ -6,9 +6,15 @@ import { getStripe } from "@/lib/stripe";
 /**
  * POST /api/bazaar/balance/load — Add funds to consumer account
  * 
- * If Stripe is configured: creates a Checkout session for payment
- * If not configured: operates in dry-run mode (simulates balance add)
+ * If Stripe is configured: creates a Checkout session for payment.
+ * If not configured: refuses with 503, unless simulated top-ups are explicitly
+ * enabled with BAZAAR_DRY_RUN_TOPUPS=true outside Vercel production. A missing
+ * Stripe key must never turn this endpoint into free credit.
  */
+function dryRunTopupsEnabled(): boolean {
+  return process.env.BAZAAR_DRY_RUN_TOPUPS === "true" && process.env.VERCEL_ENV !== "production";
+}
+
 export async function POST(request: Request) {
   const owner = await authenticateKey(request);
   if (!owner || owner.type !== "consumer") {
@@ -41,7 +47,9 @@ export async function POST(request: Request) {
 
   if (stripe) {
     // Live mode: create Stripe Checkout session
-    const session = await stripe.checkout.sessions.create({
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [{
         price_data: {
@@ -61,7 +69,14 @@ export async function POST(request: Request) {
       },
       success_url: `https://noui.bot/developers/dashboard?funded=true&amount=${amountCents}`,
       cancel_url: `https://noui.bot/developers/dashboard?funded=false`,
-    });
+      });
+    } catch (error) {
+      console.error("[BALANCE_LOAD] Stripe checkout failed:", error);
+      return NextResponse.json(
+        { error: true, code: "PAYMENT_PROVIDER_ERROR", message: "Could not start checkout. Please try again later." },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json({
       mode: "live",
@@ -73,22 +88,40 @@ export async function POST(request: Request) {
     });
   }
 
+  if (!dryRunTopupsEnabled()) {
+    return NextResponse.json(
+      { error: true, code: "PAYMENTS_UNAVAILABLE", message: "Balance top-ups are temporarily unavailable." },
+      { status: 503 }
+    );
+  }
+
   // Dry-run mode: simulate balance addition
   const currentBalance = owner.balance_cents ?? 0;
   const newBalance = currentBalance + amountCents;
 
-  const { error: updateErr } = await sb
+  // Compare-and-swap on the balance read during authentication, so a concurrent
+  // top-up or proxy charge is not silently overwritten.
+  const { data: updated, error: updateErr } = await sb
     .from("bazaar_consumers")
     .update({
       balance_cents: newBalance,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", owner.id);
+    .eq("id", owner.id)
+    .eq("balance_cents", currentBalance)
+    .select("balance_cents");
 
   if (updateErr) {
     return NextResponse.json(
       { error: true, code: "INTERNAL_ERROR", message: "Balance could not be updated" },
       { status: 500 }
+    );
+  }
+
+  if (!Array.isArray(updated) || updated.length === 0) {
+    return NextResponse.json(
+      { error: true, code: "CONFLICT", message: "Balance changed while processing. Retry the top-up." },
+      { status: 409 }
     );
   }
 

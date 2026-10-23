@@ -39,18 +39,18 @@ function fakeSupabase(answers = {}) {
   };
 }
 
-async function loadRoute(path, { sb, owner = null }) {
+async function loadRoute(path, { sb, owner = null, env = {}, stripe = null }) {
   const source = await readFile(new URL(`../src/app/api/bazaar/${path}/route.ts`, import.meta.url), "utf8");
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   });
   const exports = {};
   vm.runInNewContext(outputText, {
-    exports, URL, Date, console,
+    exports, URL, Date, console, process: { env },
     require(name) {
       if (name === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
       if (name === "@/lib/supabase") return { getSupabase: () => sb };
-      if (name === "@/lib/stripe") return { getStripe: () => null };
+      if (name === "@/lib/stripe") return { getStripe: () => stripe };
       if (name === "@/lib/price-cents") return priceCents;
       if (name === "@/lib/bazaar-auth") return {
         authenticateKey: async () => owner,
@@ -82,21 +82,70 @@ test("balance/load: a string amount is refused instead of concatenated onto the 
   assert.equal(sb.writes.length, 0);
 });
 
-test("balance/load: an integer amount still loads in dry-run mode", async () => {
-  const sb = fakeSupabase();
-  const post = await loadRoute("balance/load", { sb, owner: consumer });
+const DRY_RUN = { BAZAAR_DRY_RUN_TOPUPS: "true" };
+const balanceSwapOk = { "bazaar_consumers.update": (rec) => ({ data: [{ balance_cents: rec.payload.balance_cents }], error: null }) };
+
+test("balance/load: an integer amount still loads when dry-run top-ups are enabled", async () => {
+  const sb = fakeSupabase(balanceSwapOk);
+  const post = await loadRoute("balance/load", { sb, owner: consumer, env: DRY_RUN });
   const r = await post({ amount_cents: 500 });
   assert.equal(r.status, 200);
   assert.equal(r.body.new_balance_cents, 1500);
-  assert.equal(sb.writes.find((w) => w.table === "bazaar_consumers").payload.balance_cents, 1500);
+  const update = sb.writes.find((w) => w.table === "bazaar_consumers");
+  assert.equal(update.payload.balance_cents, 1500);
+  assert.deepEqual(update.filters, [["id", CONSUMER], ["balance_cents", 1000]], "update is a compare-and-swap on the read balance");
+});
+
+test("balance/load: without Stripe and without the dry-run flag, no credit is granted", async () => {
+  for (const env of [{}, { BAZAAR_DRY_RUN_TOPUPS: "1" }, { BAZAAR_DRY_RUN_TOPUPS: "true", VERCEL_ENV: "production" }]) {
+    const sb = fakeSupabase(balanceSwapOk);
+    const post = await loadRoute("balance/load", { sb, owner: consumer, env });
+    const r = await post({ amount_cents: 100000 });
+    assert.equal(r.status, 503, JSON.stringify(env));
+    assert.equal(r.body.code, "PAYMENTS_UNAVAILABLE");
+    assert.equal(sb.writes.length, 0, `no balance write for ${JSON.stringify(env)}`);
+  }
+});
+
+test("balance/load: a concurrent balance change is a 409, not a lost update", async () => {
+  const sb = fakeSupabase({ "bazaar_consumers.update": () => ({ data: [], error: null }) });
+  const post = await loadRoute("balance/load", { sb, owner: consumer, env: DRY_RUN });
+  const r = await post({ amount_cents: 500 });
+  assert.equal(r.status, 409);
+  assert.equal(r.body.code, "CONFLICT");
+  assert.equal(sb.writes.some((w) => w.table === "bazaar_transactions"), false);
 });
 
 test("balance/load: a failed balance update is a 500, not a reported top-up", async () => {
   const sb = fakeSupabase({ "bazaar_consumers.update": () => ({ error: { message: "connection reset" } }) });
-  const post = await loadRoute("balance/load", { sb, owner: consumer });
+  const post = await loadRoute("balance/load", { sb, owner: consumer, env: DRY_RUN });
   const r = await post({ amount_cents: 500 });
   assert.equal(r.status, 500);
   assert.equal(r.body.message, "Balance could not be updated");
+});
+
+test("balance/load: a Stripe failure is a readable 502 and never touches the balance", async () => {
+  const sb = fakeSupabase(balanceSwapOk);
+  const stripe = { checkout: { sessions: { create: async () => { throw new Error("api_key_expired sk_live_secret"); } } } };
+  const post = await loadRoute("balance/load", { sb, owner: consumer, stripe });
+  const r = await post({ amount_cents: 500 });
+  assert.equal(r.status, 502);
+  assert.equal(r.body.code, "PAYMENT_PROVIDER_ERROR");
+  assert.doesNotMatch(JSON.stringify(r.body), /sk_live|api_key/);
+  assert.equal(sb.writes.length, 0);
+});
+
+test("balance/load: with Stripe configured, checkout is created and the balance is not credited up front", async () => {
+  const sb = fakeSupabase(balanceSwapOk);
+  let created;
+  const stripe = { checkout: { sessions: { create: async (params) => { created = params; return { id: "cs_test_1", url: "https://checkout.stripe.test/cs_test_1" }; } } } };
+  const post = await loadRoute("balance/load", { sb, owner: consumer, stripe, env: DRY_RUN });
+  const r = await post({ amount_cents: 2500 });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.mode, "live");
+  assert.equal(created.line_items[0].price_data.unit_amount, 2500);
+  assert.equal(created.metadata.consumer_id, CONSUMER);
+  assert.equal(sb.writes.length, 0);
 });
 
 const consumerAnswers = { "bazaar_consumers.insert": (rec) => ({ data: { id: CONSUMER, ...rec.payload }, error: null }) };
