@@ -75,11 +75,20 @@ export async function POST(request: Request) {
   // 2b. Rate limiting — check RPM for this consumer
   const rpm = owner.rate_limit_rpm || 60;
   const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
-  const { count: recentCalls } = await sb
+  const { count: recentCalls, error: rateErr } = await sb
     .from("bazaar_usage_logs")
     .select("id", { count: "exact", head: true })
     .eq("consumer_id", owner.id)
     .gte("created_at", oneMinuteAgo);
+
+  // Without the count the limit cannot be enforced; don't forward unmetered.
+  if (rateErr) {
+    console.error("[bazaar] rate-limit count failed:", rateErr.message);
+    return NextResponse.json(
+      { error: true, code: "SERVICE_UNAVAILABLE", message: "Temporarily unavailable; the call was not forwarded and nothing was billed" },
+      { status: 503, headers: { "Retry-After": "5" } }
+    );
+  }
 
   if ((recentCalls ?? 0) >= rpm) {
     await sb.from("bazaar_usage_logs").insert({
@@ -120,14 +129,31 @@ export async function POST(request: Request) {
     toolQuery = toolQuery.eq("tool_name", toolName);
   }
 
-  const { data: tool, error: toolErr } = await toolQuery.single();
+  // limit(2) rather than single(): single() reports "no rows", "several rows"
+  // and a database failure alike, and each needs a different answer.
+  const { data: matches, error: toolErr } = await toolQuery.limit(2);
 
-  if (toolErr || !tool) {
+  if (toolErr || !Array.isArray(matches)) {
+    console.error("[bazaar] tool lookup failed:", toolErr?.message);
+    return NextResponse.json(
+      { error: true, code: "SERVICE_UNAVAILABLE", message: "Tool lookup is temporarily unavailable; nothing was billed" },
+      { status: 503, headers: { "Retry-After": "5" } }
+    );
+  }
+  if (matches.length === 0) {
     return NextResponse.json(
       { error: true, code: "NOT_FOUND", message: "Tool not found or inactive" },
       { status: 404 }
     );
   }
+  if (matches.length > 1) {
+    // Tool names are unique per provider only (sql/001 UNIQUE(provider_id, tool_name)).
+    return NextResponse.json(
+      { error: true, code: "AMBIGUOUS_TOOL", message: "Several providers offer a tool with this name; send tool_id instead" },
+      { status: 409 }
+    );
+  }
+  const tool = matches[0];
 
   const provider = tool.bazaar_providers as any;
   if (!provider?.active) {
