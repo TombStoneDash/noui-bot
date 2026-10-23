@@ -52,6 +52,9 @@ export interface LeaderboardEntry {
 /* ═══════════════════════════════════════
    RATE LIMITING (in-memory — ephemeral)
    ═══════════════════════════════════════ */
+const RATE_WINDOW_MS = 60_000;
+const MAX_RATE_LIMIT_KEYS = 10_000;
+// Map preserves insertion order, so the first key is the least recently refreshed.
 const rateLimits = new Map<string, number[]>();
 
 /** Hash an IP for privacy */
@@ -65,15 +68,41 @@ export async function hashIP(ip: string): Promise<string> {
     .join("");
 }
 
-/** Check rate limit: returns true if allowed */
-export function checkRateLimit(ipHash: string, maxPerMin: number): boolean {
-  const now = Date.now();
-  const timestamps = rateLimits.get(ipHash) || [];
-  const recent = timestamps.filter((t) => now - t < 60000);
-  if (recent.length >= maxPerMin) return false;
+/**
+ * Check rate limit: returns true if allowed.
+ * Each scope (one per endpoint) has its own budget, so polling stats or
+ * verifying tokens never uses up an IP's challenge allowance.
+ */
+export function checkRateLimit(
+  ipHash: string,
+  maxPerMin: number,
+  scope = "default",
+  now: number = Date.now(),
+): boolean {
+  const key = `${scope}:${ipHash}`;
+  const recent = (rateLimits.get(key) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  // Re-insert so the key moves to the back of insertion order.
+  rateLimits.delete(key);
+  if (recent.length >= maxPerMin) {
+    rateLimits.set(key, recent);
+    return false;
+  }
   recent.push(now);
-  rateLimits.set(ipHash, recent);
+  while (rateLimits.size >= MAX_RATE_LIMIT_KEYS) {
+    const oldest = rateLimits.keys().next();
+    if (oldest.done) break;
+    rateLimits.delete(oldest.value);
+  }
+  rateLimits.set(key, recent);
   return true;
+}
+
+export function _resetRateLimitsForTests(): void {
+  rateLimits.clear();
+}
+
+export function _rateLimitKeyCount(): number {
+  return rateLimits.size;
 }
 
 /** Generate a random base62 string */
@@ -140,14 +169,21 @@ export async function getChallenge(id: string): Promise<ChallengeRow | null> {
   return data as ChallengeRow;
 }
 
-/** Mark a challenge as consumed */
-export async function consumeChallenge(id: string): Promise<void> {
+/**
+ * Atomically mark a challenge as consumed.
+ * Returns true only for the single caller that flipped it from unconsumed,
+ * so concurrent submissions cannot both redeem one challenge.
+ */
+export async function consumeChallenge(id: string): Promise<boolean> {
   const supabase = getSupabase();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("bot_captcha_challenges")
     .update({ consumed: true })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("consumed", false)
+    .select("id");
   if (error) throw new Error(`consumeChallenge: ${error.message}`);
+  return Array.isArray(data) && data.length > 0;
 }
 
 /* ═══════════════════════════════════════

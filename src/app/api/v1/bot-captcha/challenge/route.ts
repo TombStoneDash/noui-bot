@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     const ipHash = await hashIP(ip);
 
     // Rate limit: 10 challenges/min per IP
-    if (!checkRateLimit(ipHash, 10)) {
+    if (!checkRateLimit(ipHash, 10, "challenge")) {
       return NextResponse.json(
         { error: "Rate limit exceeded. Max 10 challenges per minute." },
         { status: 429 }

@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const ipHash = await hashIP(ip);
 
     // Rate limit: 100 req/min for stats
-    if (!checkRateLimit(ipHash, 100)) {
+    if (!checkRateLimit(ipHash, 100, "stats")) {
       return NextResponse.json(
         { error: "Rate limit exceeded." },
         { status: 429 }
