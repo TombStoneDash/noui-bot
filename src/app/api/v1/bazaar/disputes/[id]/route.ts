@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 
+const DISPUTE_ID = /^disp_[0-9a-f]{16,}$/;
+// PostgREST reports "no rows" from .single() with this code.
+const NO_ROWS = "PGRST116";
+
 /**
  * GET /api/v1/bazaar/disputes/:id — Fetch a single dispute
  * Public endpoint — dispute status is transparent.
@@ -10,6 +14,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: disputeId } = await params;
+
+  if (!DISPUTE_ID.test(disputeId)) {
+    return NextResponse.json(
+      { error: true, code: "NOT_FOUND", message: "Dispute not found (dispute IDs look like disp_ followed by hex)" },
+      { status: 404 }
+    );
+  }
+
   const sb = getSupabase();
 
   const { data: dispute, error } = await sb
@@ -18,7 +30,15 @@ export async function GET(
     .eq("dispute_id", disputeId)
     .single();
 
-  if (error || !dispute) {
+  if (error && error.code !== NO_ROWS) {
+    console.error("[disputes] lookup failed:", error.message);
+    return NextResponse.json(
+      { error: true, code: "SERVICE_UNAVAILABLE", message: "Dispute lookup is temporarily unavailable" },
+      { status: 503 }
+    );
+  }
+
+  if (!dispute) {
     return NextResponse.json(
       { error: true, code: "NOT_FOUND", message: `Dispute ${disputeId} not found` },
       { status: 404 }
