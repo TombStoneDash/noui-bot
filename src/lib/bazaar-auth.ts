@@ -13,8 +13,21 @@ export type KeyOwner = {
 };
 
 /**
+ * The key store could not be read. Distinct from "no such key": callers must
+ * not answer 401 (which tells an agent its key is bad) during an outage.
+ * Left uncaught, a route handler turns it into a retryable 500.
+ */
+export class AuthLookupError extends Error {
+  constructor(what: string, cause?: { message?: string } | null) {
+    super(`${what} lookup failed${cause?.message ? `: ${cause.message}` : ""}`);
+    this.name = "AuthLookupError";
+  }
+}
+
+/**
  * Authenticate a Bazaar API key.
- * Returns the owner (provider or consumer) or null.
+ * Returns the owner (provider or consumer), or null for a missing, revoked,
+ * expired or inactive key. Throws AuthLookupError when the database fails.
  */
 export async function authenticateKey(request: Request): Promise<KeyOwner | null> {
   const authHeader = request.headers.get("authorization");
@@ -32,12 +45,16 @@ export async function authenticateKey(request: Request): Promise<KeyOwner | null
     .select("*")
     .eq("key_hash", hash)
     .is("revoked_at", null)
-    .single();
+    .maybeSingle();
 
-  if (error || !keyRecord) return null;
+  if (error) throw new AuthLookupError("API key", error);
+  if (!keyRecord) return null;
 
-  // Check expiry
-  if (keyRecord.expires_at && new Date(keyRecord.expires_at) < new Date()) return null;
+  // Check expiry; an unreadable expiry is treated as expired.
+  if (keyRecord.expires_at) {
+    const expiresAt = new Date(keyRecord.expires_at).getTime();
+    if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
+  }
 
   // Update last_used_at
   await sb
@@ -47,12 +64,13 @@ export async function authenticateKey(request: Request): Promise<KeyOwner | null
 
   // Fetch the owner
   if (keyRecord.owner_type === "consumer") {
-    const { data: consumer } = await sb
+    const { data: consumer, error: consumerError } = await sb
       .from("bazaar_consumers")
       .select("*")
       .eq("id", keyRecord.owner_id)
-      .single();
+      .maybeSingle();
 
+    if (consumerError) throw new AuthLookupError("Consumer", consumerError);
     if (!consumer || !consumer.active) return null;
 
     return {
@@ -67,12 +85,13 @@ export async function authenticateKey(request: Request): Promise<KeyOwner | null
   }
 
   if (keyRecord.owner_type === "provider") {
-    const { data: provider } = await sb
+    const { data: provider, error: providerError } = await sb
       .from("bazaar_providers")
       .select("*")
       .eq("id", keyRecord.owner_id)
-      .single();
+      .maybeSingle();
 
+    if (providerError) throw new AuthLookupError("Provider", providerError);
     if (!provider || !provider.active) return null;
 
     return {
