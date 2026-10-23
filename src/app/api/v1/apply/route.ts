@@ -24,10 +24,25 @@ export async function POST(request: Request) {
     });
   }
 
+  // These go into TEXT[] / TEXT columns; anything else makes Postgres throw (a 500).
+  const isStringArray = (value: unknown) =>
+    Array.isArray(value) && value.every((item) => typeof item === "string");
+  const badList = ["skills", "projects", "agents"].filter(
+    (key) => body[key] != null && !isStringArray(body[key])
+  );
+  const badText = ["type", "interest", "pitch", "availability"].filter(
+    (key) => body[key] != null && typeof body[key] !== "string"
+  );
+  if (badList.length || badText.length) {
+    return apiError("BAD_REQUEST", "skills, projects and agents must be arrays of strings; type, interest, pitch and availability must be strings.", {
+      invalid: [...badList, ...badText],
+    });
+  }
+
   const id = generateId();
-  const skills = body.skills || [];
-  const projects = body.projects || [];
-  const agents = body.agents || [];
+  const skills = (body.skills as string[] | null | undefined) ?? [];
+  const projects = (body.projects as string[] | null | undefined) ?? [];
+  const agents = (body.agents as string[] | null | undefined) ?? [];
 
   try {
     await sql`

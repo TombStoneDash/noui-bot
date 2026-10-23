@@ -93,3 +93,31 @@ test("insert rejection returns a generic 500 without exposing applicant or datab
   assert.equal(inserts.length, 1);
   assert.doesNotMatch(JSON.stringify(logs), /synthetic@example\.test|synthetic database connection detail/);
 });
+
+test("non-array list fields and non-string text fields return 400 without inserting", async () => {
+  const { post, inserts } = makeRoute();
+  const base = { name: "Example", contact: "synthetic@example.test" };
+  for (const [extra, field] of [
+    [{ skills: "js" }, "skills"],
+    [{ projects: { a: 1 } }, "projects"],
+    [{ agents: [1, 2] }, "agents"],
+    [{ pitch: 42 }, "pitch"],
+    [{ type: ["builder"] }, "type"],
+  ]) {
+    const response = await post(request({ ...base, ...extra }));
+    assert.equal(response.status, 400, field);
+    assert.deepEqual((await response.json()).details.invalid, [field]);
+  }
+  assert.equal(inserts.length, 0);
+});
+
+test("string-array and string fields are stored as given", async () => {
+  const { post, inserts } = makeRoute();
+  const response = await post(request({
+    name: "Example", contact: "synthetic@example.test",
+    skills: ["ts", "sql"], projects: [], agents: null, type: "builder", pitch: "hi",
+  }));
+  assert.equal(response.status, 201);
+  assert.equal(inserts.length, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(inserts[0].values.slice(3, 8))), ["builder", ["ts", "sql"], [], [], null]);
+});

@@ -184,7 +184,7 @@ export default function DocsPage() {
     "/api/v1/waitlist": "POST — join waitlist",
     "/api/v1/feedback": "GET schema, POST — report walls",
     "/api/v1/apply": "GET schema, POST — apply to build",
-    "/api/v1/init": "POST — initialize database"
+    "/api/v1/init": "POST — initialize database (operator-only)"
   }
 }`}
             />
