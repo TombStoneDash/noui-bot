@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 interface RegistrationResult {
   consumer_id: string;
@@ -62,12 +63,12 @@ export default function DeveloperRegisterPage() {
 
   return (
     <div className="min-h-screen bg-black text-white px-6 md:px-16 lg:px-24 py-16 max-w-3xl">
-      <a
+      <Link
         href="/"
         className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors"
       >
         &larr; noui.bot
-      </a>
+      </Link>
 
       <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-2">
         Register as Developer

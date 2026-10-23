@@ -242,12 +242,12 @@ export default function TrustLayerPost() {
           <p>
             Trust isn&apos;t a feature. It&apos;s a stack of primitives that work
             together. Here&apos;s what we built for{" "}
-            <a
+            <Link
               href="/"
               className="text-white underline underline-offset-4 hover:text-white/80"
             >
               noui.bot
-            </a>
+            </Link>
             , and what we believe the entire MCP ecosystem needs.
           </p>
 

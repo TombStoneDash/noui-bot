@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Humans — Agent Bazaar",
@@ -252,12 +253,12 @@ export default function HumansPage() {
           </p>
         </div>
         <div className="mt-6">
-          <a
+          <Link
             href="/providers/register"
             className="inline-block font-mono text-sm bg-green-400 text-black px-6 py-3 hover:bg-green-300 transition-colors"
           >
             Register as a provider →
-          </a>
+          </Link>
         </div>
       </Section>
 

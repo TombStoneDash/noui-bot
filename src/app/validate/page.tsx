@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 interface HumansTxtResult {
   url: string;
@@ -258,9 +259,9 @@ export default function ValidatePage() {
       {/* Header */}
       <div className="mb-12">
         <div className="font-mono text-white/20 text-xs mb-4">
-          <a href="/" className="hover:text-green-400">
+          <Link href="/" className="hover:text-green-400">
             noui.bot
-          </a>{" "}
+          </Link>{" "}
           /{" "}
           <a href="/humans" className="hover:text-green-400">
             humans

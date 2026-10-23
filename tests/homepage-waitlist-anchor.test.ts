@@ -55,6 +55,7 @@ test("roadmap waitlist link resolves to the homepage email-capture section", asy
       },
       "@/components/BazaarStatus": { BazaarStatus: "BazaarStatus" },
       "@/components/WaitlistForm": { WaitlistForm: "WaitlistForm" },
+      "next/link": { default: "Link" },
     }),
     renderPage("../src/app/roadmap/page.tsx", {
       "framer-motion": { motion: new Proxy({}, { get: (_target, name) => `motion.${String(name)}` }) },

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Bazaar Documentation | noui.bot",
@@ -91,7 +92,7 @@ export default function BazaarDocsPage() {
 # Returns an onboarding URL — complete Stripe Express setup there.`}</Code>
 
           <p className="text-white/40 text-xs mt-4">
-            Or use the self-service UI: <a href="/providers/register" className="text-white/60 underline">noui.bot/providers/register</a>
+            Or use the self-service UI: <Link href="/providers/register" className="text-white/60 underline">noui.bot/providers/register</Link>
           </p>
         </Section>
 

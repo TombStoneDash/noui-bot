@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 
 interface UsageSummary {
   consumer: { id: string; name: string; balance_cents: number };
@@ -108,12 +109,12 @@ export default function DeveloperDashboardPage() {
 
   return (
     <div className="min-h-screen bg-black text-white px-6 md:px-16 lg:px-24 py-16 max-w-4xl">
-      <a
+      <Link
         href="/"
         className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors"
       >
         &larr; noui.bot
-      </a>
+      </Link>
 
       <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-2">
         Developer Dashboard
@@ -390,12 +391,12 @@ export default function DeveloperDashboardPage() {
 
           {/* Quick Actions */}
           <div className="border-t border-white/5 pt-8 flex gap-4 flex-wrap">
-            <a
+            <Link
               href="/providers"
               className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
             >
               Browse Providers →
-            </a>
+            </Link>
             <a
               href="/docs/bazaar"
               className="font-mono text-xs text-white/40 hover:text-white/60 transition-colors"

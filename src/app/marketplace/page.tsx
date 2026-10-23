@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 interface Tool {
   id: string;
@@ -243,12 +244,12 @@ export default function MarketplacePage() {
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
       <div className="px-6 md:px-16 lg:px-24 py-16 border-b border-white/[0.06]">
-        <a
+        <Link
           href="/"
           className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors"
         >
           ← noui.bot
-        </a>
+        </Link>
 
         <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-3">
           Agent Bazaar
@@ -378,12 +379,12 @@ export default function MarketplacePage() {
             scoring.
           </p>
           <div className="flex items-center gap-4">
-            <a
+            <Link
               href="/providers/register"
               className="px-4 py-2 bg-white text-black font-mono text-sm rounded hover:bg-white/90 transition-colors"
             >
               Register as Provider →
-            </a>
+            </Link>
             <a
               href="/developers/register"
               className="px-4 py-2 border border-white/20 text-white/60 font-mono text-sm rounded hover:border-white/40 hover:text-white transition-colors"

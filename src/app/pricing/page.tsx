@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 function PriceCalculator() {
   const [callsPerDay, setCallsPerDay] = useState(1000);
@@ -141,9 +142,9 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-black text-white px-6 md:px-16 lg:px-24 py-16 max-w-4xl">
-      <a href="/" className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors">
+      <Link href="/" className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors">
         ← noui.bot
-      </a>
+      </Link>
 
       <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-3">Pricing</h1>
       <p className="text-white/40 font-mono text-sm max-w-xl leading-relaxed mb-16">
@@ -258,9 +259,9 @@ export default function PricingPage() {
             <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>Payouts via Stripe Connect</span></li>
             <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">✓</span><span>No monthly minimums</span></li>
           </ul>
-          <a href="/providers/register" className="inline-block mt-6 font-mono text-sm bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors">
+          <Link href="/providers/register" className="inline-block mt-6 font-mono text-sm bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors">
             Register as Provider
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -320,9 +321,9 @@ export default function PricingPage() {
       {/* CTA */}
       <div className="border-t border-white/[0.06] pt-8">
         <div className="flex items-center gap-4 flex-wrap">
-          <a href="/providers/register" className="font-mono text-sm bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors">
+          <Link href="/providers/register" className="font-mono text-sm bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors">
             Start Earning →
-          </a>
+          </Link>
           <a href="/marketplace" className="font-mono text-sm border border-white/20 text-white/60 px-6 py-3 rounded hover:border-white/40 hover:text-white transition-colors">
             Browse Marketplace
           </a>

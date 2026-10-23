@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Use Cases — Agent Billing Scenarios | noui.bot",
@@ -90,12 +91,12 @@ function CodeExample({ code }: { code: string }) {
 export default function UseCasesPage() {
   return (
     <div className="min-h-screen bg-black text-white px-6 md:px-16 lg:px-24 py-16 max-w-4xl">
-      <a
+      <Link
         href="/"
         className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors"
       >
         &larr; noui.bot
-      </a>
+      </Link>
 
       <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-3">
         Use Cases
@@ -212,12 +213,12 @@ console.log(usage.total_cost); // "$0.16 for this task"`}
           >
             View Pricing
           </a>
-          <a
+          <Link
             href="/providers"
             className="font-mono text-sm text-white/30 hover:text-white/50 transition-colors"
           >
             Browse Providers
-          </a>
+          </Link>
         </div>
       </div>
 

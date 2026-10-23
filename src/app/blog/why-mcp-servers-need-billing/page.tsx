@@ -188,9 +188,9 @@ export default function MCPBillingPost() {
           <p>
             If you&apos;ve built an MCP server and want to monetize it, or if you&apos;re
             building agents and need reliable tool access,{" "}
-            <a href="/#waitlist" className="text-white underline underline-offset-4 hover:text-white/80">
+            <Link href="/#waitlist" className="text-white underline underline-offset-4 hover:text-white/80">
               join the waitlist
-            </a>{" "}
+            </Link>{" "}
             or explore the{" "}
             <a href="/api/bazaar" className="text-white underline underline-offset-4 hover:text-white/80">
               API docs

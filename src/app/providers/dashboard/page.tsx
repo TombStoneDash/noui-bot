@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 
 interface ProviderSummary {
   provider: { id: string; name: string; email?: string; verified?: boolean };
@@ -90,12 +91,12 @@ export default function ProviderDashboardPage() {
 
   return (
     <div className="min-h-screen bg-black text-white px-6 md:px-16 lg:px-24 py-16 max-w-4xl">
-      <a
+      <Link
         href="/"
         className="font-mono text-xs text-white/30 hover:text-white/50 transition-colors"
       >
         &larr; noui.bot
-      </a>
+      </Link>
 
       <h1 className="font-mono text-3xl md:text-4xl font-bold mt-8 mb-2">
         Provider Dashboard
@@ -135,9 +136,9 @@ export default function ProviderDashboardPage() {
 
           <p className="font-mono text-xs text-white/20">
             Don&apos;t have an API key?{" "}
-            <a href="/providers/register" className="text-white/40 hover:text-white/60 underline">
+            <Link href="/providers/register" className="text-white/40 hover:text-white/60 underline">
               Register as a provider
-            </a>
+            </Link>
           </p>
         </form>
       ) : summary ? (

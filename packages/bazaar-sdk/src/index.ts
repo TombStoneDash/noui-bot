@@ -213,7 +213,7 @@ export class BazaarError extends Error {
 }
 
 /** Read a response body as JSON, or null when it is not JSON (e.g. an HTML 502 page) */
-async function parseBody(res: Response): Promise<any> {
+async function parseBody(res: Response): Promise<unknown> {
   const text = await res.text();
   try {
     return JSON.parse(text);
@@ -223,14 +223,20 @@ async function parseBody(res: Response): Promise<any> {
 }
 
 /** Build a BazaarError from an API error body ({error: true, code, message} or {error: "..."}) */
-function errorFromBody(data: any, status: number, fallback: string): BazaarError {
+function errorFromBody(body: unknown, status: number, fallback: string): BazaarError {
+  const data = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   const message =
-    typeof data?.error === "string" && data.error
+    typeof data.error === "string" && data.error
       ? data.error
-      : typeof data?.message === "string"
+      : typeof data.message === "string"
         ? data.message
         : fallback;
-  return new BazaarError(message, status, data?.code, data?.details);
+  return new BazaarError(
+    message,
+    status,
+    typeof data.code === "string" ? data.code : undefined,
+    data.details
+  );
 }
 
 /** Parse a response, throwing BazaarError with the real HTTP status on failure */

@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { authenticateKey } from "@/lib/bazaar-auth";
 
+type UsageLogRow = {
+  cost_cents: number | null;
+  status: string;
+  created_at: string;
+  tool_id: string;
+  bazaar_tools: { tool_name: string | null; display_name: string | null } | null;
+};
+
 const PLATFORM_FEE_RATE = 0.10; // 10% platform fee
 
 export async function POST(request: Request) {
@@ -60,14 +68,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const entries = logs || [];
-  const grossRevenueCents = entries.reduce((s: number, e: any) => s + (e.cost_cents || 0), 0);
+  const entries = (logs || []) as unknown as UsageLogRow[];
+  const grossRevenueCents = entries.reduce((s, e) => s + (e.cost_cents || 0), 0);
   const platformFeeCents = Math.round(grossRevenueCents * PLATFORM_FEE_RATE);
   const netEarningsCents = grossRevenueCents - platformFeeCents;
 
   // Earnings by tool
   const toolMap = new Map<string, { name: string; calls: number; gross: number }>();
-  for (const e of entries as any[]) {
+  for (const e of entries) {
     const toolName = e.bazaar_tools?.display_name || e.bazaar_tools?.tool_name || e.tool_id;
     const existing = toolMap.get(e.tool_id) || { name: toolName, calls: 0, gross: 0 };
     existing.calls += 1;
@@ -87,7 +95,7 @@ export async function POST(request: Request) {
 
   // Earnings by week
   const weekMap = new Map<string, { gross: number; calls: number }>();
-  for (const e of entries as any[]) {
+  for (const e of entries) {
     const d = new Date(e.created_at as string);
     const weekStart = new Date(d);
     weekStart.setDate(d.getDate() - d.getDay()); // Sunday start

@@ -425,12 +425,12 @@ export default function MCPBillingStandardPost() {
                 </strong>{" "}
                 Once your server supports the billing spec, you can register it
                 on{" "}
-                <a
+                <Link
                   href="/"
                   className="text-white underline underline-offset-4 hover:text-white/80"
                 >
                   noui.bot
-                </a>{" "}
+                </Link>{" "}
                 for discovery. Agents find you, call you, pay you — all through
                 the standard protocol.
               </span>
