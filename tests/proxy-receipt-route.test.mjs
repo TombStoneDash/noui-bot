@@ -81,12 +81,17 @@ function fakeSupabase({ priceCents = 5, balance = 100, rpcMissing = false, recei
       if (receiptInsertError) return { error: { message: receiptInsertError } };
       state.receipts.push(payload); return { error: null };
     }
-    if (table === "bazaar_idempotency_keys" && op === "select") {
-      const row = state.idempotency.get(filters.map(([, v]) => v).join("|"));
-      return { data: row ? { response: row.response } : null, error: null };
-    }
-    if (table === "bazaar_idempotency_keys" && op === "insert") {
-      state.idempotency.set(`${payload.consumer_id}|${payload.key}`, payload); return { error: null };
+    if (table === "bazaar_idempotency_keys") {
+      // (consumer_id, key) is the primary key, as in sql/008.
+      const k = op === "insert" ? `${payload.consumer_id}|${payload.key}` : filters.map(([, v]) => v).join("|");
+      const row = state.idempotency.get(k);
+      if (op === "select") return { data: row ? { response: row.response } : null, error: null };
+      if (op === "insert") {
+        if (row) return { error: { code: "23505", message: "duplicate key value" } };
+        state.idempotency.set(k, payload); return { error: null };
+      }
+      if (op === "update") { if (row) Object.assign(row, payload); return { error: null }; }
+      if (op === "delete") { state.idempotency.delete(k); return { error: null }; }
     }
     if (table === "bazaar_consumers" && op === "update") { state.consumerUpdates.push(payload); state.balance = payload.balance_cents; return { error: null }; }
     throw new Error(`unexpected ${table}.${op}`);
@@ -98,6 +103,7 @@ function fakeSupabase({ priceCents = 5, balance = 100, rpcMissing = false, recei
         select: (cols, opts) => builder(table, "select", { cols, opts }),
         insert: (row) => builder(table, "insert", row),
         update: (row) => builder(table, "update", row),
+        delete: () => builder(table, "delete"),
       };
     },
     async rpc(fn, args) {
@@ -366,3 +372,24 @@ for (const [label, payload] of [
     assert.equal(upstreamCalls.length, 0);
   });
 }
+
+test("concurrent: two requests with the same Idempotency-Key -> one upstream call, one debit", { timeout: 5_000 }, async () => {
+  const sb = fakeSupabase({ priceCents: 5, balance: 100 });
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const { call, upstreamCalls } = loadRoute({ sb, upstream: async () => { await gate; return okUpstream(); } });
+  const first = call(REQUEST, { "Idempotency-Key": "order-race" });
+  // Let the first request reach the upstream call before the second arrives.
+  while (upstreamCalls.length === 0) await new Promise((resolve) => setTimeout(resolve, 1));
+  const second = await call(REQUEST, { "Idempotency-Key": "order-race" });
+  assert.equal(second.status, 409);
+  assert.equal(second.body.code, "IDEMPOTENCY_IN_PROGRESS");
+  assert.equal(second.headers["retry-after"], "2");
+  release();
+  assert.equal((await first).status, 200);
+  assert.equal(upstreamCalls.length, 1);
+  assert.equal(sb.state.balance, 95, "billed once");
+  const third = await call(REQUEST, { "Idempotency-Key": "order-race" });
+  assert.equal(third.status, 200);
+  assert.equal(third.headers["x-bazaar-idempotent-replay"], "true");
+});

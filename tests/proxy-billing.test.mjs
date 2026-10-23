@@ -44,6 +44,7 @@ function fakeClient({ rpc, tables = {} }) {
         select: (cols) => chain(table, "select", cols),
         insert: (row) => chain(table, "insert", row),
         update: (row) => chain(table, "update", row),
+        delete: () => chain(table, "delete"),
       };
     },
   };
@@ -163,7 +164,18 @@ function idempotencyStore(rows = new Map(), { lookupError = null } = {}) {
         const row = rows.get(key);
         return { data: row ? { response: row.response } : null, error: null };
       },
-      insert: (c) => { rows.set(`${c.payload.consumer_id}|${c.payload.key}`, c.payload); return { error: null }; },
+      insert: (c) => {
+        const key = `${c.payload.consumer_id}|${c.payload.key}`;
+        if (rows.has(key)) return { error: { code: "23505", message: "duplicate key value" } };
+        rows.set(key, { ...c.payload });
+        return { error: null };
+      },
+      update: (c) => {
+        const row = rows.get(c.filters.map(([, v]) => v).join("|"));
+        if (row) Object.assign(row, c.payload);
+        return { error: null };
+      },
+      delete: (c) => { rows.delete(c.filters.map(([, v]) => v).join("|")); return { error: null }; },
     },
   };
 }
@@ -234,4 +246,75 @@ test("idempotency: no key -> fn runs, nothing looked up or stored", async () => 
   const out = await withIdempotency(sb, CONSUMER, null, "h", async () => ({ response: stored("h"), receiptId: null }));
   assert.equal(out.kind, "fresh");
   assert.equal(sb.calls.length, 0);
+});
+
+test("idempotency: a pending reservation from another request is in_progress, fn not run", async () => {
+  const rows = new Map();
+  const sb = fakeClient({ tables: idempotencyStore(rows) });
+  const hash = hashIdempotencyBody({ a: 1 });
+  rows.set(`${CONSUMER}|k1`, { consumer_id: CONSUMER, key: "k1", response: { body_hash: hash, status: 0, body: null, headers: {}, pending: true } });
+  const out = await withIdempotency(sb, CONSUMER, "k1", hash, async () => { throw new Error("fn must not run"); });
+  assert.deepEqual(out, { kind: "in_progress" });
+});
+
+test("idempotency: a pending reservation with a different body is still a mismatch", async () => {
+  const rows = new Map();
+  const sb = fakeClient({ tables: idempotencyStore(rows) });
+  rows.set(`${CONSUMER}|k1`, { consumer_id: CONSUMER, key: "k1", response: { body_hash: "other", status: 0, body: null, headers: {}, pending: true } });
+  const out = await withIdempotency(sb, CONSUMER, "k1", hashIdempotencyBody({ a: 1 }), async () => { throw new Error("fn must not run"); });
+  assert.deepEqual(out, { kind: "mismatch" });
+});
+
+test("idempotency: the key is reserved before fn runs", async () => {
+  const rows = new Map();
+  const sb = fakeClient({ tables: idempotencyStore(rows) });
+  const hash = hashIdempotencyBody({ a: 1 });
+  await withIdempotency(sb, CONSUMER, "k1", hash, async () => {
+    const row = rows.get(`${CONSUMER}|k1`);
+    assert.equal(row?.response.pending, true, "pending marker exists while the call runs");
+    return { response: stored(hash), receiptId: null };
+  });
+  assert.equal(rows.get(`${CONSUMER}|k1`).response.pending, undefined);
+});
+
+test("idempotency: losing the reservation race replays the winner instead of running fn", async () => {
+  const rows = new Map();
+  const tables = idempotencyStore(rows);
+  const hash = hashIdempotencyBody({ a: 1 });
+  // The winner finishes between our lookup (miss) and our insert.
+  const select = tables.bazaar_idempotency_keys.select;
+  let lookups = 0;
+  tables.bazaar_idempotency_keys.select = (c) => {
+    lookups++;
+    if (lookups === 1) {
+      const out = select(c);
+      rows.set(`${CONSUMER}|k1`, { consumer_id: CONSUMER, key: "k1", response: stored(hash, { winner: true }) });
+      return out;
+    }
+    return select(c);
+  };
+  const sb = fakeClient({ tables });
+  const out = await withIdempotency(sb, CONSUMER, "k1", hash, async () => { throw new Error("fn must not run"); });
+  assert.equal(out.kind, "replay");
+  assert.deepEqual(out.response.body, { winner: true });
+});
+
+test("idempotency: a throwing fn releases the reservation so the key can be retried", async () => {
+  const rows = new Map();
+  const sb = fakeClient({ tables: idempotencyStore(rows) });
+  const hash = hashIdempotencyBody({ a: 1 });
+  await assert.rejects(withIdempotency(sb, CONSUMER, "k1", hash, async () => { throw new Error("debit_failed"); }), /debit_failed/);
+  assert.equal(rows.size, 0);
+});
+
+test("idempotency: a reserve error other than a conflict degrades to a plain call", async () => {
+  const tables = idempotencyStore(new Map());
+  tables.bazaar_idempotency_keys.insert = () => ({ error: { code: "42501", message: "permission denied" } });
+  const sb = fakeClient({ tables });
+  const hash = hashIdempotencyBody({ a: 1 });
+  let runs = 0;
+  const out = await withIdempotency(sb, CONSUMER, "k1", hash, async () => { runs++; return { response: stored(hash), receiptId: null }; });
+  assert.equal(runs, 1);
+  assert.equal(out.stored, false);
+  assert.equal(sb.calls.filter((c) => c.op === "update").length, 0);
 });

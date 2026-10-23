@@ -11,7 +11,7 @@ const hooks = registerHooks({
     return nextResolve(specifier, context);
   },
 });
-const { lookupIdempotency, withIdempotency, isIdempotencyExpired, IDEMPOTENCY_TTL_MS } = await import("../src/lib/proxy-billing.ts");
+const { lookupIdempotency, withIdempotency, isIdempotencyExpired, IDEMPOTENCY_TTL_MS, IDEMPOTENCY_PENDING_STALE_MS } = await import("../src/lib/proxy-billing.ts");
 hooks.deregister();
 
 const CONSUMER = "11111111-1111-4111-8111-111111111111";
@@ -28,7 +28,13 @@ function store({ deleteError = null } = {}) {
         calls.push({ table, op: name, payload, filters });
         const k = filters.map(([, v]) => v).join("|");
         if (name === "select") return { data: rows.get(k) ?? null, error: null };
-        if (name === "insert") { rows.set(`${payload.consumer_id}|${payload.key}`, { ...payload, created_at: new Date().toISOString() }); return { error: null }; }
+        if (name === "insert") {
+          const pk = `${payload.consumer_id}|${payload.key}`;
+          if (rows.has(pk)) return { error: { code: "23505", message: "duplicate key value" } };
+          rows.set(pk, { ...payload, created_at: new Date().toISOString() });
+          return { error: null };
+        }
+        if (name === "update") { if (rows.has(k)) Object.assign(rows.get(k), payload); return { error: null }; }
         if (name === "delete") { if (deleteError) return { error: deleteError }; rows.delete(k); return { error: null }; }
         return { error: null };
       };
@@ -39,7 +45,7 @@ function store({ deleteError = null } = {}) {
       };
       return b;
     };
-    return { select: (c) => op("select", c), insert: (r) => op("insert", r), delete: () => op("delete") };
+    return { select: (c) => op("select", c), insert: (r) => op("insert", r), update: (r) => op("update", r), delete: () => op("delete") };
   };
   return { rows, calls, from, rpc: () => Promise.resolve({ data: null, error: null }) };
 }
@@ -97,4 +103,15 @@ test("sql/009: purge function only, additive, 24 h default", () => {
   assert.match(code, /INTERVAL '24 hours'/);
   assert.match(code, /DELETE FROM bazaar_idempotency_keys\s+WHERE created_at < NOW\(\) - p_older_than/);
   assert.doesNotMatch(code, /DROP |TRUNCATE|ALTER TABLE/i);
+});
+
+test("pending: a fresh marker is in_progress; a stale one is cleared and the key reused", async () => {
+  const sb = store();
+  const marker = { body_hash: "h", status: 0, body: null, headers: {}, pending: true };
+  sb.rows.set(`${CONSUMER}|k1`, { response: marker, created_at: new Date(NOW - 30_000).toISOString() });
+  assert.deepEqual(await lookupIdempotency(sb, CONSUMER, "k1", "h", NOW), { kind: "in_progress" });
+
+  sb.rows.set(`${CONSUMER}|k1`, { response: marker, created_at: new Date(NOW - IDEMPOTENCY_PENDING_STALE_MS - 1).toISOString() });
+  assert.deepEqual(await lookupIdempotency(sb, CONSUMER, "k1", "h", NOW), { kind: "miss", available: true });
+  assert.equal(sb.rows.has(`${CONSUMER}|k1`), false);
 });
