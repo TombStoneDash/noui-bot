@@ -42,8 +42,16 @@ test("a network failure is an error result", async () => {
   assert.deepEqual(result, { content: [{ type: "text", text: `GET ${URL_} failed: fetch failed` }], isError: true });
 });
 
+// AbortSignal.timeout() does not keep the event loop alive (the MCP server's stdio
+// does), so fakes that "hang" hold a ref'd timer until the signal fires.
+function keepAliveUntilAbort(signal) {
+  const timer = setInterval(() => {}, 1_000);
+  signal.addEventListener("abort", () => clearInterval(timer));
+}
+
 test("a request that never answers times out instead of hanging the tool call", async () => {
   const hang = (_url, init) => new Promise((_resolve, reject) => {
+    keepAliveUntilAbort(init.signal);
     init.signal.addEventListener("abort", () => reject(init.signal.reason));
   });
   const result = await callJsonApi(URL_, {}, { fetchImpl: hang, timeoutMs: 20 });
@@ -53,6 +61,7 @@ test("a request that never answers times out instead of hanging the tool call", 
 
 test("a body that stalls after the headers also times out", async () => {
   const stall = async (_url, init) => {
+    keepAliveUntilAbort(init.signal);
     const body = new ReadableStream({
       start(controller) {
         init.signal.addEventListener("abort", () => controller.error(init.signal.reason));
