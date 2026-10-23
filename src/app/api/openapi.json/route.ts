@@ -29,7 +29,8 @@ export async function GET() {
           summary: "Health check",
           operationId: "getHealth",
           responses: {
-            "200": { description: "Health status with uptime", content: { "application/json": { schema: { type: "object", properties: { status: { type: "string" }, uptime: { type: "string" } } } } } },
+            "200": { description: "Healthy or degraded", content: { "application/json": { schema: { $ref: "#/components/schemas/Health" } } } },
+            "503": { description: "Down: the primary database check failed", content: { "application/json": { schema: { $ref: "#/components/schemas/Health" } } } },
           },
         },
       },
@@ -175,7 +176,7 @@ export async function GET() {
             { name: "category", in: "query", required: false, description: "Filter tools by category.", schema: { type: "string" } },
           ],
           responses: {
-            "200": { description: "Tool catalog page with pricing", content: { "application/json": { schema: { type: "object", properties: { tools: { type: "array", items: { type: "object" } }, total: { type: "integer", description: "Number of tools in this returned page, not the full catalog count." }, limit: { type: "integer", description: "Effective limit after clamping to 100." }, offset: { type: "integer", description: "Requested offset for this page." } } } } } },
+            "200": { description: "Tool catalog page with pricing", content: { "application/json": { schema: { type: "object", properties: { tools: { type: "array", items: { type: "object" } }, total: { type: "integer", description: "Number of catalog tools matching the filter across all pages, not just this page. Keep paging while offset + tools.length < total." }, providers: { type: "integer", description: "Number of distinct providers matching the filter." }, categories: { type: "array", items: { type: "string" } }, limit: { type: "integer", description: "Effective limit after clamping to 100." }, offset: { type: "integer", description: "Requested offset for this page." } } } } } },
             "400": { description: "Invalid limit or offset: values must be digit-only safe integers (limit positive, offset nonnegative), and the pagination range must not overflow the maximum safe integer.", content: { "application/json": { schema: { type: "object", properties: { error: { type: "boolean" }, message: { type: "string" } } } } } },
           },
         },
@@ -213,12 +214,20 @@ export async function GET() {
           description: "Call any Bazaar tool. Authenticated, metered, and billed. Includes retry on 5xx.",
           tags: ["Bazaar"],
           security: [{ BearerAuth: [] }],
-          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["tool_name"], properties: { tool_name: { type: "string" }, input: { type: "object" } } } } } },
+          parameters: [
+            { name: "Idempotency-Key", in: "header", required: false, description: "1-255 characters. Repeating a key with the same body replays the stored response instead of calling (and billing) the tool again; reusing it with a different body returns 409.", schema: { type: "string", minLength: 1, maxLength: 255 } },
+          ],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["input"], anyOf: [{ required: ["tool_id"] }, { required: ["tool_name"] }], properties: { tool_id: { type: "string" }, tool_name: { type: "string" }, input: { type: "object", description: "Arguments passed to the tool. Must be a JSON object; use {} for none." } } } } } },
           responses: {
             "200": { description: "Tool result with billing metadata", content: { "application/json": { schema: { type: "object", properties: { result: { type: "object" }, meta: { type: "object", properties: { cost_cents: { type: "number" }, latency_ms: { type: "integer" }, provider: { type: "string" }, remaining_balance_cents: { type: "number" } } } } } } } },
             "401": { description: "Invalid or missing API key" },
             "402": { description: "Insufficient balance" },
-            "404": { description: "Tool not found" },
+            "404": { description: "Tool not found or inactive" },
+            "409": { description: "Idempotency-Key reused with a different body, or the first call with that key is still in flight" },
+            "422": { description: "tool_id or tool_name missing, or input is not a JSON object" },
+            "429": { description: "Rate limited (per-IP, or the API key's plan RPM)" },
+            "502": { description: "Provider returned an error" },
+            "503": { description: "Tool lookup unavailable" },
             "504": { description: "Provider timeout (>10s)" },
           },
         },
@@ -272,8 +281,14 @@ export async function GET() {
           description: "Record a tool invocation for MCP middleware integration.",
           tags: ["Bazaar"],
           security: [{ BearerAuth: [] }],
-          requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["tool_name"], properties: { tool_name: { type: "string" }, duration_ms: { type: "integer" }, tokens_used: { type: "integer" }, success: { type: "boolean" } } } } } },
-          responses: { "200": { description: "Invocation recorded" }, "401": { description: "Invalid key" } },
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", anyOf: [{ required: ["tool_id"] }, { required: ["tool_name"] }], properties: { tool_id: { type: "string" }, tool_name: { type: "string" }, agent_id: { type: "string", description: "Defaults to the API key owner." }, status: { type: "string", enum: ["success", "error", "timeout"], default: "success", description: "Outcome of the call. Omitting it records a billed success." }, duration_ms: { type: "number", minimum: 0 }, input_tokens: { type: "number", minimum: 0 }, output_tokens: { type: "number", minimum: 0 }, metadata: { type: "object" } } } } } },
+          responses: {
+            "201": { description: "Invocation recorded; returns the signed receipt" },
+            "400": { description: "Body is not a JSON object" },
+            "401": { description: "Invalid key" },
+            "403": { description: "A consumer key metering another agent's call, or a provider key metering another provider's tool" },
+            "422": { description: "A field has the wrong type" },
+          },
         },
       },
       "/api/v1/verify": {
@@ -360,6 +375,16 @@ export async function GET() {
         },
       },
       schemas: {
+        Health: {
+          type: "object",
+          properties: {
+            status: { type: "string", enum: ["ok", "degraded", "down"] },
+            version: { type: "string" },
+            uptime_s: { type: "integer", description: "Seconds since this server instance started." },
+            timestamp: { type: "string", format: "date-time" },
+            checks: { type: "object", additionalProperties: { type: "object", properties: { status: { type: "string", enum: ["pass", "fail"] }, latency_ms: { type: "integer" } } } },
+          },
+        },
         Error: {
           type: "object",
           properties: {

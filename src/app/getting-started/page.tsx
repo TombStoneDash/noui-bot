@@ -275,7 +275,7 @@ print(res.json())`,
               javascript: {
                 label: "SDK usage",
                 code: `const usage = await bz.usage.summary();
-console.log(\`Calls: \${usage.total_calls}, Cost: \${usage.total_cost}\`);`,
+console.log(\`Calls: \${usage.summary.total_calls}, Spend: \${usage.summary.total_spend}\`);`,
               },
               python: {
                 label: "Python requests",
@@ -284,7 +284,7 @@ console.log(\`Calls: \${usage.total_calls}, Cost: \${usage.total_cost}\`);`,
     headers={"Authorization": "Bearer bz_your_key"}
 )
 usage = res.json()
-print(f"Calls: {usage['total_calls']}, Cost: {usage['total_cost']}")`,
+print(f"Calls: {usage['summary']['total_calls']}, Spend: {usage['summary']['total_spend']}")`,
               },
             }}
           />

@@ -199,7 +199,7 @@ export default function ProviderDetailPage({
             Number.isSafeInteger(data.limit) && data.limit > 0
               ? data.limit
               : limit;
-          // `total` is the returned-page count, not the catalog size.
+          // `total` is the full catalog size; a short page is the last one.
           if (page.length < effectiveLimit) break;
           offset += effectiveLimit;
         }

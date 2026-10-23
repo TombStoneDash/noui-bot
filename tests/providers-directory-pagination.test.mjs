@@ -80,16 +80,17 @@ async function renderCatalog(responses) {
   return { urls, ids, text, providers: state[0] };
 }
 
-function page(tools, offset) {
-  return { body: { tools, total: tools.length, limit: 50, offset } };
+// Like the real catalog route, `total` is the full filtered catalog size.
+function page(tools, offset, total) {
+  return { body: { tools, total, limit: 50, offset } };
 }
 
 const firstFifty = Array.from({ length: 50 }, (_, index) => tool(`tool-${index}`));
 
 test("loads a provider on page two and computes complete totals", async () => {
   const result = await renderCatalog([
-    page(firstFifty, 0),
-    page([tool("tool-50", "second"), tool("tool-50", "second")], 50),
+    page(firstFifty, 0, 52),
+    page([tool("tool-50", "second"), tool("tool-50", "second")], 50, 52),
   ]);
   assert.deepEqual(result.urls, [
     "/api/bazaar/catalog?limit=50&offset=0",
@@ -103,20 +104,20 @@ test("loads a provider on page two and computes complete totals", async () => {
 });
 
 test("an exact page boundary fetches the next empty page", async () => {
-  const result = await renderCatalog([page(firstFifty, 0), page([], 50)]);
+  const result = await renderCatalog([page(firstFifty, 0, 50), page([], 50, 50)]);
   assert.equal(result.urls.length, 2);
   assert.deepEqual(result.ids, ["first"]);
   assert.ok(result.text.includes("50"));
 });
 
 test("a truly empty catalog has its own empty state", async () => {
-  const result = await renderCatalog([page([], 0)]);
+  const result = await renderCatalog([page([], 0, 0)]);
   assert.deepEqual(result.ids, []);
   assert.ok(result.text.includes("No providers registered yet."));
 });
 
 test("a later page failure shows an error without partial cards or totals", async () => {
-  const result = await renderCatalog([page(firstFifty, 0), { ok: false }]);
+  const result = await renderCatalog([page(firstFifty, 0, 120), { ok: false }]);
   assert.deepEqual(result.ids, []);
   assert.ok(result.text.includes("Unable to load providers. Please try again later."));
   assert.ok(!result.text.includes("No providers registered yet."));
@@ -124,7 +125,21 @@ test("a later page failure shows an error without partial cards or totals", asyn
 });
 
 test("malformed later payload shows the error state", async () => {
-  const result = await renderCatalog([page(firstFifty, 0), { body: { tools: null, total: 0, limit: 50, offset: 50 } }]);
+  const result = await renderCatalog([page(firstFifty, 0, 120), { body: { tools: null, total: 0, limit: 50, offset: 50 } }]);
+  assert.deepEqual(result.ids, []);
+  assert.ok(result.text.includes("Unable to load providers. Please try again later."));
+});
+
+test("a first page whose total is the full catalog size is accepted", async () => {
+  // Regression: the page used to require total === tools.length, so any
+  // catalog over 50 tools put the directory into its error state.
+  const result = await renderCatalog([page(firstFifty, 0, 51), page([tool("tool-50", "second")], 50, 51)]);
+  assert.deepEqual(result.ids, ["first", "second"]);
+  assert.ok(!result.text.includes("Unable to load providers. Please try again later."));
+});
+
+test("a total smaller than the tools already returned is rejected", async () => {
+  const result = await renderCatalog([page(firstFifty, 0, 49)]);
   assert.deepEqual(result.ids, []);
   assert.ok(result.text.includes("Unable to load providers. Please try again later."));
 });

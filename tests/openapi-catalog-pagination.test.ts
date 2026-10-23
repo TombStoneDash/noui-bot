@@ -63,8 +63,8 @@ test("OpenAPI GET documents the catalog pagination contract", async () => {
   }
   assert.equal(properties.limit.type, "integer");
   assert.equal(properties.offset.type, "integer");
-  assert.match(properties.total.description, /returned page/i);
-  assert.match(properties.total.description, /not the full catalog count/i);
+  assert.equal(properties.total.type, "integer");
+  assert.match(properties.total.description, /across all pages/i);
 
   const invalid = operation.responses["400"];
   assert.match(invalid.description, /invalid limit or offset/i);
