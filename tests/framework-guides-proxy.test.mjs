@@ -354,3 +354,15 @@ for (const guide of ["langchain-setup", "crewai-setup", "autogen-setup"]) {
     assert.equal(check.status, 0, check.stderr);
   });
 }
+
+test("docs index and agents.json point framework users at the proxy guides, not the old MCP adapters", async () => {
+  const docsIndex = await readFile(new URL("../src/app/docs/page.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(docsIndex, /MCPServerAdapter|McpWorkbench/);
+  const { integration } = JSON.parse(await readFile(new URL("../public/.well-known/agents.json", import.meta.url), "utf8"));
+  for (const guide of ["langchain", "crewai", "autogen"]) {
+    assert.equal(integration[guide].guide, `https://noui.bot/docs/guides/${guide}-setup`);
+    await readFile(new URL(`../src/app/docs/guides/${guide}-setup/page.tsx`, import.meta.url));
+  }
+  assert.equal(integration.bazaar.proxy.split(" ").slice(0, 2).join(" "), "POST https://noui.bot/api/bazaar/proxy");
+  assert.equal(integration.mcp.status, "available");
+});

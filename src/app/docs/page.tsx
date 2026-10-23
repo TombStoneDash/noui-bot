@@ -439,11 +439,11 @@ export default function DocsPage() {
             </a>
             <a href="/docs/guides/crewai-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
               <h3 className="font-mono text-sm text-white/80 mb-1">CrewAI</h3>
-              <p className="text-xs text-white/40">MCPServerAdapter for multi-agent crews.</p>
+              <p className="text-xs text-white/40">Bazaar tools as CrewAI BaseTools.</p>
             </a>
             <a href="/docs/guides/autogen-setup" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors">
               <h3 className="font-mono text-sm text-white/80 mb-1">AutoGen</h3>
-              <p className="text-xs text-white/40">McpWorkbench for Microsoft AutoGen agents.</p>
+              <p className="text-xs text-white/40">Bazaar tools as AutoGen FunctionTools.</p>
             </a>
             <a href="/docs/guides/monetize-mcp-server" className="border border-white/10 rounded p-4 hover:border-white/20 transition-colors md:col-span-2">
               <h3 className="font-mono text-sm text-white/80 mb-1">Monetize Your MCP Server</h3>
