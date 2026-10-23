@@ -42,17 +42,19 @@ export async function GET(request: Request) {
   const filterCol = owner.type === "consumer" ? "consumer_id" : "provider_id";
 
   // Fetch all logs in period (cap at 10k for aggregation)
+  const MAX_ROWS = 10000;
   const { data: logs, error: logErr } = await sb
     .from("bazaar_usage_logs")
     .select("cost_cents, latency_ms, status, created_at, tool_id, request_size_bytes, response_size_bytes, tokens_input, tokens_output, bazaar_tools:tool_id (tool_name, display_name)")
     .eq(filterCol, owner.id)
     .gte("created_at", startDate.toISOString())
     .order("created_at", { ascending: false })
-    .limit(10000);
+    .limit(MAX_ROWS);
 
   if (logErr) {
+    console.error("[usage/summary] log query failed:", logErr.message);
     return NextResponse.json(
-      { error: true, message: logErr.message },
+      { error: true, code: "SERVICE_UNAVAILABLE", message: "Usage summary is temporarily unavailable" },
       { status: 500 }
     );
   }
@@ -117,6 +119,9 @@ export async function GET(request: Request) {
       error_rate: totalCalls > 0 ? `${(((totalCalls - successCalls) / totalCalls) * 100).toFixed(1)}%` : "0%",
       total_spend_cents: totalSpendCents,
       total_spend: `$${(totalSpendCents / 100).toFixed(2)}`,
+      // True when the period has more calls than were aggregated; totals
+      // then undercount and the oldest days are missing.
+      truncated: totalCalls >= MAX_ROWS,
       data_volume: {
         request_bytes: totalRequestBytes,
         response_bytes: totalResponseBytes,
