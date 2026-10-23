@@ -11,10 +11,27 @@ const PLAN_LIMITS: Record<string, { rate_limit_rpm: number }> = {
   scale: { rate_limit_rpm: 1000 },
 };
 
-function planFromAmount(amountCents: number): string {
+/** Plan for a monthly price, or null for a price we don't recognise. */
+function planFromAmount(amountCents: number): string | null {
   if (amountCents === 2900) return "pro";
   if (amountCents === 9900) return "scale";
-  return "free";
+  return null;
+}
+
+type DbResult = { data?: unknown; error: { message?: string } | null };
+
+/**
+ * Supabase reports failures in the result instead of throwing. Throwing here
+ * makes the webhook answer 500, so Stripe retries the event instead of
+ * treating a subscription we never recorded as delivered.
+ */
+function check<T extends DbResult>(result: T, what: string): T {
+  if (result.error) throw new Error(`${what} failed: ${result.error.message ?? "unknown error"}`);
+  return result;
+}
+
+function unixToIso(value: unknown): string | null {
+  return typeof value === "number" && value > 0 ? new Date(value * 1000).toISOString() : null;
 }
 
 export async function POST(request: Request) {
@@ -76,41 +93,68 @@ export async function POST(request: Request) {
         const plan = (session.metadata?.plan as string) || "pro";
         const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
 
-        // Find consumer by stripe_customer_id or update by email
         const customerEmail = session.customer_details?.email;
+        const subscriptionFields = {
+          subscription_id: subscriptionId,
+          subscription_plan: plan,
+          subscription_status: "active",
+          rate_limit_rpm: limits.rate_limit_rpm,
+        };
+
+        // Our checkout route puts the consumer's id in the session metadata,
+        // and the event is signed, so that is the most reliable match.
+        const metadataConsumerId = session.metadata?.consumer_id;
+        if (metadataConsumerId) {
+          const { data: updated } = check(
+            await sb
+              .from("bazaar_consumers")
+              .update({ ...subscriptionFields, ...(customerId ? { stripe_customer_id: customerId } : {}) })
+              .eq("id", metadataConsumerId)
+              .select("id"),
+            "subscription update by consumer id"
+          );
+          if (Array.isArray(updated) && updated.length > 0) break;
+        }
 
         if (customerId) {
-          // Try by stripe_customer_id first
-          const { data: existing } = await sb
-            .from("bazaar_consumers")
-            .select("id")
-            .eq("stripe_customer_id", customerId)
-            .limit(1);
+          const { data: existing } = check(
+            await sb
+              .from("bazaar_consumers")
+              .select("id")
+              .eq("stripe_customer_id", customerId)
+              .limit(1),
+            "consumer lookup by Stripe customer"
+          );
 
-          if (existing && existing.length > 0) {
-            await sb
-              .from("bazaar_consumers")
-              .update({
-                subscription_id: subscriptionId,
-                subscription_plan: plan,
-                subscription_status: "active",
-                rate_limit_rpm: limits.rate_limit_rpm,
-              })
-              .eq("stripe_customer_id", customerId);
-          } else if (customerEmail) {
-            // Fall back to email match
-            await sb
-              .from("bazaar_consumers")
-              .update({
-                stripe_customer_id: customerId,
-                subscription_id: subscriptionId,
-                subscription_plan: plan,
-                subscription_status: "active",
-                rate_limit_rpm: limits.rate_limit_rpm,
-              })
-              .eq("email", customerEmail);
+          if (Array.isArray(existing) && existing.length > 0) {
+            check(
+              await sb.from("bazaar_consumers").update(subscriptionFields).eq("stripe_customer_id", customerId),
+              "subscription update by Stripe customer"
+            );
+            break;
+          }
+          if (customerEmail) {
+            // Fall back to email, but only when exactly one account has it:
+            // one payment must not upgrade several accounts.
+            const { data: byEmail } = check(
+              await sb.from("bazaar_consumers").select("id").eq("email", customerEmail).limit(2),
+              "consumer lookup by email"
+            );
+            if (Array.isArray(byEmail) && byEmail.length === 1) {
+              check(
+                await sb
+                  .from("bazaar_consumers")
+                  .update({ ...subscriptionFields, stripe_customer_id: customerId })
+                  .eq("id", (byEmail[0] as { id: string }).id),
+                "subscription update by email"
+              );
+              break;
+            }
           }
         }
+        console.error(
+          `Stripe webhook: checkout ${session.id} paid for subscription ${subscriptionId} but matched no single consumer; reconcile manually`
+        );
         break;
       }
 
@@ -118,30 +162,40 @@ export async function POST(request: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const subscriptionId = subscription.id;
         const status = subscription.status;
-        const amountCents = subscription.items.data[0]?.price?.unit_amount || 0;
+        const item = subscription.items.data[0];
+        const amountCents = item?.price?.unit_amount || 0;
+        // An unrecognised price (a new or annual price, a coupon-adjusted
+        // amount) must not silently downgrade a paying customer to free.
         const plan = planFromAmount(amountCents);
-        const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
-        // Cast to access fields that may vary across Stripe API versions
+        if (!plan) {
+          console.error(
+            `Stripe webhook: subscription ${subscriptionId} has unrecognised price ${amountCents}; plan left unchanged`
+          );
+        }
+        const limits = (plan && PLAN_LIMITS[plan]) || null;
+        // Since API version 2025-03-31 (we pin 2026-01-28), current_period_end
+        // lives on the subscription item; older versions put it on the subscription.
         const subAny = subscription as unknown as Record<string, unknown>;
-        const periodEndRaw = subAny.current_period_end as number | undefined;
-        const periodEnd = periodEndRaw
-          ? new Date(periodEndRaw * 1000).toISOString()
-          : null;
-        const canceledAtRaw = subAny.canceled_at as number | undefined;
-        const cancelledAt = canceledAtRaw
-          ? new Date(canceledAtRaw * 1000).toISOString()
-          : null;
+        const itemAny = (item ?? {}) as unknown as Record<string, unknown>;
+        const periodEnd = unixToIso(itemAny.current_period_end) ?? unixToIso(subAny.current_period_end);
+        const cancelledAt = unixToIso(subAny.canceled_at);
 
-        await sb
-          .from("bazaar_consumers")
-          .update({
-            subscription_plan: plan,
-            subscription_status: status === "active" ? "active" : status === "past_due" ? "past_due" : status,
-            subscription_current_period_end: periodEnd,
-            subscription_cancelled_at: cancelledAt,
-            rate_limit_rpm: status === "active" ? limits.rate_limit_rpm : PLAN_LIMITS.free.rate_limit_rpm,
-          })
-          .eq("subscription_id", subscriptionId);
+        const update: Record<string, unknown> = {
+          subscription_status: status,
+          subscription_current_period_end: periodEnd,
+          subscription_cancelled_at: cancelledAt,
+        };
+        if (status !== "active") {
+          update.rate_limit_rpm = PLAN_LIMITS.free.rate_limit_rpm;
+        } else if (limits) {
+          update.rate_limit_rpm = limits.rate_limit_rpm;
+        }
+        if (plan) update.subscription_plan = plan;
+
+        check(
+          await sb.from("bazaar_consumers").update(update).eq("subscription_id", subscriptionId),
+          "subscription status update"
+        );
         break;
       }
 
@@ -149,15 +203,18 @@ export async function POST(request: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const subscriptionId = subscription.id;
 
-        await sb
-          .from("bazaar_consumers")
-          .update({
-            subscription_plan: "free",
-            subscription_status: "cancelled",
-            subscription_cancelled_at: new Date().toISOString(),
-            rate_limit_rpm: PLAN_LIMITS.free.rate_limit_rpm,
-          })
-          .eq("subscription_id", subscriptionId);
+        check(
+          await sb
+            .from("bazaar_consumers")
+            .update({
+              subscription_plan: "free",
+              subscription_status: "cancelled",
+              subscription_cancelled_at: new Date().toISOString(),
+              rate_limit_rpm: PLAN_LIMITS.free.rate_limit_rpm,
+            })
+            .eq("subscription_id", subscriptionId),
+          "subscription cancellation"
+        );
         break;
       }
 
@@ -167,9 +224,10 @@ export async function POST(request: Request) {
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Webhook processing failed";
-    console.error(`Stripe webhook error: ${message}`);
+    console.error(`Stripe webhook error (${event.type} ${event.id}): ${message}`);
+    // 500 makes Stripe retry. Database details stay in the log.
     return NextResponse.json(
-      { error: true, message },
+      { error: true, message: "Webhook processing failed" },
       { status: 500 }
     );
   }
