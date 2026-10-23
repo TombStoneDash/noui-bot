@@ -3,6 +3,9 @@ import { getSupabase } from "@/lib/supabase";
 import { generateBazaarKey } from "@/lib/bazaar-auth";
 
 const FREE_PLAN_RPM = 60;
+const MAX_NAME_LENGTH = 200;
+const MAX_EMAIL_LENGTH = 254;
+const VALID_EMAIL = /^[a-z0-9_%+-]+(?:\.[a-z0-9_%+-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i;
 
 export async function GET() {
   return NextResponse.json({
@@ -10,8 +13,8 @@ export async function GET() {
     method: "POST",
     description: "Register as an agent developer. Get an API key to call tools through Bazaar.",
     schema: {
-      name: "string (required) — your name or org",
-      email: "string (required) — contact email",
+      name: `string (required) — your name or org, at most ${MAX_NAME_LENGTH} characters`,
+      email: "string (required) — a valid contact email",
       rate_limit_rpm: "integer (optional) — requests per minute, 1-60 (default: 60); higher limits come with a paid plan",
     },
   });
@@ -28,12 +31,33 @@ export async function POST(request: Request) {
     );
   }
 
-  const name = (body.name as string)?.trim();
-  const email = (body.email as string)?.trim();
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json(
+      { error: true, code: "BAD_REQUEST", message: "Request body must be a JSON object" },
+      { status: 400 }
+    );
+  }
+
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  const email = typeof body.email === "string" ? body.email.trim() : "";
 
   if (!name || !email) {
     return NextResponse.json(
-      { error: true, code: "VALIDATION_ERROR", message: "name and email are required" },
+      { error: true, code: "VALIDATION_ERROR", message: "name and email are required strings" },
+      { status: 422 }
+    );
+  }
+
+  if (name.length > MAX_NAME_LENGTH) {
+    return NextResponse.json(
+      { error: true, code: "VALIDATION_ERROR", message: `name must be at most ${MAX_NAME_LENGTH} characters` },
+      { status: 422 }
+    );
+  }
+
+  if (email.length > MAX_EMAIL_LENGTH || !VALID_EMAIL.test(email)) {
+    return NextResponse.json(
+      { error: true, code: "VALIDATION_ERROR", message: "email must be a valid email address" },
       { status: 422 }
     );
   }
@@ -61,9 +85,11 @@ export async function POST(request: Request) {
     .select()
     .single();
 
-  if (consErr) {
+  if (consErr || !consumer) {
+    // Database errors can name tables, constraints and columns; keep them server-side.
+    console.error("[register-consumer] consumer insert failed:", consErr?.message);
     return NextResponse.json(
-      { error: true, code: "INTERNAL_ERROR", message: consErr.message },
+      { error: true, code: "INTERNAL_ERROR", message: "Consumer could not be registered" },
       { status: 500 }
     );
   }
@@ -79,6 +105,12 @@ export async function POST(request: Request) {
   });
 
   if (keyErr) {
+    // Without a key the account is unreachable; remove it so a retry starts clean.
+    console.error("[register-consumer] API key insert failed:", keyErr.message);
+    const { error: cleanupErr } = await sb.from("bazaar_consumers").delete().eq("id", consumer.id);
+    if (cleanupErr) {
+      console.error("[register-consumer] orphaned consumer cleanup failed:", consumer.id, cleanupErr.message);
+    }
     return NextResponse.json(
       { error: true, code: "INTERNAL_ERROR", message: "API key could not be created" },
       { status: 500 }

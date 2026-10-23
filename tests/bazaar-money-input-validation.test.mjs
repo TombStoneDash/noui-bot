@@ -34,6 +34,7 @@ function fakeSupabase(answers = {}) {
         select: (cols) => builder(table, "select", cols),
         insert: (row) => builder(table, "insert", row),
         update: (row) => builder(table, "update", row),
+        delete: () => builder(table, "delete"),
       };
     },
   };
