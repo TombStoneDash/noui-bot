@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { apiError } from "@/lib/errors";
 
+const PROFILE_FIELDS = ["agent_name", "agent_url", "contact", "platform", "use_case"] as const;
+const MAX_FIELD_LENGTH = 500;
+const MAX_MESSAGE_LENGTH = 10_000;
+const MAX_LIST_ITEMS = 50;
+
+/** Postgres TEXT rejects NUL, so a stray \u0000 would otherwise surface as a 500. */
+function isStorableText(value: unknown, maxLength: number): value is string {
+  return typeof value === "string" && value.length <= maxLength && !value.includes("\u0000");
+}
+
 function generateId(): string {
   return `fb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -24,6 +34,22 @@ export async function POST(request: Request) {
     (body.message !== undefined && typeof body.message !== "string")
   ) {
     return apiError("VALIDATION_ERROR", "walls and needs must be arrays of strings; message must be a string.");
+  }
+
+  const invalid = [
+    ...PROFILE_FIELDS.filter((key) => body[key] != null && !isStorableText(body[key], MAX_FIELD_LENGTH)),
+    ...(["walls", "needs"] as const).filter((key) => {
+      const list = body[key] as string[] | undefined;
+      return list !== undefined && (list.length > MAX_LIST_ITEMS || !list.every((value) => isStorableText(value, MAX_FIELD_LENGTH)));
+    }),
+    ...(body.message !== undefined && !isStorableText(body.message, MAX_MESSAGE_LENGTH) ? ["message"] : []),
+  ];
+  if (invalid.length > 0) {
+    return apiError(
+      "VALIDATION_ERROR",
+      `Optional fields must be strings of at most ${MAX_FIELD_LENGTH} characters (message: ${MAX_MESSAGE_LENGTH}); walls and needs hold at most ${MAX_LIST_ITEMS} items.`,
+      { invalid }
+    );
   }
 
   const walls = (body.walls as string[] | undefined) ?? [];

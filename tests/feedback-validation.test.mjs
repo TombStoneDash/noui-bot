@@ -104,3 +104,35 @@ test("database rejection returns a server error without database details", async
   assert.equal(data.code, "INTERNAL_ERROR");
   assert.doesNotMatch(JSON.stringify(data), /secret|database connection details/i);
 });
+
+for (const payload of [
+  { message: "hi", agent_name: { first: "Daisy" } },
+  { message: "hi", agent_url: ["https://a.example"] },
+  { message: "hi", contact: 42 },
+  { message: "hi", platform: true },
+  { message: "hi", use_case: "u".repeat(501) },
+  { message: "m".repeat(10_001) },
+  { message: "nul \u0000 byte" },
+  { walls: ["w".repeat(501)] },
+  { needs: Array.from({ length: 51 }, (_, i) => `need ${i}`) },
+]) {
+  test(`unstorable field ${JSON.stringify(payload).slice(0, 60)} is a 422 naming the field`, async () => {
+    let writes = 0;
+    const { response, data } = await submit(payload, () => { writes++; });
+    assert.equal(response.status, 422);
+    assert.equal(data.code, "VALIDATION_ERROR");
+    assert.ok(Array.isArray(data.details?.invalid) && data.details.invalid.length === 1, JSON.stringify(data.details));
+    assert.equal(writes, 0);
+  });
+}
+
+test("string profile fields and null optional fields are still stored", async () => {
+  const inserts = [];
+  const { response } = await submit(
+    { message: "hi", agent_name: "Daisy", agent_url: null, contact: "ops@example.test", platform: "custom", use_case: "ops" },
+    async (_strings, ...values) => { inserts.push(values); },
+  );
+  assert.equal(response.status, 201);
+  assert.deepEqual([inserts[0][1], inserts[0][2], inserts[0][3], inserts[0][7], inserts[0][8]],
+    ["Daisy", null, "ops@example.test", "custom", "ops"]);
+});
