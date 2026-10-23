@@ -3,9 +3,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { callJsonApi, pathSegment } from "./http.js";
 
 const NOUI_API = "https://noui.bot/api/v1";
 const SHIPRAIL_API = "https://shiprail.dev/api";
+// `deploy` waits for the build to finish, so it gets far longer than a plain lookup.
+const DEPLOY_TIMEOUT_MS = 10 * 60_000;
 
 const server = new McpServer({
   name: "noui-bot",
@@ -18,9 +21,7 @@ server.tool(
   "Get noui.bot platform statistics — waitlist signups, feedback reports, applications. No PII.",
   {},
   async () => {
-    const res = await fetch(`${NOUI_API}/stats`);
-    const data = await res.json();
-    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+    return callJsonApi(`${NOUI_API}/stats`);
   }
 );
 
@@ -30,9 +31,7 @@ server.tool(
   "List all noui.bot services with status, endpoints, and descriptions.",
   {},
   async () => {
-    const res = await fetch(`${NOUI_API}/services`);
-    const data = await res.json();
-    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+    return callJsonApi(`${NOUI_API}/services`);
   }
 );
 
@@ -49,13 +48,11 @@ server.tool(
     use_case: z.string().optional().describe("What you're trying to do"),
   },
   async (args) => {
-    const res = await fetch(`${NOUI_API}/feedback`, {
+    return callJsonApi(`${NOUI_API}/feedback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(args),
     });
-    const data = await res.json();
-    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
   }
 );
 
@@ -73,13 +70,11 @@ server.tool(
     availability: z.enum(["full-time", "part-time", "nights-and-weekends"]).optional(),
   },
   async (args) => {
-    const res = await fetch(`${NOUI_API}/apply`, {
+    return callJsonApi(`${NOUI_API}/apply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(args),
     });
-    const data = await res.json();
-    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
   }
 );
 
@@ -95,7 +90,7 @@ server.tool(
     ref: z.string().optional().default("main").describe("Git ref to deploy"),
   },
   async (args) => {
-    const res = await fetch(`${SHIPRAIL_API}/ship`, {
+    return callJsonApi(`${SHIPRAIL_API}/ship`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -108,9 +103,7 @@ server.tool(
         ref: args.ref,
         wait: true,
       }),
-    });
-    const data = await res.json();
-    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+    }, { timeoutMs: DEPLOY_TIMEOUT_MS });
   }
 );
 
@@ -122,9 +115,7 @@ server.tool(
     action_id: z.string().describe("The actionId returned from a deploy"),
   },
   async (args) => {
-    const res = await fetch(`${SHIPRAIL_API}/actions/${args.action_id}`);
-    const data = await res.json();
-    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+    return callJsonApi(`${SHIPRAIL_API}/actions/${pathSegment(args.action_id)}`);
   }
 );
 
@@ -134,9 +125,7 @@ server.tool(
   "Get Deploy Rail statistics — total deploys, success rate, agents registered.",
   {},
   async () => {
-    const res = await fetch(`${SHIPRAIL_API}/stats`);
-    const data = await res.json();
-    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+    return callJsonApi(`${SHIPRAIL_API}/stats`);
   }
 );
 
