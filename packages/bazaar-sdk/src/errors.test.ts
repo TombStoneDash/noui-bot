@@ -1,15 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Bazaar, BazaarError } from "../src/index.ts";
+import { Bazaar, BazaarError } from "./index";
 
-function client(body, init) {
+function client(body: BodyInit | null, init?: ResponseInit) {
   return new Bazaar({
     apiKey: "bz_test",
     fetch: async () => new Response(body, init),
   });
 }
 
-function json(data, status = 200) {
+function json(data: unknown, status = 200) {
   return client(JSON.stringify(data), {
     status,
     headers: { "Content-Type": "application/json" },
