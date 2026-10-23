@@ -175,7 +175,7 @@ try {
 } catch (err) {
   if (err instanceof BazaarError) {
     console.log(err.status);  // 404
-    console.log(err.code);    // "TOOL_NOT_FOUND"
+    console.log(err.code);    // "NOT_FOUND"
     console.log(err.message); // "Tool not found"
   }
 }
