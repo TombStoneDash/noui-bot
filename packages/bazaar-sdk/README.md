@@ -32,7 +32,7 @@ console.log(result.meta.latency_ms);  // How long it took
 
 // Check usage
 const usage = await client.usage.summary();
-console.log(`Total spend: ${usage.summary.total_spend}`);
+console.log(`Total spend: ${usage.total_spend}`);
 ```
 
 ## For Providers
@@ -58,12 +58,12 @@ await provider.tools.register([
 ]);
 
 // 4. Check your earnings
-const { earnings } = await provider.provider.summary();
-console.log(`Net earnings: ${earnings.net_earnings}`);
+const earnings = await provider.provider.summary();
+console.log(`Net earnings: $${(earnings.net_earnings_cents / 100).toFixed(2)}`);
 
 // 5. Connect Stripe for payouts
-const { onboarding_url } = await provider.provider.connectStripe('https://my-site.com/success');
-console.log(`Complete onboarding: ${onboarding_url}`);
+const { url } = await provider.provider.connectStripe('https://my-site.com/success');
+console.log(`Complete onboarding: ${url}`);
 ```
 
 ## For Consumers (Agent Developers)
@@ -94,7 +94,7 @@ const { balance } = await client.balance.get();
 console.log(`Remaining: ${balance}`);
 
 // 6. Load more funds
-const { checkout_url } = await client.balance.load(1000); // $10.00
+const { url } = await client.balance.load(1000); // $10.00
 ```
 
 ## MCP Middleware Integration
@@ -174,7 +174,7 @@ try {
 } catch (err) {
   if (err instanceof BazaarError) {
     console.log(err.status);  // 404
-    console.log(err.code);    // "NOT_FOUND"
+    console.log(err.code);    // "TOOL_NOT_FOUND"
     console.log(err.message); // "Tool not found"
   }
 }
