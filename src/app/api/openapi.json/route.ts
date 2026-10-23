@@ -190,7 +190,8 @@ export async function GET() {
           requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["name", "email", "endpoint_url"], properties: { name: { type: "string" }, email: { type: "string", format: "email" }, endpoint_url: { type: "string", format: "uri" }, description: { type: "string" } } } } } },
           responses: {
             "201": { description: "Provider registered", content: { "application/json": { schema: { type: "object", properties: { api_key: { type: "string" }, provider_id: { type: "string" } } } } } },
-            "400": { description: "Validation error" },
+            "400": { description: "Body is not valid JSON" },
+            "422": { description: "Validation error: a required field is missing or has the wrong type" },
           },
         },
       },
@@ -203,7 +204,8 @@ export async function GET() {
           requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["name", "email"], properties: { name: { type: "string" }, email: { type: "string", format: "email" } } } } } },
           responses: {
             "201": { description: "Consumer registered with API key" },
-            "400": { description: "Validation error" },
+            "400": { description: "Body is not valid JSON" },
+            "422": { description: "Validation error: a required field is missing or has the wrong type" },
           },
         },
       },
@@ -241,8 +243,10 @@ export async function GET() {
           security: [{ BearerAuth: [] }],
           requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["tools"], properties: { tools: { type: "array", items: { type: "object", properties: { tool_name: { type: "string" }, description: { type: "string" }, category: { type: "string" }, price_cents_override: { type: "number" } } } } } } } } },
           responses: {
-            "200": { description: "Tools registered" },
+            "201": { description: "Tools registered or updated; per-tool errors are listed in the body" },
+            "400": { description: "Body is not valid JSON" },
             "401": { description: "Invalid provider key" },
+            "422": { description: "tools is missing, empty or over 50 entries, or every tool failed validation" },
           },
         },
       },
