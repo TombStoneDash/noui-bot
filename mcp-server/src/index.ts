@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { registerBazaarTools } from "./bazaar.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -11,6 +12,9 @@ const server = new McpServer({
   name: "noui-bot",
   version: "0.2.0",
 });
+
+// Tools: bazaar_list_tools, bazaar_call_tool, bazaar_balance (key from NOUI_API_KEY)
+registerBazaarTools(server);
 
 // Tool: platform_stats
 server.tool(

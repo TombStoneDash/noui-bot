@@ -69,6 +69,11 @@ export default function ClaudeSetupPage() {
             This guide uses the packaged stdio server. https://noui.bot/api/v1 is an API index,
             not a supported desktop MCP transport.
           </p>
+          <p className="mt-4 text-white/40">
+            The key enables three tools: <code className="text-white/60">bazaar_list_tools</code>{" "}
+            (catalog and prices), <code className="text-white/60">bazaar_call_tool</code> (runs a tool
+            through the metered proxy) and <code className="text-white/60">bazaar_balance</code>.
+          </p>
         </section>
 
         {/* Step 3 */}

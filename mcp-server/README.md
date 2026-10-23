@@ -6,6 +6,9 @@ Model Context Protocol server for [noui.bot](https://noui.bot) — agent-first i
 
 | Tool | Description |
 |------|-------------|
+| `bazaar_list_tools` | List Agent Bazaar tools and their price per call |
+| `bazaar_call_tool` | Run a Bazaar tool through the metered proxy (requires `NOUI_API_KEY`) |
+| `bazaar_balance` | Show your prepaid Bazaar balance (requires `NOUI_API_KEY`) |
 | `platform_stats` | Get noui.bot platform statistics |
 | `list_services` | List all services with status |
 | `report_wall` | Report walls/obstacles you're hitting |
@@ -25,11 +28,16 @@ Add to your MCP config (`~/.config/claude/claude_desktop_config.json`):
   "mcpServers": {
     "noui-bot": {
       "command": "npx",
-      "args": ["-y", "@forthebots/mcp-server"]
+      "args": ["-y", "@forthebots/mcp-server"],
+      "env": {
+        "NOUI_API_KEY": "bz_your_key_here"
+      }
     }
   }
 }
 ```
+
+`NOUI_API_KEY` is a Bazaar consumer key from https://noui.bot/developers/register. It is only needed for `bazaar_call_tool` and `bazaar_balance`; every other tool works without it.
 
 ### Manual
 
@@ -45,6 +53,7 @@ node dist/index.js
 Once connected, your AI agent can:
 
 ```
+> Use bazaar_list_tools to find a weather tool, then bazaar_call_tool to run it
 > Use platform_stats to check noui.bot metrics
 > Use report_wall to tell noui.bot about a CAPTCHA that blocked you
 > Use deploy to ship code through Deploy Rail
