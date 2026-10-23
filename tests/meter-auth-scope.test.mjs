@@ -32,23 +32,25 @@ const OWN_TOOL = {
 };
 const OTHER_TOOL = { ...OWN_TOOL, id: "tool-other", provider_id: "provider-2" };
 
-async function post(body, { owner = CONSUMER, tool = OWN_TOOL } = {}) {
+async function post(body, { owner = CONSUMER, tool = OWN_TOOL, tools, toolError = null, insertError = null, receiptError = null } = {}) {
   const inserts = [];
   const toolFilters = [];
+  const rows = tools ?? (tool ? [tool] : []);
   const sb = {
     from(table) {
       if (table === "bazaar_tools") {
         const builder = {
           select: () => builder,
           eq(column, value) { toolFilters.push([column, value]); return builder; },
-          single: async () => ({ data: tool, error: tool ? null : { message: "not found" } }),
+          limit: async (n) => (toolError ? { data: null, error: toolError } : { data: rows.slice(0, n), error: null }),
         };
         return builder;
       }
       return {
         insert: async (row) => {
-          inserts.push({ table, row });
-          return { error: null };
+          const error = table === "bazaar_usage_logs" ? insertError : receiptError;
+          if (!error) inserts.push({ table, row });
+          return { error };
         },
       };
     },
@@ -68,6 +70,7 @@ async function post(body, { owner = CONSUMER, tool = OWN_TOOL } = {}) {
     },
     Response,
     Date,
+    console: { error() {} },
   });
   vm.runInContext(outputText, context);
   const request = new Request("https://noui.bot/api/v1/bazaar/meter", {
@@ -123,6 +126,7 @@ test("unknown status is rejected instead of stored", async () => {
 for (const [name, body] of [
   ["string duration", { tool_id: "tool-own", duration_ms: "fast" }],
   ["negative tokens", { tool_id: "tool-own", input_tokens: -1 }],
+  ["out-of-range duration", { tool_id: "tool-own", duration_ms: 1e12 }],
   ["numeric tool_id", { tool_id: 42 }],
   ["array metadata", { tool_id: "tool-own", metadata: [1] }],
   ["missing tool", {}],
@@ -141,3 +145,65 @@ for (const [name, body] of [["null", "null"], ["array", "[]"], ["number", "5"], 
     assert.equal(out.inserts.length, 0);
   });
 }
+
+test("an unknown tool is a 404 with no usage row and no signed receipt", async () => {
+  const out = await post({ tool_id: "tool-missing" }, { tool: null });
+  assert.equal(out.status, 404);
+  assert.equal(out.json.code, "TOOL_NOT_FOUND");
+  assert.equal(out.inserts.length, 0);
+});
+
+test("a provider metering an unknown tool name is also a 404", async () => {
+  const out = await post({ tool_name: "nope" }, { owner: PROVIDER, tool: null });
+  assert.equal(out.status, 404);
+  assert.equal(out.inserts.length, 0);
+});
+
+test("a tool lookup failure is a 500, never a $0 call", async () => {
+  const out = await post({ tool_id: "tool-own" }, { toolError: { message: "connection reset by db-host-7" } });
+  assert.equal(out.status, 500);
+  assert.equal(out.json.code, "METER_FAILED");
+  assert.doesNotMatch(JSON.stringify(out.json), /db-host-7/);
+  assert.equal(out.inserts.length, 0);
+});
+
+test("a consumer tool_name shared by several providers is ambiguous", async () => {
+  const out = await post({ tool_name: "search" }, { tools: [OWN_TOOL, OTHER_TOOL] });
+  assert.equal(out.status, 409);
+  assert.equal(out.json.code, "AMBIGUOUS_TOOL");
+  assert.equal(out.inserts.length, 0);
+});
+
+test("a usage insert failure does not echo the database error", async () => {
+  const out = await post({ tool_id: "tool-own" }, { insertError: { message: 'violates foreign key constraint "fk_secret"' } });
+  assert.equal(out.status, 500);
+  assert.equal(out.json.code, "METER_FAILED");
+  assert.doesNotMatch(JSON.stringify(out.json), /fk_secret/);
+});
+
+test("tokens go to the token columns and fractional values are rounded", async () => {
+  const out = await post({ tool_id: "tool-own", duration_ms: 12.6, input_tokens: 100, output_tokens: 40.2 });
+  assert.equal(out.status, 201);
+  const usage = out.inserts[0].row;
+  assert.equal(usage.latency_ms, 13);
+  assert.equal(usage.tokens_input, 100);
+  assert.equal(usage.tokens_output, 40);
+  assert.equal(usage.request_size_bytes, undefined, "tokens are not bytes");
+  const receipt = out.inserts[1].row;
+  assert.equal(receipt.duration_ms, 13);
+  assert.equal(receipt.input_hash, undefined, "a token count is not a hash");
+});
+
+test("an unstored receipt is reported, not handed out with a dead verify_url", async () => {
+  const out = await post({ tool_id: "tool-own" }, { receiptError: { message: "insert failed" } });
+  assert.equal(out.status, 201);
+  assert.equal(out.json.metered, true);
+  assert.equal(out.json.receipt, null);
+  assert.equal(out.json.receipt_persisted, false);
+});
+
+test("a stored receipt comes back with its verify_url", async () => {
+  const out = await post({ tool_id: "tool-own" });
+  assert.equal(out.json.receipt_persisted, true);
+  assert.equal(out.json.receipt.verify_url, "https://noui.bot/api/v1/bazaar/receipts/rcpt_test");
+});
