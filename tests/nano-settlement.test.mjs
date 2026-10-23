@@ -4,11 +4,24 @@ import test from "node:test";
 const {
   RAW_PER_XNO, isNanoAccount, normalizeNanoAccount, xnoToRaw, rawToXno,
   verifyNanoSendBlock, fetchNanoBlockInfo,
+  blake2b, nanoAccountFromPublicKey, nanoPublicKeyFromAccount, isValidNanoAccount,
 } = await import("../src/lib/nano-settlement.ts");
 
-const PROVIDER = `nano_1${"a".repeat(59)}`;
-const OTHER = `nano_3${"b".repeat(59)}`;
-const PAYER = `nano_1${"c".repeat(59)}`;
+const PROVIDER = nanoAccountFromPublicKey("A".repeat(64));
+const OTHER = nanoAccountFromPublicKey("B".repeat(64));
+const PAYER = nanoAccountFromPublicKey("C".repeat(64));
+
+// Well-known mainnet addresses: the genesis account and the burn address.
+const GENESIS_KEY = "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA";
+const GENESIS = "nano_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3";
+const BURN = "nano_1111111111111111111111111111111111111111111111111111hifc8npp";
+
+/** Swap one character for another alphabet character (a one-character typo). */
+function typo(account, index) {
+  const alphabet = "13456789abcdefghijkmnopqrstuwxyz";
+  const next = alphabet[(alphabet.indexOf(account[index]) + 1) % alphabet.length];
+  return account.slice(0, index) + next + account.slice(index + 1);
+}
 const HASH = "a".repeat(64);
 const COST = xnoToRaw("0.0001");
 
@@ -66,6 +79,47 @@ test("account format check and legacy prefix normalisation", () => {
   assert.equal(isNanoAccount(`nano_1${"a".repeat(58)}`), false, "too short");
   assert.equal(isNanoAccount(null), false);
   assert.equal(normalizeNanoAccount(PROVIDER.replace("nano_", "xrb_")), PROVIDER);
+});
+
+test("blake2b matches node's blake2b512 across block boundaries", async () => {
+  const { createHash } = await import("node:crypto");
+  for (const length of [0, 1, 32, 127, 128, 129, 256, 300]) {
+    const input = Uint8Array.from({ length }, (_, i) => (i * 7 + 3) & 0xff);
+    assert.equal(
+      Buffer.from(blake2b(input, 64)).toString("hex"),
+      createHash("blake2b512").update(input).digest("hex"),
+      `length ${length}`,
+    );
+  }
+  assert.throws(() => blake2b(new Uint8Array(), 0), RangeError);
+  assert.throws(() => blake2b(new Uint8Array(), 65), RangeError);
+});
+
+test("addresses encode and decode against known mainnet accounts", () => {
+  assert.equal(nanoAccountFromPublicKey(GENESIS_KEY), GENESIS);
+  assert.equal(nanoAccountFromPublicKey(GENESIS_KEY.toLowerCase()), GENESIS);
+  assert.equal(nanoAccountFromPublicKey("0".repeat(64)), BURN);
+  assert.equal(nanoPublicKeyFromAccount(GENESIS), GENESIS_KEY);
+  assert.equal(nanoPublicKeyFromAccount(GENESIS.replace("nano_", "xrb_")), GENESIS_KEY);
+  assert.equal(nanoPublicKeyFromAccount(BURN), "0".repeat(64));
+  for (const bad of ["", "zz", "A".repeat(63), "G".repeat(64), null]) {
+    assert.throws(() => nanoAccountFromPublicKey(bad), RangeError, String(bad));
+  }
+});
+
+test("isValidNanoAccount rejects any one-character typo", () => {
+  assert.equal(isValidNanoAccount(GENESIS), true);
+  assert.equal(isValidNanoAccount(PROVIDER), true);
+  assert.equal(isNanoAccount(`nano_1${"a".repeat(59)}`), true, "format-valid");
+  assert.equal(isValidNanoAccount(`nano_1${"a".repeat(59)}`), false, "but checksum-invalid");
+  // Every position after the leading pad character, in the key and the checksum.
+  for (let i = 6; i < GENESIS.length; i++) {
+    assert.equal(isValidNanoAccount(typo(GENESIS, i)), false, `typo at ${i}`);
+  }
+  for (const bad of [null, 42, "", GENESIS.toUpperCase(), GENESIS.slice(0, -1)]) {
+    assert.equal(isValidNanoAccount(bad), false, String(bad));
+    assert.equal(nanoPublicKeyFromAccount(bad), null, String(bad));
+  }
 });
 
 test("a confirmed exact send to the provider is valid", () => {
@@ -129,6 +183,8 @@ test("rejects unusable expectations instead of passing everything", () => {
     { payTo: PROVIDER, amountRaw: -1n },
     { payTo: PROVIDER, amountRaw: 100 },
     { payTo: PROVIDER, amountRaw: COST, payer: "nope" },
+    { payTo: typo(PROVIDER, 20), amountRaw: COST },
+    { payTo: PROVIDER, amountRaw: COST, payer: typo(PAYER, 61) },
     undefined,
   ]) {
     assert.equal(verifyNanoSendBlock(HASH, blockInfo(), bad).reason, "bad_expectation");

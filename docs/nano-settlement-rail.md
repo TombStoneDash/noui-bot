@@ -16,6 +16,11 @@ after confirming that block, instead of debiting a pre-funded balance.
 - `fetchNanoBlockInfo(rpcUrl, hash, { fetch, timeoutMs })` is a small RPC client with a timeout.
   It returns `null` for an unknown block.
 - `xnoToRaw` / `rawToXno` convert exact decimals with BigInt (1 XNO = 10^30 raw), never floats.
+- `isValidNanoAccount` checks the address checksum (blake2b-40 of the public key), so a
+  mistyped address is rejected. `verifyNanoSendBlock` refuses a `payTo` or `payer` that fails it.
+  Provider registration should call it before saving an address. `isNanoAccount` checks format
+  only. `nanoAccountFromPublicKey` / `nanoPublicKeyFromAccount` convert between the two forms.
+  BLAKE2b is implemented in the file because Node's crypto only offers the 64-byte digest.
 
 ## What a verified block does *not* prove
 
@@ -24,9 +29,6 @@ after confirming that block, instead of debiting a pre-funded balance.
   any second use.
 - **Binding to this call.** A send block has no memo field. Binding a block to a specific call
   needs either a per-call amount nonce or a per-call receive address. That is a design choice.
-- **Address checksum.** `isNanoAccount` checks format only. Expected addresses come from our own
-  catalog and are compared exactly, so the blake2b checksum is not needed for verification. It
-  *is* needed when a provider registers an address.
 
 ## Decisions needed before wiring it in (Hudson)
 
