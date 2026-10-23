@@ -22,14 +22,22 @@ export async function POST(request: Request) {
   const sb = getSupabase();
   const MINIMUM_PAYOUT_CENTS = 1000; // $10 minimum
 
-  // Get provider's payout balance
-  const { data: provider } = await sb
+  // Get provider's payout balance. A failed read must not look like a $0
+  // balance (or, worse, a stale one), so stop here.
+  const { data: provider, error: providerErr } = await sb
     .from("bazaar_providers")
-    .select("payout_balance_cents, stripe_account_id")
+    .select("payout_balance_cents, stripe_account_id, created_at")
     .eq("id", owner.id)
     .single();
 
-  const payoutBalance = provider?.payout_balance_cents ?? 0;
+  if (providerErr || !provider) {
+    return NextResponse.json(
+      { error: true, code: "PAYOUT_FAILED", message: "Could not read payout balance" },
+      { status: 500 }
+    );
+  }
+
+  const payoutBalance = provider.payout_balance_cents ?? 0;
 
   if (payoutBalance < MINIMUM_PAYOUT_CENTS) {
     return NextResponse.json(
@@ -46,7 +54,7 @@ export async function POST(request: Request) {
 
   const stripe = getStripe();
 
-  if (stripe && provider?.stripe_account_id) {
+  if (stripe && provider.stripe_account_id) {
     // Claim the balance before moving money. The update only matches while the
     // balance is still the value read above, so a concurrent payout request
     // (or a retry) cannot transfer the same earnings twice.
@@ -74,6 +82,26 @@ export async function POST(request: Request) {
       );
     }
 
+    // The period this payout covers runs from the end of the last recorded
+    // payout (or provider signup) to now.
+    const periodEnd = new Date().toISOString();
+    const { data: lastPayout } = await sb
+      .from("bazaar_payouts")
+      .select("period_end")
+      .eq("provider_id", owner.id)
+      .order("period_end", { ascending: false })
+      .limit(1);
+    const periodStart = lastPayout?.[0]?.period_end ?? provider.created_at ?? periodEnd;
+    const grossCents = Math.round(payoutBalance / (1 - PLATFORM_FEE_RATE));
+    const payoutRow = {
+      provider_id: owner.id,
+      period_start: periodStart,
+      period_end: periodEnd,
+      gross_revenue_cents: grossCents,
+      platform_fee_cents: grossCents - payoutBalance,
+      net_payout_cents: payoutBalance,
+    };
+
     // Live mode: create Stripe Transfer
     let transfer: { id: string };
     try {
@@ -87,6 +115,27 @@ export async function POST(request: Request) {
         },
       });
     } catch (err: unknown) {
+      if (!isDefiniteStripeRejection(err)) {
+        // A timeout, dropped connection or 5xx does not mean the transfer
+        // failed: Stripe may have made it. Giving the balance back here would
+        // let the next request pay the same earnings again, so keep it claimed
+        // and leave a processing row for reconciliation against Stripe.
+        const { error: pendingErr } = await sb.from("bazaar_payouts").insert({ ...payoutRow, status: "processing" });
+        console.error(
+          `[PAYOUT] Transfer of ${payoutBalance} cents for provider ${owner.id} has an unknown outcome` +
+            (pendingErr ? ` and was not recorded: ${pendingErr.message}` : "; recorded as processing")
+        );
+        return NextResponse.json(
+          {
+            error: true,
+            code: "PAYOUT_UNCONFIRMED",
+            message: "Stripe did not confirm the transfer. The balance is held until the payout is reconciled; do not retry.",
+          },
+          { status: 502 }
+        );
+      }
+
+      // Stripe answered with a 4xx, so no transfer was made.
       const restored = await restoreBalance(sb, owner.id, payoutBalance);
       if (!restored) {
         console.error(`[PAYOUT] Transfer failed and ${payoutBalance} cents could not be restored for provider ${owner.id}`);
@@ -101,10 +150,7 @@ export async function POST(request: Request) {
     // Record payout. The transfer has already been made, so a failed insert is
     // logged for reconciliation rather than reported as a failed payout.
     const { error: recordErr } = await sb.from("bazaar_payouts").insert({
-      provider_id: owner.id,
-      gross_amount_cents: Math.round(payoutBalance / (1 - PLATFORM_FEE_RATE)),
-      platform_fee_cents: Math.round(payoutBalance / (1 - PLATFORM_FEE_RATE)) - payoutBalance,
-      net_payout_cents: payoutBalance,
+      ...payoutRow,
       stripe_transfer_id: transfer.id,
       status: "paid",
       paid_at: new Date().toISOString(),
@@ -127,14 +173,25 @@ export async function POST(request: Request) {
     mode: "dry_run",
     would_payout_cents: payoutBalance,
     would_payout: `$${(payoutBalance / 100).toFixed(2)}`,
-    stripe_connected: !!provider?.stripe_account_id,
+    stripe_connected: !!provider.stripe_account_id,
     stripe_configured: !!stripe,
     message: "Payout simulated (dry-run mode).",
     requirements: {
       ...(! stripe ? { stripe_keys: "Set STRIPE_SECRET_KEY in environment" } : {}),
-      ...(!provider?.stripe_account_id ? { connect: "Complete Stripe Connect onboarding first (POST /api/bazaar/connect)" } : {}),
+      ...(!provider.stripe_account_id ? { connect: "Complete Stripe Connect onboarding first (POST /api/bazaar/connect)" } : {}),
     },
   });
+}
+
+/**
+ * True only when Stripe answered and refused the request. Stripe does not
+ * process a request it answers with a 4xx, except 409 (a conflicting request
+ * with the same idempotency key, which may have succeeded). Connection errors,
+ * timeouts and 5xx responses are ambiguous.
+ */
+function isDefiniteStripeRejection(err: unknown): boolean {
+  const status = (err as { statusCode?: unknown } | null)?.statusCode;
+  return typeof status === "number" && status >= 400 && status < 500 && status !== 409;
 }
 
 /**
@@ -178,24 +235,32 @@ export async function GET(request: Request) {
 
   const sb = getSupabase();
 
-  const { data: provider } = await sb
+  const { data: provider, error: providerErr } = await sb
     .from("bazaar_providers")
     .select("payout_balance_cents, stripe_account_id")
     .eq("id", owner.id)
     .single();
 
-  const { data: payouts } = await sb
+  const { data: payouts, error: payoutsErr } = await sb
     .from("bazaar_payouts")
     .select("*")
     .eq("provider_id", owner.id)
     .order("created_at", { ascending: false })
     .limit(10);
 
+  // An error must not read as "$0 pending, no payouts".
+  if (providerErr || !provider || payoutsErr) {
+    return NextResponse.json(
+      { error: true, code: "PAYOUT_LOOKUP_FAILED", message: "Could not load payout balance or history" },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json({
     provider_id: owner.id,
-    pending_balance_cents: provider?.payout_balance_cents ?? 0,
-    pending_balance: `$${((provider?.payout_balance_cents ?? 0) / 100).toFixed(2)}`,
-    stripe_connected: !!provider?.stripe_account_id,
+    pending_balance_cents: provider.payout_balance_cents ?? 0,
+    pending_balance: `$${((provider.payout_balance_cents ?? 0) / 100).toFixed(2)}`,
+    stripe_connected: !!provider.stripe_account_id,
     minimum_payout: "$10.00",
     history: (payouts || []).map((p: Record<string, unknown>) => ({
       id: p.id,
