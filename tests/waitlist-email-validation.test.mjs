@@ -104,3 +104,48 @@ test("storage failure returns 500 after one insert attempt", async () => {
   assert.equal(response.body.error, "Internal error.");
   assert.equal(route.inserts.length, 1);
 });
+
+for (const source of [42, { utm: "x" }, ["landing"], false, "s".repeat(101), "nul\u0000"]) {
+  test(`malformed source ${JSON.stringify(source).slice(0, 40)} returns 400 without storage`, async () => {
+    const route = loadRoute();
+    const response = await submit(route, { email: "user@example.com", source });
+    assert.equal(response.status, 400);
+    assert.match(response.body.error, /source/);
+    assert.equal(route.inserts.length, 0);
+  });
+}
+
+test("blank or null source falls back to api", async () => {
+  for (const source of [null, "   "]) {
+    const route = loadRoute();
+    const response = await submit(route, { email: "user@example.com", source });
+    assert.equal(response.status, 201);
+    assert.equal(route.inserts[0].values[1], "api");
+  }
+});
+
+test("an address longer than 254 characters is refused", async () => {
+  const route = loadRoute();
+  const response = await submit(route, { email: `${"a".repeat(64)}@${"b".repeat(63)}.${"c".repeat(63)}.${"d".repeat(63)}.com` });
+  assert.equal(response.status, 400);
+  assert.equal(route.inserts.length, 0);
+});
+
+test("new signups are logged by id, never by email address", async () => {
+  const logs = [];
+  const context = vm.createContext({
+    exports: {},
+    console: { log: (...args) => logs.push(args.join(" ")), error() {} },
+    require(name) {
+      if (name === "next/server") return { NextResponse: { json: (body, { status = 200 } = {}) => ({ body, status }) } };
+      if (name === "@/lib/db") return { sql: async () => [{ id: 17 }] };
+      throw new Error(`Unexpected import: ${name}`);
+    },
+  });
+  vm.runInContext(outputText, context);
+  const response = await context.exports.POST({ json: async () => ({ email: "private.person@example.com" }) });
+  assert.equal(response.status, 201);
+  assert.equal(logs.length, 1);
+  assert.match(logs[0], /id=17/);
+  assert.doesNotMatch(logs[0], /private\.person|example\.com/);
+});

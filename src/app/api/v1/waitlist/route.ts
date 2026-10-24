@@ -15,14 +15,21 @@ export async function POST(request: Request) {
   const email = body?.email;
   const normalized = typeof email === "string" ? email.trim().toLowerCase() : "";
   const validEmail = /^[a-z0-9_%+-]+(?:\.[a-z0-9_%+-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/;
-  if (!validEmail.test(normalized)) {
+  if (normalized.length > 254 || !validEmail.test(normalized)) {
     return NextResponse.json(
       { error: "Valid email required." },
       { status: 400 }
     );
   }
 
-  const src = body.source || "api";
+  const source = body.source ?? "api";
+  if (typeof source !== "string" || source.length > 100 || source.includes("\u0000")) {
+    return NextResponse.json(
+      { error: "source must be a string of at most 100 characters." },
+      { status: 400 }
+    );
+  }
+  const src = source.trim() || "api";
 
   try {
     // Upsert — don't fail on duplicate
@@ -41,7 +48,8 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`[WAITLIST] New signup: ${normalized} | id=${result[0].id}`);
+    // Log the row id only; email addresses do not belong in server logs.
+    console.log(`[WAITLIST] New signup | id=${result[0].id}`);
 
     return NextResponse.json(
       {
