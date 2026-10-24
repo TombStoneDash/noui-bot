@@ -6,35 +6,46 @@ import { getSupabase } from "@/lib/supabase";
  * GET /api/v1/bazaar/stats — Public Bazaar statistics dashboard
  * No auth required. Returns proof-of-life metrics.
  */
+/** PostgREST returns at most this many rows per request. */
+const PAGE_SIZE = 1000;
+
 export async function GET() {
   const sb = getSupabase();
+  const unavailable = () =>
+    NextResponse.json(
+      { error: true, message: "Statistics temporarily unavailable" },
+      { status: 503 }
+    );
 
   try {
     // Total tool invocations
-    const { count: totalInvocations } = await sb
+    const { count: totalInvocations, error: totalError } = await sb
       .from("bazaar_usage_logs")
       .select("id", { count: "exact", head: true });
 
     // Successful invocations
-    const { count: successfulCalls } = await sb
+    const { count: successfulCalls, error: successError } = await sb
       .from("bazaar_usage_logs")
       .select("id", { count: "exact", head: true })
       .eq("status", "success");
+
+    // Successful invocations that cost nothing (free tier or free tools)
+    const { count: freeCalls, error: freeError } = await sb
+      .from("bazaar_usage_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "success")
+      .or("cost_cents.eq.0,cost_cents.is.null");
 
     // Unique consumers (agents)
     const { count: consumerCount, error: consumerError } = await sb
       .from("bazaar_consumers")
       .select("id", { count: "exact", head: true });
 
-    if (consumerError) {
-      return NextResponse.json(
-        { error: true, message: "Statistics temporarily unavailable" },
-        { status: 503 }
-      );
-    }
+    // A failed count must not be published as zero.
+    if (totalError || successError || freeError || consumerError) return unavailable();
 
     // Public tools and their distinct providers use the catalog hygiene policy.
-    const { data: tools } = await sb
+    const { data: tools, error: toolsError } = await sb
       .from("bazaar_tools")
       .select(`
         id,
@@ -43,39 +54,51 @@ export async function GET() {
         )
       `)
       .eq("active", true);
+    if (toolsError) return unavailable();
     const filtered = filterCatalogRows(tools || []);
 
-    // Total revenue
-    const { data: revData } = await sb
-      .from("bazaar_usage_logs")
-      .select("cost_cents")
-      .eq("status", "success");
+    // Total revenue: page through every paid call, since one request is
+    // capped at PAGE_SIZE rows and would otherwise undercount.
+    let totalRevenueCents = 0;
+    for (let start = 0; ; start += PAGE_SIZE) {
+      const { data: revData, error: revError } = await sb
+        .from("bazaar_usage_logs")
+        .select("cost_cents")
+        .eq("status", "success")
+        .gt("cost_cents", 0)
+        .order("id")
+        .range(start, start + PAGE_SIZE - 1);
+      if (revError) return unavailable();
+      const rows = (revData || []) as { cost_cents: number | null }[];
+      totalRevenueCents += rows.reduce((s, r) => s + (r.cost_cents || 0), 0);
+      if (rows.length < PAGE_SIZE) break;
+    }
 
-    const totalRevenueCents = (revData || []).reduce((s: number, r: { cost_cents: number }) => s + (r.cost_cents || 0), 0);
-
-    // Average response time
-    const { data: latencyData } = await sb
+    // Average response time over the most recent successful calls
+    const { data: latencyData, error: latencyError } = await sb
       .from("bazaar_usage_logs")
       .select("latency_ms")
       .eq("status", "success")
       .not("latency_ms", "is", null)
-      .limit(1000);
+      .order("created_at", { ascending: false })
+      .limit(PAGE_SIZE);
+    if (latencyError) return unavailable();
 
     const avgLatency = latencyData && latencyData.length > 0
       ? Math.round(latencyData.reduce((s: number, r: { latency_ms: number }) => s + r.latency_ms, 0) / latencyData.length)
       : 0;
 
     // Last invocation
-    const { data: lastLog } = await sb
+    const { data: lastLog, error: lastError } = await sb
       .from("bazaar_usage_logs")
       .select("created_at")
       .order("created_at", { ascending: false })
       .limit(1);
+    if (lastError) return unavailable();
 
-    // Free tier percentage
-    const freeCalls = totalRevenueCents === 0 ? (totalInvocations || 0) : 0;
-    const freePct = (totalInvocations || 0) > 0
-      ? Math.round((freeCalls / (totalInvocations || 1)) * 100)
+    // Share of successful calls that were free
+    const freePct = (successfulCalls || 0) > 0
+      ? Math.round(((freeCalls || 0) / (successfulCalls || 1)) * 100)
       : 100;
 
     return NextResponse.json({
@@ -97,11 +120,7 @@ export async function GET() {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
       },
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json(
-      { error: true, message },
-      { status: 500 }
-    );
+  } catch {
+    return unavailable();
   }
 }
