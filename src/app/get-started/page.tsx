@@ -214,7 +214,7 @@ console.log(result);`}
         <Step number="5" title="Check your usage">
           <CopyBlock
             code={`const usage = await bz.usage.summary();
-console.log(usage.total_calls, usage.total_cost);`}
+console.log(usage.summary.total_calls, usage.summary.total_spend);`}
           />
           <p className="font-mono text-xs text-white/30 mt-3">
             Or view your{" "}

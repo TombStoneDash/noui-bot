@@ -67,7 +67,9 @@ async function fetchCatalogTools(): Promise<Tool[]> {
     const page = payload as { tools?: unknown; limit?: unknown; offset?: unknown; total?: unknown };
     if (!Array.isArray(page.tools) || page.tools.length > CATALOG_PAGE_SIZE ||
         page.limit !== CATALOG_PAGE_SIZE || page.offset !== offset ||
-        page.total !== page.tools.length || !page.tools.every(isTool)) {
+        // total is the full filtered catalog size, so it covers every page so far.
+        !Number.isSafeInteger(page.total) || (page.total as number) < offset + page.tools.length ||
+        !page.tools.every(isTool)) {
       throw new Error("Invalid catalog response");
     }
 
