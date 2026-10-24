@@ -44,6 +44,7 @@
     "directory": "packages/noui-factory"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
     "vitest": "^1.0.0"

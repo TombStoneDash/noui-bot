@@ -14,7 +14,7 @@ npm install @tombstonedash/factory
 
 ```bash
 # Initialize a new agent factory
-npx @tombstonedash/factory init my-agent
+npx @tombstonedash/factory init my-agent        # add --force to overwrite an existing factory.json
 
 # Validate configuration
 npx @tombstonedash/factory validate
@@ -61,7 +61,7 @@ console.log(manifest);
     }
   ],
   "runtime": {
-    "model": "claude-3-haiku",
+    "model": "claude-haiku-5-5",
     "maxTokens": 4096,
     "timeout": 30000
   }
