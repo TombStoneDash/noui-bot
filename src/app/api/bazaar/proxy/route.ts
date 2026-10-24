@@ -210,6 +210,17 @@ export async function POST(request: Request) {
     );
   }
 
+  if (outcome.kind === "in_progress") {
+    return NextResponse.json(
+      {
+        error: true,
+        code: "IDEMPOTENCY_IN_PROGRESS",
+        message: "A request with this Idempotency-Key is still running; retry shortly to get its result",
+      },
+      { status: 409, headers: { "Retry-After": "2" } }
+    );
+  }
+
   const headers: Record<string, string> = { ...outcome.response.headers };
   if (outcome.kind === "replay") headers["X-Bazaar-Idempotent-Replay"] = "true";
   return NextResponse.json(outcome.response.body, { status: outcome.response.status, headers });

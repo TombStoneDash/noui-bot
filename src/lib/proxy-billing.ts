@@ -19,6 +19,14 @@ export const IDEMPOTENCY_KEY_MAX_LENGTH = 128;
 /** Stored idempotent responses are honoured for 24 h; older rows are expired and purged. */
 export const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * A key is reserved (with a pending marker) before the billed call runs. A
+ * marker older than this belongs to a request that died mid-call: the proxy
+ * timeout is 10 s, with one retry.
+ */
+export const IDEMPOTENCY_PENDING_STALE_MS = 2 * 60 * 1000;
+const UNIQUE_VIOLATION = "23505";
+
 /** True when a stored row's `created_at` is older than the TTL. A missing/invalid timestamp is not expired. */
 export function isIdempotencyExpired(createdAt: unknown, nowMs: number = Date.now()): boolean {
   if (typeof createdAt !== "string") return false;
@@ -155,18 +163,27 @@ export type StoredIdempotentResponse = {
   status: number;
   body: unknown;
   headers: Record<string, string>;
+  /** Set only on the reservation marker written before the call runs. */
+  pending?: true;
 };
 
 export type IdempotencyLookup =
   | { kind: "miss"; available: boolean }
   | { kind: "hit"; stored: StoredIdempotentResponse }
+  | { kind: "in_progress" }
   | { kind: "mismatch" };
+
+function pendingMarker(bodyHash: string): StoredIdempotentResponse {
+  return { body_hash: bodyHash, status: 0, body: null, headers: {}, pending: true };
+}
 
 /**
  * Look up a stored response for (consumer, key). A hit whose body hash differs
  * is a mismatch (caller returns 409). A lookup error (e.g. the table does not
  * exist yet) is treated as a miss with `available: false`. A row older than
  * the 24 h TTL is deleted and treated as a miss, so the key can be reused.
+ * A pending marker means the same request is still running (`in_progress`),
+ * unless it is stale, in which case it is cleared like an expired row.
  */
 export async function lookupIdempotency(
   sb: BillingClient,
@@ -184,7 +201,11 @@ export async function lookupIdempotency(
   if (error) return { kind: "miss", available: false };
   if (!data) return { kind: "miss", available: true };
   const row = data as { response: StoredIdempotentResponse; created_at?: string };
-  if (isIdempotencyExpired(row.created_at, nowMs)) {
+  const stalePending =
+    row.response?.pending === true &&
+    typeof row.created_at === "string" &&
+    nowMs - Date.parse(row.created_at) > IDEMPOTENCY_PENDING_STALE_MS;
+  if (isIdempotencyExpired(row.created_at, nowMs) || stalePending) {
     const { error: delErr } = await sb
       .from("bazaar_idempotency_keys")
       .delete()
@@ -195,10 +216,28 @@ export async function lookupIdempotency(
   }
   const stored = row.response;
   if (!stored || stored.body_hash !== bodyHash) return { kind: "mismatch" };
+  if (stored.pending === true) return { kind: "in_progress" };
   return { kind: "hit", stored };
 }
 
-/** Store the final response under the key. Returns false (never throws) when the store fails. */
+/**
+ * Claim (consumer, key) with a pending marker. The primary key makes this
+ * atomic: of two concurrent requests, exactly one inserts.
+ */
+export async function reserveIdempotency(
+  sb: BillingClient,
+  consumerId: string,
+  key: string,
+  bodyHash: string
+): Promise<"reserved" | "taken" | "unavailable"> {
+  const { error } = await sb
+    .from("bazaar_idempotency_keys")
+    .insert({ consumer_id: consumerId, key, receipt_id: null, response: pendingMarker(bodyHash) });
+  if (!error) return "reserved";
+  return error.code === UNIQUE_VIOLATION ? "taken" : "unavailable";
+}
+
+/** Replace the pending marker with the final response. Returns false (never throws) when the store fails. */
 export async function storeIdempotency(
   sb: BillingClient,
   consumerId: string,
@@ -208,14 +247,28 @@ export async function storeIdempotency(
 ): Promise<boolean> {
   const { error } = await sb
     .from("bazaar_idempotency_keys")
-    .insert({ consumer_id: consumerId, key, receipt_id: receiptId, response: stored });
+    .update({ receipt_id: receiptId, response: stored })
+    .eq("consumer_id", consumerId)
+    .eq("key", key);
   return !error;
+}
+
+/** Drop a reservation so the key can be retried. Never throws. */
+async function releaseIdempotency(sb: BillingClient, consumerId: string, key: string): Promise<void> {
+  try {
+    await sb.from("bazaar_idempotency_keys").delete().eq("consumer_id", consumerId).eq("key", key);
+  } catch {
+    // The marker then expires after IDEMPOTENCY_PENDING_STALE_MS.
+  }
 }
 
 /**
  * Run `fn` once per (consumer, key): return the stored response on a hit,
- * 409-shaped `{ mismatch: true }` on a body-hash mismatch, else run `fn` and store.
- * Only 2xx results are stored, so a failed upstream call can be retried with the same key.
+ * `mismatch` on a body-hash mismatch, `in_progress` while another request
+ * with the same key is running, else reserve the key, run `fn` and store.
+ * Reserving first means two concurrent requests cannot both call (and bill)
+ * upstream. Only 2xx results are stored, so a failed upstream call can be
+ * retried with the same key.
  */
 export async function withIdempotency(
   sb: BillingClient,
@@ -226,6 +279,7 @@ export async function withIdempotency(
 ): Promise<
   | { kind: "replay"; response: StoredIdempotentResponse }
   | { kind: "mismatch" }
+  | { kind: "in_progress" }
   | { kind: "fresh"; response: StoredIdempotentResponse; receiptId: string | null; stored: boolean }
 > {
   if (!key) {
@@ -234,11 +288,33 @@ export async function withIdempotency(
   }
   const found = await lookupIdempotency(sb, consumerId, key, bodyHash);
   if (found.kind === "hit") return { kind: "replay", response: found.stored };
-  if (found.kind === "mismatch") return { kind: "mismatch" };
-  const out = await fn();
-  const stored =
-    found.available && out.response.status >= 200 && out.response.status < 300
-      ? await storeIdempotency(sb, consumerId, key, out.receiptId, out.response)
-      : false;
+  if (found.kind === "mismatch" || found.kind === "in_progress") return { kind: found.kind };
+
+  // An unavailable table (lookup or reserve error) degrades to a plain call.
+  const reservation = found.available ? await reserveIdempotency(sb, consumerId, key, bodyHash) : "unavailable";
+  if (reservation === "taken") {
+    // Another request claimed the key between our lookup and insert.
+    const again = await lookupIdempotency(sb, consumerId, key, bodyHash);
+    if (again.kind === "hit") return { kind: "replay", response: again.stored };
+    if (again.kind === "mismatch") return { kind: "mismatch" };
+    return { kind: "in_progress" };
+  }
+  const reserved = reservation === "reserved";
+
+  let out: Awaited<ReturnType<typeof fn>>;
+  try {
+    out = await fn();
+  } catch (err) {
+    if (reserved) await releaseIdempotency(sb, consumerId, key);
+    throw err;
+  }
+
+  let stored = false;
+  if (reserved) {
+    if (out.response.status >= 200 && out.response.status < 300) {
+      stored = await storeIdempotency(sb, consumerId, key, out.receiptId, out.response);
+    }
+    if (!stored) await releaseIdempotency(sb, consumerId, key);
+  }
   return { kind: "fresh", ...out, stored };
 }
