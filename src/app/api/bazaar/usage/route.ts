@@ -72,8 +72,9 @@ export async function GET(request: Request) {
     .limit(limit);
 
   if (logErr) {
+    console.error("[usage] log query failed:", logErr.message);
     return NextResponse.json(
-      { error: true, message: logErr.message },
+      { error: true, code: "SERVICE_UNAVAILABLE", message: "Usage is temporarily unavailable" },
       { status: 500 }
     );
   }
@@ -102,6 +103,10 @@ export async function GET(request: Request) {
       total_cost_cents: totalCostCents,
       total_cost: `$${(totalCostCents / 100).toFixed(2)}`,
       avg_latency_ms: avgLatency,
+      // These figures cover the returned recent_calls only (at most `limit`).
+      // Use /api/bazaar/usage/summary for whole-period totals.
+      calls_included: totalCalls,
+      truncated: totalCalls >= limit,
     },
     recent_calls: entries.map((e: any) => ({
       id: e.id,

@@ -49,8 +49,9 @@ export async function GET(request: Request) {
   const { data: receipts, count, error } = await query;
 
   if (error) {
+    console.error("[receipts] list failed:", error.message);
     return NextResponse.json(
-      { error: true, message: error.message },
+      { error: true, code: "SERVICE_UNAVAILABLE", message: "Receipts are temporarily unavailable" },
       { status: 500 }
     );
   }
