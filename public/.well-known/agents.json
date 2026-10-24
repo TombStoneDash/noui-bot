@@ -71,7 +71,8 @@
     "waitlist": "10 requests/minute",
     "feedback": "30 requests/minute",
     "apply": "10 requests/minute",
-    "stats": "60 requests/minute"
+    "stats": "60 requests/minute",
+    "bazaar_proxy": "1000 requests/minute per IP; each API key is also limited to its plan's rate_limit_rpm"
   },
   "services": [
     {

@@ -10,6 +10,11 @@ export const ROUTE_LIMITS: Record<string, number> = {
   "/api/v1/health": 120,
   "/api/v1/status": 60,
   "/api/v1": 100,
+  // The proxy enforces each key's plan RPM itself (Scale allows 1,000/min), and
+  // many agents share one egress IP. This per-IP ceiling must not undercut a plan.
+  "/api/bazaar/proxy": 1_000,
+  // Stripe delivers signed events in bursts from a small set of IPs.
+  "/api/webhooks/stripe": 1_000,
 };
 
 const DEFAULT_BUCKET = "/api";
