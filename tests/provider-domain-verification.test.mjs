@@ -17,7 +17,7 @@ const { outputText } = ts.transpileModule(source, {
 const OWNER = { id: "0123456789abcdef", type: "provider", email: "p@example.com" };
 
 // One provider row; supports select().eq().single() and update().eq().
-function fakeSupabase(row) {
+function fakeSupabase(row, updateError = null) {
   const updates = [];
   return {
     updates,
@@ -31,6 +31,7 @@ function fakeSupabase(row) {
           return {
             async eq(column, value) {
               assert.deepEqual([column, value], ["id", OWNER.id]);
+              if (updateError) return { error: updateError };
               updates.push(patch);
               Object.assign(row, patch);
               return { error: null };
@@ -42,12 +43,14 @@ function fakeSupabase(row) {
   };
 }
 
-function loadRoute({ row = { verification_level: "unverified", verification_metadata: {} }, txt = {} } = {}) {
-  const sb = fakeSupabase(row);
+function loadRoute({ row = { verification_level: "unverified", verification_metadata: {} }, txt = {}, updateError = null } = {}) {
+  const sb = fakeSupabase(row, updateError);
   const lookups = [];
   const exports = {};
   vm.runInNewContext(outputText, {
     exports,
+    URL,
+    console: { error() {} },
     require(name) {
       if (name === "next/server") return { NextResponse: { json: (body, init) => Response.json(body, init) } };
       if (name === "@/lib/supabase") return { getSupabase: () => sb };
@@ -57,6 +60,7 @@ function loadRoute({ row = { verification_level: "unverified", verification_meta
         async resolveTxt(hostname) {
           lookups.push(hostname);
           if (!(hostname in txt)) throw Object.assign(new Error("queryTxt ENOTFOUND"), { code: "ENOTFOUND" });
+          if (txt[hostname] instanceof Error) throw txt[hostname];
           return txt[hostname];
         },
       };
@@ -172,4 +176,64 @@ test("the provider quickstart uses the real register and verify contracts", asyn
   assert.match(page, /"level": "email"/);
   assert.match(page, /"level": "domain", "domain": "example\.com"/);
   assert.doesNotMatch(page, /"method": "email"/);
+});
+
+test("email verification never downgrades a domain- or code-verified provider", async () => {
+  for (const level of ["domain", "code"]) {
+    const metadata = { method: "dns_txt", domain: "example.com", status: "verified" };
+    const route = loadRoute({ row: { verification_level: level, verification_metadata: metadata } });
+    const res = await call(route.POST, { level: "email" });
+    assert.equal(res.status, 200);
+    assert.equal(res.data.verified, true);
+    assert.equal(res.data.verification_level, level);
+    assert.equal(route.updates.length, 0);
+    assert.equal(route.row.verification_level, level);
+    assert.deepEqual(route.row.verification_metadata, metadata);
+  }
+
+  const fresh = loadRoute();
+  const res = await call(fresh.POST, { level: "email" });
+  assert.equal(res.data.verification_level, "email");
+  assert.equal(fresh.row.verification_level, "email");
+});
+
+test("a DNS failure other than not-found is a 503 and keeps the pending challenge", async () => {
+  const pending = { method: "dns_txt", domain: "example.com", status: "pending", challenge_token: "noui-verify-good" };
+  const servfail = Object.assign(new Error("queryTxt ESERVFAIL"), { code: "ESERVFAIL" });
+  const route = loadRoute({
+    row: { verification_level: "unverified", verification_metadata: { ...pending } },
+    txt: { "_noui-verify.example.com": servfail },
+  });
+  const res = await call(route.POST, { level: "domain", domain: "example.com" });
+  assert.equal(res.status, 503);
+  assert.equal(res.data.code, "DNS_LOOKUP_FAILED");
+  assert.equal(res.data.challenge.record_value, "noui-verify-good");
+  assert.equal(route.updates.length, 0);
+  assert.deepEqual(route.row.verification_metadata, pending);
+});
+
+test("code verification requires an https repo_url string", async () => {
+  for (const repo_url of [undefined, "", 42, { href: "https://github.com/a/b" }, "github.com/a/b",
+    "http://github.com/a/b", "javascript:alert(1)", "https://user:pw@github.com/a/b",
+    `https://github.com/${"a".repeat(600)}`]) {
+    const route = loadRoute();
+    const res = await call(route.POST, { level: "code", repo_url });
+    assert.equal(res.status, 422, `repo_url ${JSON.stringify(repo_url)}`);
+    assert.equal(route.updates.length, 0);
+  }
+
+  const route = loadRoute();
+  const res = await call(route.POST, { level: "code", repo_url: "  https://github.com/org/repo  " });
+  assert.equal(res.status, 200);
+  assert.equal(route.row.verification_metadata.repo_url, "https://github.com/org/repo");
+});
+
+test("database errors are not echoed to the caller", async () => {
+  const route = loadRoute({ updateError: { message: 'relation "bazaar_providers" violates constraint secret_col' } });
+  for (const body of [{ level: "email" }, { level: "domain", domain: "example.com" }, { level: "code", repo_url: "https://github.com/o/r" }]) {
+    const res = await call(route.POST, body);
+    assert.equal(res.status, 500);
+    assert.equal(res.data.code, "STORAGE_ERROR");
+    assert.doesNotMatch(JSON.stringify(res.data), /secret_col|relation/);
+  }
 });

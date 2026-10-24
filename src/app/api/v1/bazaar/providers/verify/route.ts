@@ -14,13 +14,46 @@ function normalizeDomain(value: unknown): string | null {
   return HOSTNAME_RE.test(domain) ? domain : null;
 }
 
-/** TXT records at a name, each record's chunks joined. Missing names yield []. */
+const MAX_REPO_URL_LENGTH = 512;
+/** Resolver codes that mean "no such record", as opposed to a failed lookup. */
+const DNS_NOT_FOUND = new Set(["ENOTFOUND", "ENODATA"]);
+
+/**
+ * TXT records at a name, each record's chunks joined. Missing names yield [].
+ * Any other resolver failure (timeout, SERVFAIL, refused) throws, so an outage
+ * is not reported to the provider as "record not published yet".
+ */
 async function lookupTxt(name: string): Promise<string[]> {
   try {
     return (await resolveTxt(name)).map((chunks) => chunks.join(""));
-  } catch {
-    return [];
+  } catch (err) {
+    const code = (err as { code?: unknown } | null)?.code;
+    if (typeof code === "string" && DNS_NOT_FOUND.has(code)) return [];
+    throw new Error(`TXT lookup for ${name} failed${typeof code === "string" ? `: ${code}` : ""}`);
   }
+}
+
+/** An https URL of reasonable length without credentials, or null. */
+function normalizeRepoUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > MAX_REPO_URL_LENGTH) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "https:" || !url.hostname || url.username || url.password) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** Log the database error server-side; never echo its text to the caller. */
+function storageError(context: string, error: unknown) {
+  console.error(`[providers/verify] ${context}:`, error);
+  return NextResponse.json(
+    { error: true, code: "STORAGE_ERROR", message: "Could not read or save verification state. Try again." },
+    { status: 500 }
+  );
 }
 
 /**
@@ -80,6 +113,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const { data: current, error: readError } = await sb
+      .from("bazaar_providers")
+      .select("verification_level")
+      .eq("id", owner.id)
+      .single();
+    if (readError) return storageError("read provider", readError);
+
+    // Already domain- or code-verified: email is weaker, so keep the stronger
+    // level and its metadata instead of overwriting them.
+    const currentLevel = (current?.verification_level as string) || "unverified";
+    if ((LEVEL_RANK[currentLevel] ?? 0) > LEVEL_RANK.email) {
+      return NextResponse.json({
+        verified: true,
+        provider_id: owner.id,
+        verification_level: currentLevel,
+        message: `Already verified at the stronger '${currentLevel}' level; email verification is not needed.`,
+      });
+    }
+
     const { error } = await sb
       .from("bazaar_providers")
       .update({
@@ -93,12 +145,7 @@ export async function POST(request: Request) {
       })
       .eq("id", owner.id);
 
-    if (error) {
-      return NextResponse.json(
-        { error: true, message: error.message },
-        { status: 500 }
-      );
-    }
+    if (error) return storageError("update provider", error);
 
     return NextResponse.json({
       verified: true,
@@ -129,12 +176,7 @@ export async function POST(request: Request) {
       .eq("id", owner.id)
       .single();
 
-    if (readError) {
-      return NextResponse.json(
-        { error: true, message: readError.message },
-        { status: 500 }
-      );
-    }
+    if (readError) return storageError("read provider", readError);
 
     const recordName = `_noui-verify.${domain}`;
     const pending = current?.verification_metadata as Record<string, unknown> | null;
@@ -151,7 +193,21 @@ export async function POST(request: Request) {
         instructions: `Add a TXT record for ${recordName} with value: ${challengeToken}. Then call this endpoint again with level=domain and domain=${domain} to complete verification.`,
       };
 
-      const records = await lookupTxt(recordName);
+      let records: string[];
+      try {
+        records = await lookupTxt(recordName);
+      } catch (err) {
+        console.error("[providers/verify] DNS:", err);
+        return NextResponse.json(
+          {
+            error: true,
+            code: "DNS_LOOKUP_FAILED",
+            message: `Could not look up ${recordName} right now. Your challenge is unchanged; try again shortly.`,
+            challenge,
+          },
+          { status: 503 }
+        );
+      }
       if (!records.includes(challengeToken)) {
         return NextResponse.json({
           verified: false,
@@ -179,12 +235,7 @@ export async function POST(request: Request) {
         })
         .eq("id", owner.id);
 
-      if (error) {
-        return NextResponse.json(
-          { error: true, message: error.message },
-          { status: 500 }
-        );
-      }
+      if (error) return storageError("update provider", error);
 
       return NextResponse.json({
         verified: true,
@@ -212,12 +263,7 @@ export async function POST(request: Request) {
       })
       .eq("id", owner.id);
 
-    if (error) {
-      return NextResponse.json(
-        { error: true, message: error.message },
-        { status: 500 }
-      );
-    }
+    if (error) return storageError("update provider", error);
 
     return NextResponse.json({
       verified: false,
@@ -234,13 +280,13 @@ export async function POST(request: Request) {
 
   // Code verification: check GitHub repo reference
   if (level === "code") {
-    const repoUrl = body.repo_url as string;
+    const repoUrl = normalizeRepoUrl(body.repo_url);
     if (!repoUrl) {
       return NextResponse.json(
         {
           error: true,
           code: "VALIDATION_ERROR",
-          message: "repo_url required for code verification (e.g. 'https://github.com/org/repo')",
+          message: `repo_url required for code verification: an https URL of at most ${MAX_REPO_URL_LENGTH} characters (e.g. 'https://github.com/org/repo')`,
         },
         { status: 422 }
       );
@@ -259,12 +305,7 @@ export async function POST(request: Request) {
       })
       .eq("id", owner.id);
 
-    if (error) {
-      return NextResponse.json(
-        { error: true, message: error.message },
-        { status: 500 }
-      );
-    }
+    if (error) return storageError("update provider", error);
 
     return NextResponse.json({
       verified: false,
