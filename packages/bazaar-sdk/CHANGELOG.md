@@ -3,6 +3,7 @@
 ## [0.1.3] - Unreleased
 ### Fixed
 - Corrected proxy, metering payload, and metering response types to match the wire formats
+- Corrected `usage.summary()`, `provider.summary()`, `balance.load()` and `provider.connectStripe()` types: totals live under `summary`, earnings under `earnings`, and the Stripe links are `checkout_url` / `onboarding_url` (there was never a `url` field)
 ### Added
 - Added `client.receipts` lookup and public verification APIs
 ### Release procedure
