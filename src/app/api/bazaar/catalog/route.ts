@@ -89,7 +89,7 @@ export async function GET(request: Request) {
 
   if (error) {
     return NextResponse.json(
-      { error: true, message: error.message },
+      { error: true, message: "Catalog temporarily unavailable" },
       { status: 500 }
     );
   }
