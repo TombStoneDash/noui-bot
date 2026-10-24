@@ -4,6 +4,26 @@ import { authenticateKey } from "@/lib/bazaar-auth";
 import { parsePagination } from "@/lib/pagination";
 import { generateDisputeId } from "@/lib/receipts";
 
+const VALID_REASONS = ["tool_error", "overcharge", "timeout", "quality", "other"];
+const VALID_STATUSES = ["filed", "under_review", "resolved_refund", "resolved_denied", "resolved_credit"];
+const RECEIPT_ID = /^rcpt_[0-9a-f]{16,}$/;
+const MAX_DESCRIPTION_CHARS = 5_000;
+const MAX_EVIDENCE_BYTES = 16_384;
+// PostgREST reports "no rows" from .single() with this code.
+const NO_ROWS = "PGRST116";
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function unavailable(what: string, err: { message?: string } | null) {
+  console.error(`[disputes] ${what} failed:`, err?.message);
+  return NextResponse.json(
+    { error: true, code: "SERVICE_UNAVAILABLE", message: "Disputes are temporarily unavailable; nothing was filed" },
+    { status: 503 }
+  );
+}
+
 /**
  * POST /api/v1/bazaar/disputes — File a dispute against a receipt
  * GET  /api/v1/bazaar/disputes — List disputes for the authenticated user
@@ -17,7 +37,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: Record<string, unknown>;
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
@@ -26,28 +46,38 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-
-  const receiptId = body.receipt_id as string;
-  const reason = body.reason as string;
-  const description = body.description as string;
-  const evidence = (body.evidence as object) || {};
-
-  if (!receiptId) {
+  if (!isPlainObject(body)) {
     return NextResponse.json(
-      { error: true, code: "VALIDATION_ERROR", message: "receipt_id required" },
-      { status: 422 }
+      { error: true, code: "BAD_REQUEST", message: "Request body must be a JSON object" },
+      { status: 400 }
     );
   }
 
-  const validReasons = ["tool_error", "overcharge", "timeout", "quality", "other"];
-  if (!reason || !validReasons.includes(reason)) {
+  const invalid = (message: string) =>
+    NextResponse.json({ error: true, code: "VALIDATION_ERROR", message }, { status: 422 });
+
+  const receiptId = body.receipt_id;
+  const reason = body.reason;
+  const description = body.description ?? null;
+  const evidence = body.evidence ?? {};
+
+  if (typeof receiptId !== "string" || !receiptId) {
+    return invalid("receipt_id required");
+  }
+  if (typeof reason !== "string" || !VALID_REASONS.includes(reason)) {
+    return invalid(`reason required: ${VALID_REASONS.join(" | ")}`);
+  }
+  if (description !== null && (typeof description !== "string" || description.length > MAX_DESCRIPTION_CHARS)) {
+    return invalid(`description must be a string of at most ${MAX_DESCRIPTION_CHARS} characters`);
+  }
+  if (!isPlainObject(evidence) || new TextEncoder().encode(JSON.stringify(evidence)).length > MAX_EVIDENCE_BYTES) {
+    return invalid(`evidence must be a JSON object of at most ${MAX_EVIDENCE_BYTES} bytes`);
+  }
+  // Receipt IDs are rcpt_ + hex; anything else cannot exist.
+  if (!RECEIPT_ID.test(receiptId)) {
     return NextResponse.json(
-      {
-        error: true,
-        code: "VALIDATION_ERROR",
-        message: `reason required: ${validReasons.join(" | ")}`,
-      },
-      { status: 422 }
+      { error: true, code: "NOT_FOUND", message: `Receipt ${receiptId.slice(0, 64)} not found` },
+      { status: 404 }
     );
   }
 
@@ -60,7 +90,8 @@ export async function POST(request: Request) {
     .eq("receipt_id", receiptId)
     .single();
 
-  if (receiptErr || !receipt) {
+  if (receiptErr && receiptErr.code !== NO_ROWS) return unavailable("receipt lookup", receiptErr);
+  if (!receipt) {
     return NextResponse.json(
       { error: true, code: "NOT_FOUND", message: `Receipt ${receiptId} not found` },
       { status: 404 }
@@ -82,12 +113,14 @@ export async function POST(request: Request) {
   }
 
   // Check for existing dispute on this receipt
-  const { data: existing } = await sb
+  // If this check cannot run, refuse rather than risk a duplicate dispute.
+  const { data: existing, error: existingErr } = await sb
     .from("bazaar_disputes")
     .select("dispute_id")
     .eq("receipt_id", receiptId)
     .not("status", "in", '("resolved_denied")')
     .limit(1);
+  if (existingErr) return unavailable("duplicate check", existingErr);
 
   if (existing && existing.length > 0) {
     return NextResponse.json(
@@ -108,17 +141,12 @@ export async function POST(request: Request) {
     filed_by: owner.id,
     filed_by_type: owner.type === "consumer" ? "agent" : "provider",
     reason,
-    description: description || null,
+    description: description?.trim() || null,
     evidence,
     status: "filed",
   });
 
-  if (insertErr) {
-    return NextResponse.json(
-      { error: true, message: insertErr.message },
-      { status: 500 }
-    );
-  }
+  if (insertErr) return unavailable("insert", insertErr);
 
   return NextResponse.json(
     {
@@ -155,6 +183,12 @@ export async function GET(request: Request) {
   }
   const { limit, offset } = page;
   const status = url.searchParams.get("status");
+  if (status !== null && !VALID_STATUSES.includes(status)) {
+    return NextResponse.json(
+      { error: true, code: "BAD_REQUEST", message: `status must be one of: ${VALID_STATUSES.join(" | ")}` },
+      { status: 400 }
+    );
+  }
 
   const sb = getSupabase();
 
@@ -172,9 +206,10 @@ export async function GET(request: Request) {
   const { data: disputes, count, error } = await query;
 
   if (error) {
+    console.error("[disputes] list failed:", error.message);
     return NextResponse.json(
-      { error: true, message: error.message },
-      { status: 500 }
+      { error: true, code: "SERVICE_UNAVAILABLE", message: "Disputes are temporarily unavailable" },
+      { status: 503 }
     );
   }
 
