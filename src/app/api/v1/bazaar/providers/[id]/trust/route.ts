@@ -51,31 +51,43 @@ export async function GET(
     .filter((l): l is number => l != null && l > 0)
     .sort((a, b) => a - b);
 
+  // Nearest rank: the 95th percentile is observation ceil(n * 0.95) (one-based).
   const p95 = latencies.length > 0
-    ? latencies[Math.floor(latencies.length * 0.95)] || latencies[latencies.length - 1]
+    ? latencies[Math.ceil(latencies.length * 0.95) - 1]
     : 0;
 
-  // Count disputes — look up through receipts
-  const { data: providerReceipts } = await sb
+  // Count disputes — look up through receipts. A failed lookup must not read
+  // as "no disputes", which would award the full dispute score.
+  const disputesUnavailable = () =>
+    NextResponse.json(
+      { error: true, code: "DISPUTES_UNAVAILABLE", message: "Trust score unavailable" },
+      { status: 503 }
+    );
+
+  const { data: providerReceipts, error: receiptsErr } = await sb
     .from("bazaar_receipts")
     .select("receipt_id")
     .eq("provider_id", providerId);
+
+  if (receiptsErr) return disputesUnavailable();
 
   const receiptIds = (providerReceipts || []).map((r) => r.receipt_id);
   let totalDisputes = 0;
   let resolvedDenied = 0;
   if (receiptIds.length > 0) {
-    const { count: tc } = await sb
+    const { count: tc, error: tcErr } = await sb
       .from("bazaar_disputes")
       .select("*", { count: "exact", head: true })
       .in("receipt_id", receiptIds);
+    if (tcErr) return disputesUnavailable();
     totalDisputes = tc || 0;
 
-    const { count: rd } = await sb
+    const { count: rd, error: rdErr } = await sb
       .from("bazaar_disputes")
       .select("*", { count: "exact", head: true })
       .in("receipt_id", receiptIds)
       .eq("status", "resolved_denied");
+    if (rdErr) return disputesUnavailable();
     resolvedDenied = rd || 0;
   }
 

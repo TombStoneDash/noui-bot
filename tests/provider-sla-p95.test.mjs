@@ -28,7 +28,7 @@ const { outputText } = ts.transpileModule(source, {
 const now = Date.parse("2026-01-01T00:00:00.000Z");
 const periodStart = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-async function executeGET(logs) {
+async function executeGET(logs, errors = {}) {
   const queries = [];
   const supabase = {
     from(table) {
@@ -68,12 +68,13 @@ async function executeGET(logs) {
             verified_at: null,
           }, error: null };
         }
-        if (table === "bazaar_usage_logs") return { data: logs, error: null };
-        if (table === "bazaar_receipts" && query.columns === "*") return { count: 2 };
+        if (table === "bazaar_usage_logs") return errors.usage ? { data: null, error: errors.usage } : { data: logs, error: null };
+        if (table === "bazaar_receipts" && query.columns === "*") return errors.receiptsCount ? { count: null, error: errors.receiptsCount } : { count: 2 };
         if (table === "bazaar_receipts") {
+          if (errors.receipts) return { data: null, error: errors.receipts };
           return { data: [{ receipt_id: "receipt-1" }, { receipt_id: "receipt-2" }] };
         }
-        if (table === "bazaar_disputes") return { count: 1 };
+        if (table === "bazaar_disputes") return errors.disputes ? { count: null, error: errors.disputes } : { count: 1 };
         throw new Error(`Unexpected table: ${table}`);
       }
       return chain;
@@ -158,5 +159,18 @@ for (const { name, values, p95, average, excluded = 0 } of cases) {
       { table: "bazaar_receipts", columns: "receipt_id", filters: [["eq", "provider_id", "provider-1"]] },
       { table: "bazaar_disputes", columns: "*", filters: [["in", "receipt_id", ["receipt-1", "receipt-2"]]] },
     ]);
+  });
+}
+
+const databaseMessage = "private database connection details";
+for (const [source, queryCount] of [["usage", 2], ["receiptsCount", 3], ["receipts", 4], ["disputes", 5]]) {
+  test(`GET fails closed without database details when the ${source} query errors`, async () => {
+    const { response, body, queries } = await executeGET([{ latency_ms: 10, status: "success" }], {
+      [source]: { message: databaseMessage },
+    });
+    assert.equal(response.status, 503);
+    assert.deepEqual(body, { error: true, code: "SLA_UNAVAILABLE", message: "SLA metrics unavailable" });
+    assert.equal(JSON.stringify(body).includes(databaseMessage), false);
+    assert.equal(queries.length, queryCount);
   });
 }
