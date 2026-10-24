@@ -79,7 +79,16 @@ export async function POST(request: NextRequest) {
     const agentId = agentIdValue || "anonymous";
 
     // Look up challenge (a malformed ID cannot exist, so skip the database)
-    const challenge = UUID_RE.test(challenge_id) ? await getChallenge(challenge_id) : null;
+    let challenge;
+    try {
+      challenge = UUID_RE.test(challenge_id) ? await getChallenge(challenge_id) : null;
+    } catch {
+      // An outage must not read as "no such challenge".
+      return NextResponse.json(
+        { error: "Challenge lookup is temporarily unavailable. Try again." },
+        { status: 503 }
+      );
+    }
     if (!challenge) {
       return NextResponse.json(
         { verified: false, reason: "not_found", response_time_ms: 0 },

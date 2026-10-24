@@ -1,6 +1,13 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Pin the workspace root to this repo. Without it, Next infers the root from the
+  // highest lockfile it finds, so a stray package-lock.json in a parent directory
+  // makes Turbopack resolve from the wrong root and the build panics.
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   async redirects() {
     return [
       // forthebots.io → noui.bot (301 permanent redirect)
