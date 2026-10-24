@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BAZAAR_PYTHON_CLIENT } from "../bazaar-python-client";
 
 export const metadata: Metadata = {
   title: "Use Bazaar MCP Tools with LangChain | noui.bot",
@@ -45,11 +46,12 @@ export default function LangChainSetupPage() {
         <section>
           <h2 className="font-mono text-lg text-white/90 mb-4">1. Install Dependencies</h2>
           <pre className="bg-gray-900 border border-gray-800 rounded p-4 overflow-x-auto text-green-400 text-xs">
-{`pip install langchain langchain-openai mcp`}
+{`pip install langchain langchain-openai`}
           </pre>
           <p className="mt-4 text-white/40">
-            The <code className="text-white/60">mcp</code> package provides the MCP client
-            that connects to Bazaar&apos;s proxy endpoint.
+            Bazaar runs each provider&apos;s MCP server for you behind one HTTPS proxy, so your
+            agent needs no MCP client library. Swap <code className="text-white/60">langchain-openai</code>{" "}
+            for any LangChain chat model package.
           </p>
         </section>
 
@@ -60,107 +62,87 @@ export default function LangChainSetupPage() {
 {`export NOUI_API_KEY="bz_your_key_here"
 export OPENAI_API_KEY="sk-..."   # or any LLM provider`}
           </pre>
-          <p className="mt-4 text-white/40">
-            Or use a <code className="text-white/60">.env</code> file with{" "}
-            <code className="text-white/60">python-dotenv</code>.
-          </p>
         </section>
 
         {/* Step 3 */}
         <section>
-          <h2 className="font-mono text-lg text-white/90 mb-4">3. Connect to Bazaar via MCP</h2>
+          <h2 className="font-mono text-lg text-white/90 mb-4">3. Save the Bazaar Client</h2>
           <p className="mb-4">
-            Use the MCP client to connect to Bazaar&apos;s SSE proxy endpoint,
-            then convert the discovered tools into LangChain-compatible tools:
+            Save this as <code className="text-white/60">bazaar_client.py</code>. It lists tools from{" "}
+            <code className="text-white/60">GET /api/bazaar/catalog</code> and runs them through{" "}
+            <code className="text-white/60">POST /api/bazaar/proxy</code>:
           </p>
           <pre className="bg-gray-900 border border-gray-800 rounded p-4 overflow-x-auto text-green-400 text-xs">
-{`import os
-import asyncio
-import json
-from mcp import ClientSession
-from mcp.client.sse import sse_client
-from langchain_core.tools import StructuredTool
-from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.prompts import ChatPromptTemplate
-
-BAZAAR_URL = "https://noui.bot/api/mcp/sse"
-API_KEY = os.environ["NOUI_API_KEY"]
-
-
-async def get_bazaar_tools(session: ClientSession) -> list[StructuredTool]:
-    """Discover Bazaar MCP tools and wrap them as LangChain tools."""
-    tools_result = await session.list_tools()
-    lc_tools = []
-
-    def make_callbacks(tool_name):
-        async def _call(**kwargs):
-            result = await session.call_tool(tool_name, arguments=kwargs)
-            return json.dumps([c.text for c in result.content])
-
-        return (
-            lambda **kw: asyncio.get_event_loop().run_until_complete(_call(**kw)),
-            lambda **kw: _call(**kw),
-        )
-
-    for tool in tools_result.tools:
-        sync_call, async_call = make_callbacks(tool.name)
-
-        lc_tools.append(
-            StructuredTool.from_function(
-                func=sync_call,
-                coroutine=async_call,
-                name=tool.name,
-                description=tool.description or "",
-                # Accept any kwargs — Bazaar tools define their own schemas
-            )
-        )
-    return lc_tools
-
-
-async def main():
-    headers = {"Authorization": f"Bearer {API_KEY}"}
-
-    async with sse_client(BAZAAR_URL, headers=headers) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-
-            # Convert MCP tools → LangChain tools
-            tools = await get_bazaar_tools(session)
-            print(f"Loaded {len(tools)} Bazaar tools")
-
-            # Build a LangChain agent
-            llm = ChatOpenAI(model="gpt-4o", temperature=0)
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", "You are a helpful agent with access to "
-                           "Bazaar MCP tools. Use them when needed."),
-                ("human", "{input}"),
-                ("placeholder", "{agent_scratchpad}"),
-            ])
-
-            agent = create_tool_calling_agent(llm, tools, prompt)
-            executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-
-            result = await executor.ainvoke({
-                "input": "Check the platform stats on noui.bot"
-            })
-            print(result["output"])
-
-
-asyncio.run(main())`}
+{BAZAAR_PYTHON_CLIENT}
           </pre>
         </section>
 
         {/* Step 4 */}
         <section>
-          <h2 className="font-mono text-lg text-white/90 mb-4">4. How Billing Works</h2>
+          <h2 className="font-mono text-lg text-white/90 mb-4">4. Give the Tools to a LangChain Agent</h2>
+          <p className="mb-4">
+            Save this as <code className="text-white/60">agent.py</code> next to the client and run it:
+          </p>
+          <pre className="bg-gray-900 border border-gray-800 rounded p-4 overflow-x-auto text-green-400 text-xs">
+{`from langchain.agents import create_agent
+from langchain_core.tools import StructuredTool
+from langchain_openai import ChatOpenAI
+
+from bazaar_client import (
+    call_bazaar_tool,
+    list_bazaar_tools,
+    tool_description,
+    tool_function_name,
+)
+
+
+def make_langchain_tool(tool: dict) -> StructuredTool:
+    tool_id = tool["id"]
+
+    def run(arguments: dict) -> str:
+        return call_bazaar_tool(tool_id, arguments)
+
+    return StructuredTool.from_function(
+        func=run,
+        name=tool_function_name(tool),
+        description=tool_description(tool),
+    )
+
+
+tools = [make_langchain_tool(t) for t in list_bazaar_tools()]
+print(f"Loaded {len(tools)} Bazaar tools")
+
+agent = create_agent(
+    model=ChatOpenAI(model="gpt-4o", temperature=0),
+    tools=tools,
+    system_prompt="Use Bazaar tools when they help. Every call is billed to your balance.",
+)
+
+result = agent.invoke(
+    {"messages": [{"role": "user", "content": "What is the weather in Paris?"}]}
+)
+print(result["messages"][-1].content)`}
+          </pre>
+          <p className="mt-4 text-white/40">
+            The catalog does not publish parameter schemas yet, so each tool takes one{" "}
+            <code className="text-white/60">arguments</code> object and the model reads the expected
+            fields from the tool description. To limit spend, filter{" "}
+            <code className="text-white/60">list_bazaar_tools()</code> by{" "}
+            <code className="text-white/60">tool_name</code> or{" "}
+            <code className="text-white/60">pricing.price_cents</code> before building tools.
+          </p>
+        </section>
+
+        {/* Step 5 */}
+        <section>
+          <h2 className="font-mono text-lg text-white/90 mb-4">5. How Billing Works</h2>
           <p className="mb-4">
             Every tool call through Bazaar is metered transparently:
           </p>
           <div className="bg-gray-900 border border-gray-800 rounded p-4">
             <p className="text-white/60 text-xs mb-2">What happens on each tool call:</p>
             <ol className="list-decimal list-inside space-y-1 text-xs text-white/50">
-              <li>Your agent calls a Bazaar tool via MCP</li>
+              <li>Your agent calls a Bazaar tool through the proxy</li>
               <li>Bazaar checks your balance and the tool&apos;s per-call price</li>
               <li>The tool executes and returns results</li>
               <li>Your balance is debited and a receipt is issued</li>
@@ -171,35 +153,36 @@ asyncio.run(main())`}
 curl https://noui.bot/api/v1/bazaar/balance \\
   -H "Authorization: Bearer bz_your_key"
 
-# View receipts
+# View usage and spend
 curl https://noui.bot/api/v1/bazaar/usage/summary \\
   -H "Authorization: Bearer bz_your_key"`}
           </pre>
         </section>
 
-        {/* Step 5 */}
+        {/* Step 6 */}
         <section>
-          <h2 className="font-mono text-lg text-white/90 mb-4">5. Production Tips</h2>
+          <h2 className="font-mono text-lg text-white/90 mb-4">6. Production Tips</h2>
           <div className="space-y-4">
             <div className="border border-white/10 rounded p-4">
-              <h3 className="font-mono text-sm text-white/80 mb-2">Connection Reuse</h3>
+              <h3 className="font-mono text-sm text-white/80 mb-2">Load Tools Once</h3>
               <p className="text-xs text-white/40">
-                Keep the MCP session open across multiple agent runs. The SSE connection
-                is persistent — reconnecting on every call adds latency.
+                Build the tool list once at startup and reuse it across agent runs. Each proxy
+                call is a single stateless HTTPS request, so there is no session to keep open.
               </p>
             </div>
             <div className="border border-white/10 rounded p-4">
               <h3 className="font-mono text-sm text-white/80 mb-2">Error Handling</h3>
               <p className="text-xs text-white/40">
-                Bazaar returns structured errors for insufficient balance, rate limits,
-                and provider failures. Wrap tool calls in try/except for graceful fallback.
+                The client turns insufficient balance (402), rate limits (429) and provider
+                failures (502/504) into text the agent can read, so one failed call never
+                crashes the run. Failed calls are never billed.
               </p>
             </div>
             <div className="border border-white/10 rounded p-4">
               <h3 className="font-mono text-sm text-white/80 mb-2">Cost Controls</h3>
               <p className="text-xs text-white/40">
-                Set a per-session budget by checking balance before and after agent runs.
-                Tools expose their price in the MCP tool metadata.
+                Check your balance before and after agent runs. Each tool&apos;s price is in
+                its catalog entry and in the description the model sees.
               </p>
             </div>
           </div>

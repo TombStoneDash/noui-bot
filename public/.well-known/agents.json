@@ -436,20 +436,27 @@
   ],
   "integration": {
     "langchain": {
-      "note": "Import as API tool. All endpoints accept JSON, return JSON.",
-      "example": "Use requests.post('https://noui.bot/api/v1/feedback', json={...})"
+      "guide": "https://noui.bot/docs/guides/langchain-setup",
+      "note": "Wrap each catalog tool as a StructuredTool that POSTs {tool_id, input} to the Bazaar proxy with Authorization: Bearer bz_..."
     },
     "crewai": {
-      "note": "Register as custom tool in your crew. GET endpoints return schema for self-discovery.",
-      "example": "GET https://noui.bot/api/v1/feedback returns the full schema"
+      "guide": "https://noui.bot/docs/guides/crewai-setup",
+      "note": "Wrap each catalog tool as a crewai BaseTool that calls the Bazaar proxy."
     },
     "autogen": {
-      "note": "Each service endpoint has a GET method that returns its own schema \u2014 agents can self-discover.",
-      "auto_discovery": "GET https://noui.bot/api/v1 returns all available endpoints"
+      "guide": "https://noui.bot/docs/guides/autogen-setup",
+      "note": "Wrap each catalog tool as an autogen_core FunctionTool that calls the Bazaar proxy."
+    },
+    "bazaar": {
+      "catalog": "GET https://noui.bot/api/bazaar/catalog",
+      "proxy": "POST https://noui.bot/api/bazaar/proxy {\"tool_id\": \"...\", \"input\": {...}}",
+      "auth": "Authorization: Bearer bz_... (consumer key from https://noui.bot/developers/register)"
     },
     "mcp": {
-      "status": "planned",
-      "note": "MCP server coming. For now, use HTTP endpoints directly."
+      "status": "available",
+      "package": "@forthebots/mcp-server",
+      "guide": "https://noui.bot/docs/guides/claude-setup",
+      "note": "stdio server; run with npx -y @forthebots/mcp-server"
     }
   },
   "a2a_compatible": {
