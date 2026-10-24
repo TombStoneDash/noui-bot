@@ -43,7 +43,7 @@ const TOOL = "33333333-3333-4333-8333-333333333333";
  *  - bazaar_consumers update -> fallback debit
  *  - rpc bazaar_debit_balance -> configurable (missing / balance gate)
  */
-function fakeSupabase({ priceCents = 5, balance = 100, rpcMissing = false, receiptInsertError = null } = {}) {
+function fakeSupabase({ priceCents = 5, balance = 100, rpcMissing = false, receiptInsertError = null, extraTools = [], toolError = null, countError = null } = {}) {
   const state = {
     balance,
     usageLogs: [],
@@ -73,9 +73,19 @@ function fakeSupabase({ priceCents = 5, balance = 100, rpcMissing = false, recei
   };
   function answer(rec) {
     const { table, op, payload, filters } = rec;
-    if (table === "bazaar_usage_logs" && op === "select") return { count: 0, data: [], error: null };
+    if (table === "bazaar_usage_logs" && op === "select") {
+      if (countError && payload.opts?.count) return { count: null, data: null, error: countError };
+      return { count: 0, data: [], error: null };
+    }
     if (table === "bazaar_usage_logs" && op === "insert") { state.usageLogs.push(payload); return { error: null }; }
-    if (table === "bazaar_tools" && op === "select") return { data: state.tool, error: null };
+    if (table === "bazaar_tools" && op === "select") {
+      if (toolError) return { data: null, error: toolError };
+      const byId = filters.find(([c]) => c === "id");
+      const byName = filters.find(([c]) => c === "tool_name");
+      const tools = [state.tool, ...extraTools].filter((t) =>
+        (!byId || t.id === byId[1]) && (!byName || t.tool_name === byName[1]));
+      return { data: tools, error: null };
+    }
     if (table === "bazaar_tools" && op === "update") return { error: null };
     if (table === "bazaar_receipts" && op === "insert") {
       if (receiptInsertError) return { error: { message: receiptInsertError } };
@@ -180,6 +190,55 @@ test("success: billed call debits once, persists a verifying receipt, exposes me
   assert.equal(sb.state.usageLogs[0].metadata.receipt_id, receipt.receipt_id);
   assert.equal(sb.state.usageLogs[0].metadata.atomic_debit, true);
   assert.equal(sb.state.consumerUpdates.length, 0, "no read-modify-write when the RPC exists");
+});
+
+test("tool lookup: an unknown tool is a 404 with no upstream call", async () => {
+  const sb = fakeSupabase();
+  const { call, upstreamCalls } = loadRoute({ sb, upstream: okUpstream });
+  const r = await call({ tool_id: "44444444-4444-4444-8444-444444444444", input: {} });
+  assert.equal(r.status, 404);
+  assert.equal(r.body.code, "NOT_FOUND");
+  assert.equal(upstreamCalls.length, 0);
+});
+
+test("tool lookup: a database error is a 503, not 'not found', and nothing is billed", async () => {
+  const sb = fakeSupabase({ toolError: { message: "connection to db-7 lost" } });
+  const { call, upstreamCalls } = loadRoute({ sb, upstream: okUpstream });
+  const r = await call(REQUEST);
+  assert.equal(r.status, 503);
+  assert.equal(r.body.code, "SERVICE_UNAVAILABLE");
+  assert.doesNotMatch(r.text, /db-7/);
+  assert.equal(upstreamCalls.length, 0);
+  assert.equal(sb.state.rpcCalls, 0);
+});
+
+test("tool lookup: a tool_name offered by two providers is a 409 asking for tool_id", async () => {
+  const sb = fakeSupabase({
+    extraTools: [{ id: "55555555-5555-4555-8555-555555555555", tool_name: "wallet.balance", active: true, price_cents_override: 1, bazaar_providers: { id: "p2", name: "Other", endpoint_url: "https://other.test/mcp", active: true } }],
+  });
+  const { call, upstreamCalls } = loadRoute({ sb, upstream: okUpstream });
+  const r = await call({ tool_name: "wallet.balance", input: {} });
+  assert.equal(r.status, 409);
+  assert.equal(r.body.code, "AMBIGUOUS_TOOL");
+  assert.equal(upstreamCalls.length, 0);
+  const byId = await call(REQUEST);
+  assert.equal(byId.status, 200, "tool_id still resolves");
+});
+
+test("tool lookup: a unique tool_name still resolves", async () => {
+  const sb = fakeSupabase();
+  const { call } = loadRoute({ sb, upstream: okUpstream });
+  const r = await call({ tool_name: "wallet.balance", input: { account: "a" } });
+  assert.equal(r.status, 200, r.text);
+});
+
+test("rate limit: a failed count does not forward the call unmetered", async () => {
+  const sb = fakeSupabase({ countError: { message: "statement timeout" } });
+  const { call, upstreamCalls } = loadRoute({ sb, upstream: okUpstream });
+  const r = await call(REQUEST);
+  assert.equal(r.status, 503);
+  assert.equal(upstreamCalls.length, 0);
+  assert.equal(sb.state.balance, 100);
 });
 
 test("replay: same Idempotency-Key + same body -> one upstream call, one debit, identical body, replay header", async () => {
