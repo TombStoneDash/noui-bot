@@ -24,22 +24,6 @@ export async function POST(request: Request) {
 
   const sb = getSupabase();
 
-  // Revoke the old key
-  const { error: revokeErr } = await sb
-    .from("bazaar_api_keys")
-    .update({ revoked_at: new Date().toISOString() })
-    .eq("key_hash", oldHash);
-
-  if (revokeErr) {
-    return NextResponse.json(
-      { error: true, message: "Failed to revoke old key" },
-      { status: 500 }
-    );
-  }
-
-  // Generate a new key
-  const { key, hash, prefix } = generateBazaarKey();
-
   // Find the old key record to clone its settings
   const { data: oldKeyRecord } = await sb
     .from("bazaar_api_keys")
@@ -47,7 +31,11 @@ export async function POST(request: Request) {
     .eq("key_hash", oldHash)
     .single();
 
-  const { error: insertErr } = await sb
+  // Issue the new key before revoking the old one. Revoking first meant a
+  // failed insert left the provider with no working key at all.
+  const { key, hash, prefix } = generateBazaarKey();
+
+  const { data: newKeyRecord, error: insertErr } = await sb
     .from("bazaar_api_keys")
     .insert({
       key_hash: hash,
@@ -57,11 +45,33 @@ export async function POST(request: Request) {
       rate_limit_rpm: oldKeyRecord?.rate_limit_rpm || 60,
       scopes: oldKeyRecord?.scopes || null,
       created_at: new Date().toISOString(),
-    });
+    })
+    .select("id")
+    .single();
 
   if (insertErr) {
     return NextResponse.json(
-      { error: true, message: "Failed to create new key" },
+      { error: true, message: "Failed to create new key; the current key is still active" },
+      { status: 500 }
+    );
+  }
+
+  // Revoke the old key
+  const { error: revokeErr } = await sb
+    .from("bazaar_api_keys")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("key_hash", oldHash);
+
+  if (revokeErr) {
+    // Don't leave two live keys behind: withdraw the one we just issued.
+    if (newKeyRecord?.id) {
+      await sb
+        .from("bazaar_api_keys")
+        .update({ revoked_at: new Date().toISOString() })
+        .eq("id", newKeyRecord.id);
+    }
+    return NextResponse.json(
+      { error: true, message: "Failed to revoke old key; the current key is still active" },
       { status: 500 }
     );
   }
