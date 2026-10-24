@@ -49,7 +49,10 @@ export async function POST(request: Request) {
   }
   for (const field of ["duration_ms", "input_tokens", "output_tokens"]) {
     const value = body[field];
-    if (value !== undefined && value !== null && (typeof value !== "number" || !Number.isFinite(value) || value < 0)) {
+    if (
+      value !== undefined && value !== null &&
+      (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 2_147_483_647)
+    ) {
       return invalid(`${field} must be a non-negative number`);
     }
   }
@@ -65,9 +68,11 @@ export async function POST(request: Request) {
   const toolName = body.tool_name as string;
   const agentId = (body.agent_id as string) || owner.id;
   const status = (body.status as string) || "success";
-  const durationMs = (body.duration_ms as number) || 0;
-  const inputTokens = (body.input_tokens as number) || 0;
-  const outputTokens = (body.output_tokens as number) || 0;
+  // These land in INTEGER columns; a fraction (e.g. from performance.now())
+  // would make the insert fail after validation passed.
+  const durationMs = Math.round((body.duration_ms as number) || 0);
+  const inputTokens = Math.round((body.input_tokens as number) || 0);
+  const outputTokens = Math.round((body.output_tokens as number) || 0);
   const metadata = (body.metadata as object) || {};
 
   if (!toolId && !toolName) {
@@ -91,7 +96,7 @@ export async function POST(request: Request) {
 
   // Look up the tool to get provider_id and pricing
   let toolQuery = sb.from("bazaar_tools")
-    .select("id, provider_id, price_cents_override, bazaar_providers:provider_id (default_price_cents)")
+    .select("id, tool_name, provider_id, price_cents_override, bazaar_providers:provider_id (default_price_cents)")
     .eq("active", true);
 
   if (toolId) {
@@ -103,19 +108,44 @@ export async function POST(request: Request) {
     if (owner.type === "provider") toolQuery = toolQuery.eq("provider_id", owner.id);
   }
 
+  // limit(2) rather than single(): single() reports "no rows", "several rows"
+  // and a database failure alike, and each needs a different answer.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: tool } = await toolQuery.single() as { data: any };
+  const { data: matches, error: toolErr } = await toolQuery.limit(2) as { data: any[] | null; error: unknown };
 
-  if (owner.type === "provider" && tool && tool.provider_id !== owner.id) {
+  if (toolErr || !Array.isArray(matches)) {
+    // Never price a call at $0 (or sign a receipt) because the lookup failed.
+    console.error("[METER] Tool lookup failed:", (toolErr as { message?: string } | null)?.message);
+    return NextResponse.json(
+      { error: true, code: "METER_FAILED", message: "Could not look up the tool; nothing was recorded" },
+      { status: 500 }
+    );
+  }
+  if (matches.length === 0) {
+    return NextResponse.json(
+      { error: true, code: "TOOL_NOT_FOUND", message: "No active tool matches tool_id or tool_name" },
+      { status: 404 }
+    );
+  }
+  if (matches.length > 1) {
+    // Tool names are unique per provider only; a consumer must say which one.
+    return NextResponse.json(
+      { error: true, code: "AMBIGUOUS_TOOL", message: "Several providers offer a tool with this name; send tool_id instead" },
+      { status: 409 }
+    );
+  }
+  const tool = matches[0];
+
+  if (owner.type === "provider" && tool.provider_id !== owner.id) {
     return NextResponse.json(
       { error: true, code: "FORBIDDEN", message: "Provider keys can only meter their own tools" },
       { status: 403 }
     );
   }
 
-  const resolvedToolId = tool?.id || toolId || "unknown";
-  const providerId = tool?.provider_id || (owner.type === "provider" ? owner.id : "unknown");
-  const priceCents = tool?.price_cents_override ?? tool?.bazaar_providers?.default_price_cents ?? 0;
+  const resolvedToolId: string = tool.id;
+  const providerId: string = tool.provider_id;
+  const priceCents = tool.price_cents_override ?? tool.bazaar_providers?.default_price_cents ?? 0;
 
   // Record the invocation
   const { error: insertErr } = await sb.from("bazaar_usage_logs").insert({
@@ -125,8 +155,8 @@ export async function POST(request: Request) {
     status,
     cost_cents: status === "success" ? priceCents : 0,
     latency_ms: durationMs,
-    request_size_bytes: inputTokens,
-    response_size_bytes: outputTokens,
+    tokens_input: inputTokens,
+    tokens_output: outputTokens,
     metadata: {
       ...metadata,
       source: "meter_api",
@@ -136,8 +166,9 @@ export async function POST(request: Request) {
   });
 
   if (insertErr) {
+    console.error("[METER] Usage insert failed:", insertErr.message);
     return NextResponse.json(
-      { error: true, message: insertErr.message },
+      { error: true, code: "METER_FAILED", message: "Could not record the call" },
       { status: 500 }
     );
   }
@@ -160,15 +191,13 @@ export async function POST(request: Request) {
   const { error: receiptErr } = await sb.from("bazaar_receipts").insert({
     receipt_id: receiptId,
     tool_id: resolvedToolId,
-    tool_name: toolName || null,
+    tool_name: tool.tool_name ?? (toolName || null),
     agent_id: agentId,
     provider_id: providerId,
     timestamp: now,
     duration_ms: durationMs,
     cost_microcents: costMicrocents,
     status,
-    input_hash: inputTokens ? String(inputTokens) : null,
-    output_hash: outputTokens ? String(outputTokens) : null,
     signature,
     metadata: {
       ...metadata,
@@ -189,11 +218,16 @@ export async function POST(request: Request) {
     cost_cents: priceCents,
     status,
     timestamp: now,
-    receipt: {
-      receipt_id: receiptId,
-      signature,
-      verify_url: `https://noui.bot/api/v1/bazaar/receipts/${receiptId}`,
-    },
+    // A receipt that was not stored cannot be looked up, so don't hand out
+    // a verify_url that would 404.
+    receipt: receiptErr
+      ? null
+      : {
+          receipt_id: receiptId,
+          signature,
+          verify_url: `https://noui.bot/api/v1/bazaar/receipts/${receiptId}`,
+        },
+    receipt_persisted: !receiptErr,
   }, { status: 201 });
 }
 
